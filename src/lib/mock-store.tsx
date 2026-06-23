@@ -113,9 +113,10 @@ function calculateGrade(score: number, maxScore: number): string {
 
 // ---------- Seed data ----------
 const seedClasses: ClassRoom[] = [
-  { id: "c1", name: "Sunflower", teacherId: "u3" },
-  { id: "c2", name: "Butterfly", teacherId: "u4" },
-  { id: "c3", name: "Rainbow" },
+  { id: "c1", name: "Baby", teacherId: "u3" },
+  { id: "c2", name: "Middle", teacherId: "u4" },
+  { id: "c3", name: "Top" },
+  { id: "c4", name: "P1" },
 ];
 
 const seedUsers: User[] = [
