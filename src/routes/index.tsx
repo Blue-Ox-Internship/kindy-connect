@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Sparkles, Sun, Bell, ShieldCheck, BookOpenCheck } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -23,7 +22,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  const { currentUser, login, loginAs, registerTeacher } = useStore();
+  const { currentUser, login, registerTeacher } = useStore();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,11 +37,6 @@ function Landing() {
     const u = login(email);
     if (!u) return toast.error("Invalid credentials or account not verified");
     toast.success(`Welcome, ${u.name.split(" ")[0]}`);
-    navigate({ to: "/app/dashboard" });
-  };
-
-  const quick = (role: "admin" | "deputy" | "teacher") => {
-    loginAs(role);
     navigate({ to: "/app/dashboard" });
   };
 
@@ -101,23 +95,12 @@ function Landing() {
           <CardContent className="p-7">
             <h2 className="text-2xl font-semibold">Sign in</h2>
             <p className="text-sm text-muted-foreground mb-5">Admin, deputy & verified teachers.</p>
-            <Tabs defaultValue="login">
-              <TabsList className="w-full">
-                <TabsTrigger value="login" className="flex-1">Email login</TabsTrigger>
-                <TabsTrigger value="demo" className="flex-1">Quick demo</TabsTrigger>
-              </TabsList>
-              <TabsContent value="login" className="space-y-3 mt-4">
-                <div><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@kinder.app" /></div>
-                <div><Label>Password</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="********" /></div>
-                <Button className="w-full" onClick={doLogin}>Sign in</Button>
-                <p className="text-xs text-muted-foreground text-center">Try: admin@kinder.app - deputy@kinder.app - grace@kinder.app</p>
-              </TabsContent>
-              <TabsContent value="demo" className="space-y-2 mt-4">
-                <Button variant="outline" className="w-full justify-start" onClick={() => quick("admin")}>Continue as Admin</Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => quick("deputy")}>Continue as Deputy</Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => quick("teacher")}>Continue as Teacher</Button>
-              </TabsContent>
-            </Tabs>
+            <div className="space-y-3 mt-4">
+              <div><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@kinder.app" /></div>
+              <div><Label>Password</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="********" /></div>
+              <Button className="w-full" onClick={doLogin}>Sign in</Button>
+              <p className="text-xs text-muted-foreground text-center">Try: admin@kinder.app - deputy@kinder.app - grace@kinder.app</p>
+            </div>
           </CardContent>
         </Card>
       </section>
