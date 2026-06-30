@@ -33,8 +33,8 @@ function Landing() {
     if (currentUser) navigate({ to: "/app/dashboard" });
   }, [currentUser, navigate]);
 
-  const doLogin = () => {
-    const u = login(email, password);
+  const doLogin = async () => {
+    const u = await login(email, password);
     if (!u) return toast.error("Invalid credentials or account not verified");
     toast.success(`Welcome, ${u.name.split(" ")[0]}`);
     navigate({ to: "/app/dashboard" });
