@@ -14,15 +14,20 @@ import { useStore } from "@/lib/mock-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 export function AppShell({ children, title }: { children: ReactNode; title: string }) {
   const { currentUser, users, logout } = useStore();
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
+  useEffect(() => {
+    if (!currentUser) {
+      navigate({ to: "/" });
+    }
+  }, [currentUser, navigate]);
+
   if (!currentUser) {
-    if (typeof window !== "undefined") navigate({ to: "/" });
     return null;
   }
 

@@ -23,6 +23,8 @@ function TeachersPage() {
   const pending = listToDisplay.filter((t) => t.status === "pending");
   const verified = listToDisplay.filter((t) => t.status === "verified");
   const rejected = listToDisplay.filter((t) => t.status === "rejected");
+  const formatRegisteredAt = (value: string | Date) =>
+    value instanceof Date ? value.toISOString().slice(0, 10) : value;
 
   const renderTable = (list: typeof users, withActions = false) => (
     <Table>
@@ -46,7 +48,7 @@ function TeachersPage() {
             <TableCell>{t.phone}</TableCell>
             {isCurrentUserAdmin && <TableCell className="capitalize">{t.role}</TableCell>}
             {isCurrentUserAdmin && <TableCell className="font-mono text-xs">{t.password || "N/A"}</TableCell>}
-            <TableCell>{t.registeredAt}</TableCell>
+            <TableCell>{formatRegisteredAt(t.registeredAt)}</TableCell>
             <TableCell>
               <Badge variant={t.status === "verified" ? "default" : t.status === "rejected" ? "destructive" : "secondary"} className="capitalize">{t.status}</Badge>
             </TableCell>
@@ -87,4 +89,4 @@ function TeachersPage() {
       </Card>
     </AppShell>
   );
-}
+}

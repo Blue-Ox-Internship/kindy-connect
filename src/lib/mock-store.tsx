@@ -141,7 +141,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     marks: state.marks,
 
     login: async (email, password) => {
-      const u = await loginUser({ email, password });
+      const u = await loginUser({ data: { email, password } });
       if (u) {
         setState(s => ({ ...s, currentUserId: u.id }));
       }
@@ -160,13 +160,13 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     },
 
     registerUser: async ({ name, email, phone, password, role }) => {
-      const u = await registerUserDb({ name, email, phone, password, role });
+      const u = await registerUserDb({ data: { name, email, phone, password, role } });
       setState(s => ({ ...s, users: [...s.users, u] }));
     },
 
     approveTeacher: async (id) => {
       if (!currentUser) return;
-      await approveTeacherDb({ id, actorId: currentUser.id, actorName: currentUser.name });
+      await approveTeacherDb({ data: { id, actorId: currentUser.id, actorName: currentUser.name } });
       setState(s => ({
         ...s,
         users: s.users.map((u: User) => (u.id === id ? { ...u, status: "verified" } : u)),
@@ -186,7 +186,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
 
     rejectTeacher: async (id) => {
       if (!currentUser) return;
-      await rejectTeacherDb({ id, actorId: currentUser.id, actorName: currentUser.name });
+      await rejectTeacherDb({ data: { id, actorId: currentUser.id, actorName: currentUser.name } });
       setState(s => ({
         ...s,
         users: s.users.map((u: User) => (u.id === id ? { ...u, status: "rejected" } : u)),
@@ -206,7 +206,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
 
     addPupil: async (pupilData) => {
       if (!currentUser) return;
-      const newPupil = await addPupilDb({ pupil: pupilData, actorId: currentUser.id, actorName: currentUser.name });
+      const newPupil = await addPupilDb({ data: { pupil: pupilData, actorId: currentUser.id, actorName: currentUser.name } });
       setState(s => ({
         ...s,
         pupils: [...s.pupils, newPupil],
@@ -225,7 +225,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     },
 
     updatePupil: async (id, data) => {
-      await updatePupilDb({ id, data });
+      await updatePupilDb({ data: { id, data } });
       setState(s => ({
         ...s,
         pupils: s.pupils.map((p: Pupil) => (p.id === id ? { ...p, ...data } : p)),
@@ -233,7 +233,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     },
 
     deactivatePupil: async (id) => {
-      await deactivatePupilDb({ id });
+      await deactivatePupilDb({ data: { id } });
       setState(s => ({
         ...s,
         pupils: s.pupils.map((p: Pupil) => (p.id === id ? { ...p, active: false } : p)),
@@ -242,7 +242,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
 
     addParent: async (parentData) => {
       if (!currentUser) return;
-      const newParent = await addParentDb({ parent: parentData, actorId: currentUser.id, actorName: currentUser.name });
+      const newParent = await addParentDb({ data: { parent: parentData, actorId: currentUser.id, actorName: currentUser.name } });
       setState(s => ({
         ...s,
         parents: [...s.parents, newParent],
@@ -263,16 +263,18 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     markArrival: async (pupilId, transportDetails) => {
       if (!currentUser || !transportDetails) return;
       const res = await markArrivalDb({
-        pupilId,
-        transportDetails: {
-          transport: transportDetails.transport,
-          vehicleReg: transportDetails.vehicleReg,
-          personName: transportDetails.personName,
-          personRelation: transportDetails.personRelation,
-          phone: transportDetails.phone,
+        data: {
+          pupilId,
+          transportDetails: {
+            transport: transportDetails.transport,
+            vehicleReg: transportDetails.vehicleReg,
+            personName: transportDetails.personName,
+            personRelation: transportDetails.personRelation,
+            phone: transportDetails.phone,
+          },
+          actorId: currentUser.id,
+          actorName: currentUser.name,
         },
-        actorId: currentUser.id,
-        actorName: currentUser.name,
       });
 
       setState(s => {
@@ -293,16 +295,18 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     markDeparture: async (pupilId, transportDetails) => {
       if (!currentUser || !transportDetails) return;
       const res = await markDepartureDb({
-        pupilId,
-        transportDetails: {
-          transport: transportDetails.transport,
-          vehicleReg: transportDetails.vehicleReg,
-          personName: transportDetails.personName,
-          personRelation: transportDetails.personRelation,
-          phone: transportDetails.phone,
+        data: {
+          pupilId,
+          transportDetails: {
+            transport: transportDetails.transport,
+            vehicleReg: transportDetails.vehicleReg,
+            personName: transportDetails.personName,
+            personRelation: transportDetails.personRelation,
+            phone: transportDetails.phone,
+          },
+          actorId: currentUser.id,
+          actorName: currentUser.name,
         },
-        actorId: currentUser.id,
-        actorName: currentUser.name,
       });
 
       setState(s => {
@@ -322,7 +326,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
 
     addMark: async (markData) => {
       if (!currentUser) return;
-      const newMark = await addMarkDb({ mark: markData, actorId: currentUser.id });
+      const newMark = await addMarkDb({ data: { mark: markData, actorId: currentUser.id } });
       const pupil = state.pupils.find((p: Pupil) => p.id === markData.pupilId);
       
       setState(s => ({
@@ -344,7 +348,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
 
     updateMark: async (id, markData) => {
       if (!currentUser) return;
-      const res = await updateMarkDb({ id, data: markData });
+      const res = await updateMarkDb({ data: { id, data: markData } });
       
       setState(s => {
         const existingMark = s.marks.find(m => m.id === id);
@@ -370,7 +374,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
 
     deleteMark: async (id) => {
       if (!currentUser) return;
-      await deleteMarkDb({ id });
+      await deleteMarkDb({ data: { id } });
       
       setState(s => {
         const existingMark = s.marks.find(m => m.id === id);
