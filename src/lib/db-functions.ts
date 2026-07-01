@@ -141,17 +141,16 @@ export const getInitialData = createServerFn({ method: "GET" })
 // 2. Authentication Functions
 // ----------------------------------------------------
 export const loginUser = createServerFn({ method: "POST" })
-  .validator((d: { email: string; password?: string }) => d)
+  .validator((d: { id: string }) => d)
   .handler(async ({ data }) => {
-    const { email, password } = data;
+    const { id } = data;
     try {
       const results = await sql`
         SELECT * FROM users 
-        WHERE LOWER(email) = LOWER(${email})
+        WHERE LOWER(id) = LOWER(${id})
       `;
       if (results.length === 0) return null;
       const user = toCamel<User>(results[0]);
-      if (password && user.password !== password) return null;
       if (user.role === "teacher" && user.status !== "verified") return null;
       return user;
     } catch (error) {
@@ -161,9 +160,9 @@ export const loginUser = createServerFn({ method: "POST" })
   });
 
 export const registerUser = createServerFn({ method: "POST" })
-  .validator((d: Omit<User, "id" | "status" | "registeredAt">) => d)
+  .validator((d: Omit<User, "status" | "registeredAt">) => d)
   .handler(async ({ data }) => {
-    const id = Math.random().toString(36).slice(2, 10);
+    const id = data.id.trim();
     const status = data.role === "admin" ? "verified" : "pending";
     const registeredAt = new Date().toISOString().slice(0, 10);
     

@@ -39,7 +39,7 @@ interface Store {
   notifications: Notification[];
   audit: AuditLog[];
   marks: Mark[];
-  login: (email: string, password?: string) => Promise<User | null>;
+  login: (id: string) => Promise<User | null>;
   loginAs: (role: Role) => Promise<void>;
   logout: () => void;
   registerUser: (data: { name: string; email: string; phone: string; password?: string; role: Role }) => Promise<void>;
@@ -140,8 +140,8 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     audit: state.audit,
     marks: state.marks,
 
-    login: async (email, password) => {
-      const u = await loginUser({ data: { email, password } });
+    login: async (id) => {
+      const u = await loginUser({ data: { id } });
       if (u) {
         setState(s => ({ ...s, currentUserId: u.id }));
       }
@@ -159,8 +159,8 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
       setState(s => ({ ...s, currentUserId: null }));
     },
 
-    registerUser: async ({ name, email, phone, password, role }) => {
-      const u = await registerUserDb({ data: { name, email, phone, password, role } });
+    registerUser: async ({ id, name, email, phone, role }) => {
+      const u = await registerUserDb({ data: { id, name, email, phone, role } });
       setState(s => ({ ...s, users: [...s.users, u] }));
     },
 

@@ -24,32 +24,32 @@ export const Route = createFileRoute("/")({
 function Landing() {
   const { currentUser, login, registerUser } = useStore();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [assignedId, setAssignedId] = useState("");
   const [regOpen, setRegOpen] = useState(false);
-  const [reg, setReg] = useState({ name: "", email: "", phone: "", password: "", role: "teacher" as Role });
+  const [reg, setReg] = useState({ id: "", name: "", email: "", phone: "", role: "teacher" as Role });
 
   useEffect(() => {
     if (currentUser) navigate({ to: "/app/dashboard" });
   }, [currentUser, navigate]);
 
   const doLogin = async () => {
-    const u = await login(email, password);
-    if (!u) return toast.error("Invalid credentials or account not verified");
+    if (!assignedId.trim()) return toast.error("Enter your assigned ID");
+    const u = await login(assignedId.trim());
+    if (!u) return toast.error("Invalid ID or account not verified");
     toast.success(`Welcome, ${u.name.split(" ")[0]}`);
     navigate({ to: "/app/dashboard" });
   };
 
   const submitReg = () => {
-    if (!reg.name || !reg.email || !reg.phone || !reg.password) return toast.error("Fill all fields");
+    if (!reg.id || !reg.name || !reg.email || !reg.phone) return toast.error("Fill all fields");
     registerUser(reg);
     if (reg.role === "admin") {
-      toast.success("Admin registration completed - you can now log in!");
+      toast.success("Admin registration completed - you can now log in with the assigned ID!");
     } else {
       toast.success("Registration submitted - awaiting approval");
     }
     setRegOpen(false);
-    setReg({ name: "", email: "", phone: "", password: "", role: "teacher" });
+    setReg({ id: "", name: "", email: "", phone: "", role: "teacher" });
   };
 
   return (
@@ -67,10 +67,10 @@ function Landing() {
             <DialogHeader><DialogTitle>User registration</DialogTitle></DialogHeader>
             <p className="text-sm text-muted-foreground">Register as an admin or teacher. Teacher registrations require admin approval before login.</p>
             <div className="space-y-3 mt-2">
+              <div><Label>Assigned ID</Label><Input value={reg.id} onChange={(e) => setReg({ ...reg, id: e.target.value })} placeholder="kst-001" /></div>
               <div><Label>Full name</Label><Input value={reg.name} onChange={(e) => setReg({ ...reg, name: e.target.value })} /></div>
               <div><Label>Email</Label><Input type="email" value={reg.email} onChange={(e) => setReg({ ...reg, email: e.target.value })} /></div>
               <div><Label>Phone</Label><Input value={reg.phone} onChange={(e) => setReg({ ...reg, phone: e.target.value })} /></div>
-              <div><Label>Password</Label><Input type="password" value={reg.password} onChange={(e) => setReg({ ...reg, password: e.target.value })} /></div>
               <div>
                 <Label>Role</Label>
                 <select
@@ -110,12 +110,11 @@ function Landing() {
         <Card className="border-0 shadow-xl rounded-3xl overflow-hidden">
           <CardContent className="p-7">
             <h2 className="text-2xl font-semibold">Sign in</h2>
-            <p className="text-sm text-muted-foreground mb-5">Admin, deputy & verified teachers.</p>
+            <p className="text-sm text-muted-foreground mb-5">Enter the ID assigned by your admin.</p>
             <div className="space-y-3 mt-4">
-              <div><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@kinder.app" /></div>
-              <div><Label>Password</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="********" /></div>
+              <div><Label>Assigned ID</Label><Input value={assignedId} onChange={(e) => setAssignedId(e.target.value)} placeholder="kst-001" /></div>
               <Button className="w-full" onClick={doLogin}>Sign in</Button>
-              <p className="text-xs text-muted-foreground text-center">Try: admin@kinder.app - deputy@kinder.app - grace@kinder.app</p>
+              <p className="text-xs text-muted-foreground text-center">Ask your administrator for your login ID.</p>
             </div>
           </CardContent>
         </Card>
