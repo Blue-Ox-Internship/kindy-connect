@@ -45,7 +45,7 @@ interface Store {
   registerUser: (data: { name: string; email: string; phone: string; password?: string; role: Role }) => Promise<void>;
   approveTeacher: (id: string) => Promise<void>;
   rejectTeacher: (id: string) => Promise<void>;
-  addPupil: (data: Omit<Pupil, "id" | "active">) => Promise<void>;
+  addPupil: (data: Omit<Pupil, "id" | "active"> & { parent?: Omit<Parent, "id"> }) => Promise<void>;
   updatePupil: (id: string, data: Partial<Pupil>) => Promise<void>;
   deactivatePupil: (id: string) => Promise<void>;
   addParent: (data: Omit<Parent, "id">) => Promise<void>;
@@ -206,10 +206,28 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
 
     addPupil: async (pupilData) => {
       if (!currentUser) return;
-      const newPupil = await addPupilDb({ data: { pupil: pupilData, actorId: currentUser.id, actorName: currentUser.name } });
+      const { parent, ...pupil } = pupilData as Omit<Pupil, "id" | "active"> & { parent?: Omit<Parent, "id"> };
+      let createdParent: Parent | undefined;
+
+      if (parent) {
+        createdParent = await addParentDb({ data: { parent, actorId: currentUser.id, actorName: currentUser.name } });
+      }
+
+      const newPupil = await addPupilDb({
+        data: {
+          pupil: {
+            ...pupil,
+            parentIds: createdParent ? [createdParent.id, ...(pupil.parentIds ?? [])] : pupil.parentIds ?? [],
+          },
+          parent,
+          actorId: currentUser.id,
+          actorName: currentUser.name,
+        },
+      });
       setState(s => ({
         ...s,
         pupils: [...s.pupils, newPupil],
+        parents: createdParent ? [...s.parents, createdParent] : s.parents,
         audit: [
           {
             id: Math.random().toString(36).slice(2, 10),

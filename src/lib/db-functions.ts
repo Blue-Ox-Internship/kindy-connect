@@ -27,6 +27,13 @@ export interface Pupil {
   parentIds: string[];
 }
 
+export interface ParentInput {
+  name: string;
+  phone: string;
+  email: string;
+  relationship: string;
+}
+
 export interface Parent {
   id: string;
   name: string;
@@ -240,11 +247,12 @@ export const rejectTeacher = createServerFn({ method: "POST" })
 // 3. Pupil CRUD Functions
 // ----------------------------------------------------
 export const addPupil = createServerFn({ method: "POST" })
-  .validator((d: { pupil: Omit<Pupil, "id" | "active">; actorId: string; actorName: string }) => d)
+  .validator((d: { pupil: Omit<Pupil, "id" | "active">; parent?: ParentInput; actorId: string; actorName: string }) => d)
   .handler(async ({ data }) => {
-    const { pupil, actorId, actorName } = data;
+    const { pupil, parent, actorId, actorName } = data;
     const id = Math.random().toString(36).slice(2, 10);
     const logId = Math.random().toString(36).slice(2, 10);
+    const parentId = parent ? Math.random().toString(36).slice(2, 10) : null;
     
     const dbPupil = toSnake({
       id,
@@ -260,8 +268,16 @@ export const addPupil = createServerFn({ method: "POST" })
     
     try {
       await sql.begin(async (sql) => {
+        if (parent && parentId) {
+          await sql`INSERT INTO parents ${sql(toSnake({ id: parentId, ...parent }))}`;
+        }
+
         await sql`INSERT INTO pupils ${sql(dbPupil)}`;
         
+        if (parentId) {
+          await sql`INSERT INTO pupil_parents ${sql([{ pupil_id: id, parent_id: parentId }], "pupil_id", "parent_id")}`;
+        }
+
         if (pupil.parentIds && pupil.parentIds.length > 0) {
           const rows = pupil.parentIds.map(parentId => ({
             pupil_id: id,
@@ -281,6 +297,7 @@ export const addPupil = createServerFn({ method: "POST" })
         id,
         ...pupil,
         active: true,
+        parentIds: parentId ? [parentId, ...(pupil.parentIds || [])] : pupil.parentIds || [],
       };
     } catch (error) {
       console.error("Error in addPupil:", error);

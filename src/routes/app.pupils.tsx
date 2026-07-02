@@ -22,7 +22,18 @@ function PupilsPage() {
   const { pupils, classes, parents, addPupil, deactivatePupil } = useStore();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ admissionNo: "", firstName: "", lastName: "", gender: "M" as "M" | "F", dob: "", classId: classes[0]?.id ?? "", parentIds: [] as string[] });
+  const [form, setForm] = useState({
+    admissionNo: "",
+    firstName: "",
+    lastName: "",
+    gender: "M" as "M" | "F",
+    dob: "",
+    classId: classes[0]?.id ?? "",
+    parentName: "",
+    parentPhone: "",
+    parentEmail: "",
+    parentRelationship: "Mother",
+  });
 
   const filtered = pupils.filter(
     (p) => `${p.firstName} ${p.lastName} ${p.admissionNo}`.toLowerCase().includes(q.toLowerCase()),
@@ -31,10 +42,44 @@ function PupilsPage() {
   const submit = () => {
     if (!form.admissionNo || !form.firstName || !form.lastName) return toast.error("Fill required fields");
     if (pupils.some((p) => p.admissionNo === form.admissionNo)) return toast.error("Admission number already exists");
-    addPupil(form as Omit<Pupil, "id" | "active">);
+    const parentProvided = form.parentName || form.parentPhone || form.parentEmail;
+    if (parentProvided && (!form.parentName || !form.parentPhone || !form.parentEmail)) {
+      return toast.error("Fill all parent fields or leave them blank");
+    }
+
+    addPupil({
+      admissionNo: form.admissionNo,
+      firstName: form.firstName,
+      lastName: form.lastName,
+      gender: form.gender,
+      dob: form.dob,
+      classId: form.classId,
+      parentIds: [],
+      ...(parentProvided
+        ? {
+            parent: {
+              name: form.parentName,
+              phone: form.parentPhone,
+              email: form.parentEmail,
+              relationship: form.parentRelationship,
+            },
+          }
+        : {}),
+    } as Omit<Pupil, "id" | "active"> & { parent?: { name: string; phone: string; email: string; relationship: string } });
     toast.success("Pupil registered");
     setOpen(false);
-    setForm({ admissionNo: "", firstName: "", lastName: "", gender: "M", dob: "", classId: classes[0]?.id ?? "", parentIds: [] });
+    setForm({
+      admissionNo: "",
+      firstName: "",
+      lastName: "",
+      gender: "M",
+      dob: "",
+      classId: classes[0]?.id ?? "",
+      parentName: "",
+      parentPhone: "",
+      parentEmail: "",
+      parentRelationship: "Mother",
+    });
   };
 
   return (
@@ -69,11 +114,21 @@ function PupilsPage() {
                       <SelectContent>{classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <div className="col-span-2"><Label>Link parent (optional)</Label>
-                    <Select value={form.parentIds[0] ?? ""} onValueChange={(v) => setForm({ ...form, parentIds: v ? [v] : [] })}>
-                      <SelectTrigger><SelectValue placeholder="Choose parent" /></SelectTrigger>
-                      <SelectContent>{parents.map((p) => <SelectItem key={p.id} value={p.id}>{p.name} ({p.relationship})</SelectItem>)}</SelectContent>
-                    </Select>
+                  <div className="col-span-2 rounded-xl border p-3 space-y-3 bg-muted/20">
+                    <div className="text-sm font-medium">Parent / guardian details</div>
+                    <div><Label>Full name</Label><Input value={form.parentName} onChange={(e) => setForm({ ...form, parentName: e.target.value })} /></div>
+                    <div><Label>Phone</Label><Input value={form.parentPhone} onChange={(e) => setForm({ ...form, parentPhone: e.target.value })} placeholder="+254..." /></div>
+                    <div><Label>Email</Label><Input type="email" value={form.parentEmail} onChange={(e) => setForm({ ...form, parentEmail: e.target.value })} /></div>
+                    <div><Label>Relationship</Label>
+                      <Select value={form.parentRelationship} onValueChange={(v) => setForm({ ...form, parentRelationship: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Mother">Mother</SelectItem>
+                          <SelectItem value="Father">Father</SelectItem>
+                          <SelectItem value="Guardian">Guardian</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
                 <DialogFooter><Button onClick={submit}>Save pupil</Button></DialogFooter>
