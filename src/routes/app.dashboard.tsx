@@ -401,41 +401,84 @@ function Dashboard() {
 }
 
 function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
+  const totalTeachers = users.filter((u: any) => u.role === "teacher" && u.status === "verified").length;
+  const pendingTeachers = users.filter((u: any) => u.role === "teacher" && u.status === "pending").length;
+  const totalAdmins = users.filter((u: any) => (u.role === "admin" || u.role === "deputy") && u.status === "verified").length;
+  const activePupils = pupils.filter((p: any) => p.active).length;
+  
   const stats = [
-    { label: "Total Schools", value: schools.length, icon: Building, color: "bg-primary/15 text-primary" },
-    { label: "Active Admins", value: users.filter((u: any) => u.role === "admin" && u.status === "verified").length, icon: ShieldCheck, color: "bg-secondary/20 text-secondary-foreground" },
-    { label: "Total Pupils", value: pupils.filter((p: any) => p.active).length, icon: Baby, color: "bg-chart-4/20 text-chart-4" },
-    { label: "System Activity", value: audit.length, icon: ClipboardList, color: "bg-accent/15 text-accent" },
+    { label: "Total Schools", value: schools.length, icon: Building, color: "bg-blue-500/15 text-blue-600", link: "/app/schools" },
+    { label: "System Users", value: users.length, icon: ShieldCheck, color: "bg-purple-500/15 text-purple-600", link: "/app/teachers" },
+    { label: "Active Pupils", value: activePupils, icon: Baby, color: "bg-green-500/15 text-green-600", link: "/app/pupils" },
+    { label: "Total Classes", value: classes.length, icon: GraduationCap, color: "bg-orange-500/15 text-orange-600", link: "/app/classes" },
+  ];
+
+  const additionalStats = [
+    { label: "Admins/Deputies", value: totalAdmins },
+    { label: "Verified Teachers", value: totalTeachers },
+    { label: "Pending Approvals", value: pendingTeachers, highlight: pendingTeachers > 0 },
+    { label: "System Logs", value: audit.length },
   ];
 
   return (
-    <AppShell title="System Overview">
+    <AppShell title="Super Admin Dashboard">
       <div className="space-y-6">
-        {/* Stats Grid */}
+        {/* Main Stats Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((s) => {
             const Icon = s.icon;
             return (
-              <Card key={s.label} className="border-0 shadow-sm">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${s.color}`}>
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <div className="text-3xl font-semibold">{s.value}</div>
-                    <div className="text-sm text-muted-foreground">{s.label}</div>
-                  </div>
-                </CardContent>
-              </Card>
+              <a href={s.link} key={s.label}>
+                <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className={`h-14 w-14 rounded-2xl flex items-center justify-center ${s.color}`}>
+                      <Icon className="h-7 w-7" />
+                    </div>
+                    <div>
+                      <div className="text-3xl font-bold">{s.value}</div>
+                      <div className="text-sm text-muted-foreground">{s.label}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </a>
             );
           })}
         </div>
 
+        {/* Secondary Stats Bar */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {additionalStats.map((s) => (
+            <Card key={s.label} className={`border-0 shadow-sm ${s.highlight ? 'bg-accent/10 border-accent/30' : ''}`}>
+              <CardContent className="p-4 flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{s.label}</span>
+                <span className={`text-2xl font-semibold ${s.highlight ? 'text-accent' : ''}`}>{s.value}</span>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Quick Actions */}
+        {pendingTeachers > 0 && (
+          <Card className="border-accent/40 bg-accent/5">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <BellRing className="h-5 w-5 text-accent" />
+                <div>
+                  <div className="font-semibold">{pendingTeachers} teacher account{pendingTeachers > 1 ? "s" : ""} awaiting approval</div>
+                  <div className="text-sm text-muted-foreground">Review and approve pending registrations.</div>
+                </div>
+              </div>
+              <Button asChild variant="default"><a href="/app/teachers">Review Now</a></Button>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Schools Overview */}
+          {/* Schools Overview Table */}
           <Card className="lg:col-span-2">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
               <CardTitle>Schools Overview</CardTitle>
+              <Button asChild size="sm" variant="outline"><a href="/app/schools">Manage All</a></Button>
             </CardHeader>
             <CardContent>
               <Table>
@@ -444,27 +487,34 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
                     <TableHead>School Name</TableHead>
                     <TableHead>Pupils</TableHead>
                     <TableHead>Classes</TableHead>
-                    <TableHead>Admins/Staff</TableHead>
+                    <TableHead>Staff</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {schools.slice(0, 5).map((s: any) => {
+                  {schools.map((s: any) => {
                     const pupilsCount = pupils.filter((p: any) => p.schoolId === s.id && p.active).length;
                     const classesCount = classes.filter((c: any) => c.schoolId === s.id).length;
                     const staffCount = users.filter((u: any) => u.schoolId === s.id && u.status === "verified").length;
+                    const status = pupilsCount > 0 ? "Active" : "New";
                     return (
                       <TableRow key={s.id}>
                         <TableCell className="font-semibold">{s.name}</TableCell>
-                        <TableCell>{pupilsCount} pupils</TableCell>
-                        <TableCell>{classesCount} classes</TableCell>
-                        <TableCell>{staffCount} active</TableCell>
+                        <TableCell className="text-muted-foreground">{pupilsCount}</TableCell>
+                        <TableCell className="text-muted-foreground">{classesCount}</TableCell>
+                        <TableCell className="text-muted-foreground">{staffCount}</TableCell>
+                        <TableCell>
+                          <Badge variant={status === "Active" ? "default" : "secondary"} className="text-xs">
+                            {status}
+                          </Badge>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
                   {schools.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                        No schools registered.
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                        No schools registered yet. <a href="/app/schools" className="text-primary underline">Create your first school</a>
                       </TableCell>
                     </TableRow>
                   )}
@@ -473,25 +523,104 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
             </CardContent>
           </Card>
 
-          {/* Recent Audits */}
+          {/* Recent System Activity */}
           <Card>
-            <CardHeader>
-              <CardTitle>System Activity</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle>Recent Activity</CardTitle>
+              <Button asChild size="sm" variant="ghost"><a href="/app/audit">View All</a></Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              {audit.slice(0, 5).map((a: any) => (
-                <div key={a.id} className="text-sm pb-3 border-b last:border-0 last:pb-0">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-semibold text-xs truncate max-w-[120px]">{a.actorName}</span>
-                    <span className="text-[10px] text-muted-foreground">{new Date(a.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              {audit.slice(0, 8).map((a: any) => {
+                const timestamp = new Date(a.timestamp);
+                const isToday = timestamp.toDateString() === new Date().toDateString();
+                return (
+                  <div key={a.id} className="text-sm pb-3 border-b last:border-0 last:pb-0">
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="font-medium text-xs truncate max-w-[140px]">{a.actorName}</span>
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
+                        {isToday 
+                          ? timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                          : timestamp.toLocaleDateString([], { month: 'short', day: 'numeric' })
+                        }
+                      </span>
+                    </div>
+                    <div className="text-muted-foreground text-xs leading-relaxed">
+                      <span className="text-foreground font-medium">{a.action}</span>
+                      <br />
+                      <span className="text-[11px]">{a.target}</span>
+                    </div>
                   </div>
-                  <div className="text-muted-foreground text-xs">{a.action}: <span className="font-medium text-foreground">{a.target}</span></div>
-                </div>
-              ))}
-              {audit.length === 0 && <p className="text-xs text-muted-foreground">No recent activity.</p>}
+                );
+              })}
+              {audit.length === 0 && (
+                <p className="text-xs text-center text-muted-foreground py-4">No system activity yet.</p>
+              )}
             </CardContent>
           </Card>
         </div>
+
+        {/* Quick Access Links */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Access</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <a href="/app/schools">
+                <Card className="border hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-blue-500/15 text-blue-600 flex items-center justify-center">
+                      <Building className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Manage Schools</div>
+                      <div className="text-xs text-muted-foreground">Add, edit, or remove</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </a>
+              <a href="/app/teachers">
+                <Card className="border hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-purple-500/15 text-purple-600 flex items-center justify-center">
+                      <ShieldCheck className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">User Accounts</div>
+                      <div className="text-xs text-muted-foreground">Manage all users</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </a>
+              <a href="/app/classes">
+                <Card className="border hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-orange-500/15 text-orange-600 flex items-center justify-center">
+                      <GraduationCap className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">All Classes</div>
+                      <div className="text-xs text-muted-foreground">View across schools</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </a>
+              <a href="/app/audit">
+                <Card className="border hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-green-500/15 text-green-600 flex items-center justify-center">
+                      <ClipboardList className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Audit Logs</div>
+                      <div className="text-xs text-muted-foreground">System activity</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </a>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </AppShell>
   );
