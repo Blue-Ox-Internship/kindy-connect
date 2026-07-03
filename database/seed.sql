@@ -21,8 +21,8 @@ INSERT INTO classes (id, name, teacher_id, school_id) VALUES
 INSERT INTO users (id, name, email, role, status, phone, registered_at, password, class_id, school_id) VALUES
 ('KC001', 'System Administrator', 'superadmin@kinder.app', 'super_admin', 'verified', '+254700000000', '2025-01-01', 'admin123', NULL, NULL),
 ('u1', 'Amina Okello', 'admin@kinder.app', 'admin', 'verified', '+254700000001', '2025-01-10', 'admin123', NULL, 's1'),
-('u2', 'Brian Mwangi', 'deputy@kinder.app', 'deputy', 'verified', '+254700000002', '2025-01-12', 'deputy123', NULL, 's2'),
-('u3', 'Grace Wanjiku', 'grace@kinder.app', 'teacher', 'verified', '+254700000003', '2025-02-01', 'grace123', 'c7', 's3'),
+('u2', 'Brian Mwangi', 'deputy@kinder.app', 'admin', 'verified', '+254700000002', '2025-01-12', 'admin123', NULL, 's2'),
+('u3', 'Grace Wanjiku', 'grace@kinder.app', 'admin', 'verified', '+254700000003', '2025-02-01', 'admin123', NULL, 's3'),
 ('u4', 'Peter Otieno', 'peter@kinder.app', 'teacher', 'verified', '+254700000004', '2025-02-03', 'peter123', 'c2', 's1'),
 ('u5', 'Lucy Achieng', 'lucy@kinder.app', 'teacher', 'pending', '+254700000005', '2025-06-15', 'lucy123', NULL, 's1'),
 ('u6', 'James Kariuki', 'james@kinder.app', 'teacher', 'verified', '+254700000006', '2025-06-16', 'james123', 'c1', 's1'),
@@ -34,7 +34,6 @@ INSERT INTO users (id, name, email, role, status, phone, registered_at, password
 UPDATE classes SET teacher_id = 'u6' WHERE id = 'c1';
 UPDATE classes SET teacher_id = 'u4' WHERE id = 'c2';
 UPDATE classes SET teacher_id = 'u7' WHERE id = 'c3';
-UPDATE classes SET teacher_id = 'u3' WHERE id = 'c7';
 UPDATE classes SET teacher_id = 'u7' WHERE id = 'c3';
 UPDATE classes SET teacher_id = 'u3' WHERE id = 'c5';
 
