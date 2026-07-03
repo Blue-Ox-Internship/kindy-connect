@@ -169,7 +169,7 @@ export const loginUser = createServerFn({ method: "POST" })
     try {
       const results = await sql`
         SELECT * FROM users 
-        WHERE LOWER(id) = LOWER(${id})
+        WHERE id = ${id}
       `;
       if (results.length === 0) return null;
       const user = toCamel<User>(results[0]);
