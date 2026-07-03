@@ -1,10 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useStore, type Role } from "@/lib/mock-store";
+import { useStore } from "@/lib/mock-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Sparkles, Sun, Bell, ShieldCheck, BookOpenCheck } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -22,13 +21,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  const { currentUser, login, registerUser, schools } = useStore();
+  const { currentUser, login } = useStore();
   const navigate = useNavigate();
   const [assignedId, setAssignedId] = useState("");
-  const [regOpen, setRegOpen] = useState(false);
-  const [reg, setReg] = useState({ id: "", name: "", email: "", phone: "", role: "teacher" as Role });
-  const [schoolId, setSchoolId] = useState("");
-  const [newSchoolName, setNewSchoolName] = useState("");
 
   useEffect(() => {
     if (currentUser) navigate({ to: "/app/dashboard" });
@@ -42,36 +37,6 @@ function Landing() {
     navigate({ to: "/app/dashboard" });
   };
 
-  const changeRole = (role: Role) => {
-    setReg({ ...reg, role });
-    if (role === "teacher" && schoolId === "new") {
-      setSchoolId("");
-      setNewSchoolName("");
-    }
-  };
-
-  const submitReg = () => {
-    if (!reg.id || !reg.name || !reg.email || !reg.phone) return toast.error("Fill all fields");
-    if (!schoolId) return toast.error("Please select a school");
-    if (schoolId === "new" && !newSchoolName.trim()) return toast.error("Please enter the new school's name");
-
-    registerUser({
-      ...reg,
-      schoolId,
-      newSchoolName: schoolId === "new" ? newSchoolName.trim() : undefined,
-    });
-
-    if (reg.role === "admin") {
-      toast.success("Admin registration completed - you can now log in with the assigned ID!");
-    } else {
-      toast.success("Registration submitted - awaiting approval");
-    }
-    setRegOpen(false);
-    setReg({ id: "", name: "", email: "", phone: "", role: "teacher" });
-    setSchoolId("");
-    setNewSchoolName("");
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <header className="flex items-center justify-between px-6 lg:px-12 py-5">
@@ -81,60 +46,6 @@ function Landing() {
           </div>
           <span className="font-semibold text-lg">Little Stars</span>
         </div>
-        <Dialog open={regOpen} onOpenChange={setRegOpen}>
-          <DialogTrigger asChild><Button variant="outline">Sign up</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>User registration</DialogTitle></DialogHeader>
-            <p className="text-sm text-muted-foreground">Register as an admin or teacher. Teacher registrations require admin approval before login.</p>
-            <div className="space-y-3 mt-2">
-              <div><Label>Assigned ID</Label><Input value={reg.id} onChange={(e) => setReg({ ...reg, id: e.target.value })} placeholder="kst-001" /></div>
-              <div><Label>Full name</Label><Input value={reg.name} onChange={(e) => setReg({ ...reg, name: e.target.value })} /></div>
-              <div><Label>Email</Label><Input type="email" value={reg.email} onChange={(e) => setReg({ ...reg, email: e.target.value })} /></div>
-              <div><Label>Phone</Label><Input value={reg.phone} onChange={(e) => setReg({ ...reg, phone: e.target.value })} /></div>
-              <div>
-                <Label>Role</Label>
-                <select
-                  value={reg.role}
-                  onChange={(e) => changeRole(e.target.value as Role)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring file:border-0 file:bg-transparent file:text-sm file:font-medium md:text-sm"
-                >
-                  <option value="teacher">Teacher</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <div>
-                <Label>School</Label>
-                <select
-                  value={schoolId}
-                  onChange={(e) => {
-                    setSchoolId(e.target.value);
-                    if (e.target.value !== "new") setNewSchoolName("");
-                  }}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring file:border-0 file:bg-transparent file:text-sm file:font-medium md:text-sm"
-                >
-                  <option value="">Select school</option>
-                  {schools.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                  {reg.role === "admin" && (
-                    <option value="new">[Register a New School]</option>
-                  )}
-                </select>
-              </div>
-              {schoolId === "new" && (
-                <div>
-                  <Label>New School Name</Label>
-                  <Input 
-                    value={newSchoolName} 
-                    onChange={(e) => setNewSchoolName(e.target.value)} 
-                    placeholder="e.g. Sunshine Kindergarten" 
-                  />
-                </div>
-              )}
-            </div>
-            <DialogFooter><Button onClick={submitReg}>Submit registration</Button></DialogFooter>
-          </DialogContent>
-        </Dialog>
       </header>
 
       <section className="grid lg:grid-cols-2 gap-10 items-center px-6 lg:px-12 py-10 lg:py-16 max-w-7xl mx-auto">
