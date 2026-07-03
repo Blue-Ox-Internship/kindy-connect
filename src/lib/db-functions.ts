@@ -189,6 +189,20 @@ export const registerUser = createServerFn({ method: "POST" })
     const registeredAt = new Date().toISOString().slice(0, 10);
     
     try {
+      // Check for existing email
+      const emailCheck = await sql`SELECT id FROM users WHERE LOWER(email) = LOWER(${data.email})`;
+      if (emailCheck.length > 0) {
+        throw new Error("Email already used");
+      }
+      
+      // Check for existing phone if provided
+      if (data.phone) {
+        const phoneCheck = await sql`SELECT id FROM users WHERE phone = ${data.phone}`;
+        if (phoneCheck.length > 0) {
+          throw new Error("Phone number already used");
+        }
+      }
+      
       const result = await sql.begin(async (sql) => {
         let finalSchoolId = data.schoolId;
         let newSchool: any = null;
@@ -224,8 +238,21 @@ export const registerUser = createServerFn({ method: "POST" })
         };
       });
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in registerUser:", error);
+      // Return user-friendly error messages
+      if (error.message === "Email already used" || error.message === "Phone number already used") {
+        throw error;
+      }
+      // Check for PostgreSQL unique constraint violations
+      if (error.code === '23505') {
+        if (error.constraint === 'users_email_key' || error.message?.includes('email')) {
+          throw new Error("Email already used");
+        }
+        if (error.constraint === 'users_phone_key' || error.message?.includes('phone')) {
+          throw new Error("Phone number already used");
+        }
+      }
       throw error;
     }
   });

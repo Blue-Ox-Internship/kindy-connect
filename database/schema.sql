@@ -37,7 +37,7 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL UNIQUE,
     role VARCHAR(50) NOT NULL CHECK (role IN ('super_admin', 'admin', 'deputy', 'teacher')),
     status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'verified', 'rejected')),
-    phone VARCHAR(50),
+    phone VARCHAR(50) UNIQUE,
     class_id VARCHAR(50),
     registered_at DATE NOT NULL DEFAULT CURRENT_DATE,
     password VARCHAR(255) NOT NULL,
@@ -169,6 +169,7 @@ ALTER TABLE marks
 
 -- Create Indexes for performance
 CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_phone ON users(phone);
 CREATE INDEX idx_users_school ON users(school_id);
 CREATE INDEX idx_classes_school ON classes(school_id);
 CREATE INDEX idx_pupils_class ON pupils(class_id);
