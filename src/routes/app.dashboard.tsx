@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { useStore } from "@/lib/mock-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Baby, GraduationCap, CalendarCheck, BellRing, Sun, RotateCcw } from "lucide-react";
+import { Baby, GraduationCap, CalendarCheck, BellRing, Sun, RotateCcw, Building, ClipboardList, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard - Little Stars" }] }),
@@ -18,8 +19,12 @@ export const Route = createFileRoute("/app/dashboard")({
 });
 
 function Dashboard() {
-  const { currentUser, pupils, classes, users, attendance, notifications, markArrival, markDeparture, parents } = useStore();
+  const { currentUser, pupils, classes, users, attendance, notifications, markArrival, markDeparture, parents, schools, audit } = useStore();
   if (!currentUser) return null;
+
+  if (currentUser.role === "super_admin") {
+    return <SuperAdminDashboard schools={schools} users={users} pupils={pupils} classes={classes} audit={audit} />;
+  }
 
   const [arrivalDialogOpen, setArrivalDialogOpen] = useState(false);
   const [departureDialogOpen, setDepartureDialogOpen] = useState(false);
@@ -391,6 +396,103 @@ function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </AppShell>
+  );
+}
+
+function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
+  const stats = [
+    { label: "Total Schools", value: schools.length, icon: Building, color: "bg-primary/15 text-primary" },
+    { label: "Active Admins", value: users.filter((u: any) => u.role === "admin" && u.status === "verified").length, icon: ShieldCheck, color: "bg-secondary/20 text-secondary-foreground" },
+    { label: "Total Pupils", value: pupils.filter((p: any) => p.active).length, icon: Baby, color: "bg-chart-4/20 text-chart-4" },
+    { label: "System Activity", value: audit.length, icon: ClipboardList, color: "bg-accent/15 text-accent" },
+  ];
+
+  return (
+    <AppShell title="System Overview">
+      <div className="space-y-6">
+        {/* Stats Grid */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((s) => {
+            const Icon = s.icon;
+            return (
+              <Card key={s.label} className="border-0 shadow-sm">
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${s.color}`}>
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="text-3xl font-semibold">{s.value}</div>
+                    <div className="text-sm text-muted-foreground">{s.label}</div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Schools Overview */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Schools Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>School Name</TableHead>
+                    <TableHead>Pupils</TableHead>
+                    <TableHead>Classes</TableHead>
+                    <TableHead>Admins/Staff</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {schools.slice(0, 5).map((s: any) => {
+                    const pupilsCount = pupils.filter((p: any) => p.schoolId === s.id && p.active).length;
+                    const classesCount = classes.filter((c: any) => c.schoolId === s.id).length;
+                    const staffCount = users.filter((u: any) => u.schoolId === s.id && u.status === "verified").length;
+                    return (
+                      <TableRow key={s.id}>
+                        <TableCell className="font-semibold">{s.name}</TableCell>
+                        <TableCell>{pupilsCount} pupils</TableCell>
+                        <TableCell>{classesCount} classes</TableCell>
+                        <TableCell>{staffCount} active</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {schools.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                        No schools registered.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Recent Audits */}
+          <Card>
+            <CardHeader>
+              <CardTitle>System Activity</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {audit.slice(0, 5).map((a: any) => (
+                <div key={a.id} className="text-sm pb-3 border-b last:border-0 last:pb-0">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-semibold text-xs truncate max-w-[120px]">{a.actorName}</span>
+                    <span className="text-[10px] text-muted-foreground">{new Date(a.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <div className="text-muted-foreground text-xs">{a.action}: <span className="font-medium text-foreground">{a.target}</span></div>
+                </div>
+              ))}
+              {audit.length === 0 && <p className="text-xs text-muted-foreground">No recent activity.</p>}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </AppShell>
   );
 }

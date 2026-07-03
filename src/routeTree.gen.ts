@@ -12,11 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppTeachersRouteImport } from './routes/app.teachers'
+import { Route as AppSchoolsRouteImport } from './routes/app.schools'
 import { Route as AppReportsRouteImport } from './routes/app.reports'
 import { Route as AppPupilsRouteImport } from './routes/app.pupils'
 import { Route as AppParentsRouteImport } from './routes/app.parents'
 import { Route as AppMarksRouteImport } from './routes/app.marks'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
+import { Route as AppClassesRouteImport } from './routes/app.classes'
 import { Route as AppAuditRouteImport } from './routes/app.audit'
 import { Route as AppAttendanceRouteImport } from './routes/app.attendance'
 
@@ -33,6 +35,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppTeachersRoute = AppTeachersRouteImport.update({
   id: '/teachers',
   path: '/teachers',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSchoolsRoute = AppSchoolsRouteImport.update({
+  id: '/schools',
+  path: '/schools',
   getParentRoute: () => AppRoute,
 } as any)
 const AppReportsRoute = AppReportsRouteImport.update({
@@ -60,6 +67,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppClassesRoute = AppClassesRouteImport.update({
+  id: '/classes',
+  path: '/classes',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAuditRoute = AppAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
@@ -76,11 +88,13 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/app/attendance': typeof AppAttendanceRoute
   '/app/audit': typeof AppAuditRoute
+  '/app/classes': typeof AppClassesRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/marks': typeof AppMarksRoute
   '/app/parents': typeof AppParentsRoute
   '/app/pupils': typeof AppPupilsRoute
   '/app/reports': typeof AppReportsRoute
+  '/app/schools': typeof AppSchoolsRoute
   '/app/teachers': typeof AppTeachersRoute
 }
 export interface FileRoutesByTo {
@@ -88,11 +102,13 @@ export interface FileRoutesByTo {
   '/app': typeof AppRouteWithChildren
   '/app/attendance': typeof AppAttendanceRoute
   '/app/audit': typeof AppAuditRoute
+  '/app/classes': typeof AppClassesRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/marks': typeof AppMarksRoute
   '/app/parents': typeof AppParentsRoute
   '/app/pupils': typeof AppPupilsRoute
   '/app/reports': typeof AppReportsRoute
+  '/app/schools': typeof AppSchoolsRoute
   '/app/teachers': typeof AppTeachersRoute
 }
 export interface FileRoutesById {
@@ -101,11 +117,13 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/app/attendance': typeof AppAttendanceRoute
   '/app/audit': typeof AppAuditRoute
+  '/app/classes': typeof AppClassesRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/marks': typeof AppMarksRoute
   '/app/parents': typeof AppParentsRoute
   '/app/pupils': typeof AppPupilsRoute
   '/app/reports': typeof AppReportsRoute
+  '/app/schools': typeof AppSchoolsRoute
   '/app/teachers': typeof AppTeachersRoute
 }
 export interface FileRouteTypes {
@@ -115,11 +133,13 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/attendance'
     | '/app/audit'
+    | '/app/classes'
     | '/app/dashboard'
     | '/app/marks'
     | '/app/parents'
     | '/app/pupils'
     | '/app/reports'
+    | '/app/schools'
     | '/app/teachers'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -127,11 +147,13 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/attendance'
     | '/app/audit'
+    | '/app/classes'
     | '/app/dashboard'
     | '/app/marks'
     | '/app/parents'
     | '/app/pupils'
     | '/app/reports'
+    | '/app/schools'
     | '/app/teachers'
   id:
     | '__root__'
@@ -139,11 +161,13 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/attendance'
     | '/app/audit'
+    | '/app/classes'
     | '/app/dashboard'
     | '/app/marks'
     | '/app/parents'
     | '/app/pupils'
     | '/app/reports'
+    | '/app/schools'
     | '/app/teachers'
   fileRoutesById: FileRoutesById
 }
@@ -173,6 +197,13 @@ declare module '@tanstack/react-router' {
       path: '/teachers'
       fullPath: '/app/teachers'
       preLoaderRoute: typeof AppTeachersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/schools': {
+      id: '/app/schools'
+      path: '/schools'
+      fullPath: '/app/schools'
+      preLoaderRoute: typeof AppSchoolsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/reports': {
@@ -210,6 +241,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/classes': {
+      id: '/app/classes'
+      path: '/classes'
+      fullPath: '/app/classes'
+      preLoaderRoute: typeof AppClassesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/audit': {
       id: '/app/audit'
       path: '/audit'
@@ -230,22 +268,26 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppAuditRoute: typeof AppAuditRoute
+  AppClassesRoute: typeof AppClassesRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppMarksRoute: typeof AppMarksRoute
   AppParentsRoute: typeof AppParentsRoute
   AppPupilsRoute: typeof AppPupilsRoute
   AppReportsRoute: typeof AppReportsRoute
+  AppSchoolsRoute: typeof AppSchoolsRoute
   AppTeachersRoute: typeof AppTeachersRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAttendanceRoute: AppAttendanceRoute,
   AppAuditRoute: AppAuditRoute,
+  AppClassesRoute: AppClassesRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppMarksRoute: AppMarksRoute,
   AppParentsRoute: AppParentsRoute,
   AppPupilsRoute: AppPupilsRoute,
   AppReportsRoute: AppReportsRoute,
+  AppSchoolsRoute: AppSchoolsRoute,
   AppTeachersRoute: AppTeachersRoute,
 }
 

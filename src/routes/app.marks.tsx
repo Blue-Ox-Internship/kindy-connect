@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
@@ -20,10 +20,35 @@ export const Route = createFileRoute("/app/marks")({
 });
 
 function MarksPage() {
-  const { currentUser, pupils, classes, marks, addMark, updateMark, deleteMark } = useStore();
+  const { currentUser, pupils, classes, marks, addMark, updateMark, deleteMark, schools } = useStore();
   const isTeacher = currentUser?.role === "teacher";
-  const defaultClass = isTeacher ? currentUser?.classId ?? classes[0]?.id : classes[0]?.id;
-  const [classId, setClassId] = useState<string>(defaultClass ?? "");
+
+  // Super Admin School filtering
+  const [superSchoolId, setSuperSchoolId] = useState<string>(schools[0]?.id ?? "");
+
+  const filteredClasses = useMemo(() => {
+    if (currentUser?.role === "super_admin") {
+      return classes.filter((c) => c.schoolId === superSchoolId);
+    }
+    return classes;
+  }, [classes, currentUser, superSchoolId]);
+
+  const [classId, setClassId] = useState<string>("");
+
+  useEffect(() => {
+    if (filteredClasses.length > 0) {
+      const defaultClass = isTeacher ? currentUser?.classId ?? filteredClasses[0]?.id : filteredClasses[0]?.id;
+      setClassId((curr) => {
+        if (!curr || !filteredClasses.some(c => c.id === curr)) {
+          return defaultClass ?? "";
+        }
+        return curr;
+      });
+    } else {
+      setClassId("");
+    }
+  }, [filteredClasses, currentUser, isTeacher]);
+
   const [term, setTerm] = useState("Term 2");
   const [year, setYear] = useState("2025");
   const [subject, setSubject] = useState("Reading");
@@ -201,6 +226,20 @@ function MarksPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3 mb-4">
+            {currentUser?.role === "super_admin" && (
+              <div className="flex items-center gap-2">
+                <Label>School:</Label>
+                <select
+                  value={superSchoolId}
+                  onChange={(e) => setSuperSchoolId(e.target.value)}
+                  className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring file:border-0 file:bg-transparent file:text-sm file:font-medium md:text-sm"
+                >
+                  {schools.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <Label>Class:</Label>
               <Select value={classId} onValueChange={setClassId} disabled={isTeacher}>
@@ -208,7 +247,7 @@ function MarksPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {classes.map((c) => (
+                  {filteredClasses.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}
                     </SelectItem>

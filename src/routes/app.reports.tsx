@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Download, FileSpreadsheet, FileText, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 export const Route = createFileRoute("/app/reports")({
   head: () => ({ meta: [{ title: "Reports - Little Stars" }] }),
@@ -19,10 +19,35 @@ export const Route = createFileRoute("/app/reports")({
 });
 
 function ReportsPage() {
-  const { pupils, attendance, classes, marks } = useStore();
+  const { currentUser, pupils, attendance, classes, marks, schools } = useStore();
   const today = new Date().toISOString().slice(0, 10);
   const todayAtt = attendance.filter((a) => a.date === today);
-  const [selectedClass, setSelectedClass] = useState(classes[0]?.id ?? "");
+
+  // Super Admin School filtering
+  const [superSchoolId, setSuperSchoolId] = useState<string>(schools[0]?.id ?? "");
+
+  const filteredClasses = useMemo(() => {
+    if (currentUser?.role === "super_admin") {
+      return classes.filter((c) => c.schoolId === superSchoolId);
+    }
+    return classes;
+  }, [classes, currentUser, superSchoolId]);
+
+  const [selectedClass, setSelectedClass] = useState<string>("");
+
+  useEffect(() => {
+    if (filteredClasses.length > 0) {
+      setSelectedClass((curr) => {
+        if (!curr || !filteredClasses.some(c => c.id === curr)) {
+          return filteredClasses[0]?.id ?? "";
+        }
+        return curr;
+      });
+    } else {
+      setSelectedClass("");
+    }
+  }, [filteredClasses]);
+
   const [selectedTerm, setSelectedTerm] = useState("Term 2");
   const [selectedYear, setSelectedYear] = useState("2025");
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);

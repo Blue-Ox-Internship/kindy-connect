@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { Car, Info, Calendar } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -20,11 +20,36 @@ export const Route = createFileRoute("/app/attendance")({
 });
 
 function AttendancePage() {
-  const { currentUser, pupils, classes, attendance, markArrival, markDeparture } = useStore();
+  const { currentUser, pupils, classes, attendance, markArrival, markDeparture, schools } = useStore();
   const today = new Date().toISOString().slice(0, 10);
   const isTeacher = currentUser?.role === "teacher";
-  const defaultClass = isTeacher ? currentUser?.classId ?? classes[0]?.id : classes[0]?.id;
-  const [classId, setClassId] = useState<string>(defaultClass ?? "");
+
+  // Super Admin School filtering
+  const [superSchoolId, setSuperSchoolId] = useState<string>(schools[0]?.id ?? "");
+
+  const filteredClasses = useMemo(() => {
+    if (currentUser?.role === "super_admin") {
+      return classes.filter((c) => c.schoolId === superSchoolId);
+    }
+    return classes;
+  }, [classes, currentUser, superSchoolId]);
+
+  const [classId, setClassId] = useState<string>("");
+
+  useEffect(() => {
+    if (filteredClasses.length > 0) {
+      const defaultClass = isTeacher ? currentUser?.classId ?? filteredClasses[0]?.id : filteredClasses[0]?.id;
+      setClassId((curr) => {
+        // If current class isn't in new list, reset to default
+        if (!curr || !filteredClasses.some(c => c.id === curr)) {
+          return defaultClass ?? "";
+        }
+        return curr;
+      });
+    } else {
+      setClassId("");
+    }
+  }, [filteredClasses, currentUser, isTeacher]);
   const [date, setDate] = useState(today);
   const [arrivalDialogOpen, setArrivalDialogOpen] = useState(false);
   const [departureDialogOpen, setDepartureDialogOpen] = useState(false);
@@ -104,9 +129,20 @@ function AttendancePage() {
     <AppShell title="Attendance">
       <Card className="border-0 shadow-sm"><CardContent className="p-5">
         <div className="flex flex-wrap gap-3 mb-4 items-center">
+          {currentUser?.role === "super_admin" && (
+            <select
+              value={superSchoolId}
+              onChange={(e) => setSuperSchoolId(e.target.value)}
+              className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring file:border-0 file:bg-transparent file:text-sm file:font-medium md:text-sm"
+            >
+              {schools.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          )}
           <Select value={classId} onValueChange={setClassId} disabled={isTeacher}>
             <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-            <SelectContent>{classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+            <SelectContent>{filteredClasses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
           </Select>
           <div className="flex items-center gap-2">
             <label htmlFor="date-search" className="text-sm font-medium">Search Date:</label>

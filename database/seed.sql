@@ -1,22 +1,30 @@
 -- Kindy Connect Database Seed Data (Supabase/PostgreSQL Compatible)
 
--- 1. Insert Classes (leaving teacher_id NULL temporarily to avoid circular reference)
-INSERT INTO classes (id, name, teacher_id) VALUES
-('c1', 'Baby Class', NULL),
-('c2', 'Middle Class', NULL),
-('c3', 'Top Class', NULL),
-('c4', 'Pre-Unit', NULL),
-('c5', 'Sunflower', NULL);
+-- 0. Insert Schools
+INSERT INTO schools (id, name, address, phone, email, registered_at) VALUES
+('s1', 'Little Stars Kindergarten', '123 Sunshine Blvd, Nairobi', '+254711111111', 'littlestars@kinder.app', '2025-01-01'),
+('s2', 'Sunshine Academy', '456 Bright Road, Mombasa', '+254722222222', 'sunshine@kinder.app', '2025-01-05');
 
--- 2. Insert Users
-INSERT INTO users (id, name, email, role, status, phone, registered_at, password, class_id) VALUES
-('u1', 'Amina Okello', 'admin@kinder.app', 'admin', 'verified', '+254700000001', '2025-01-10', 'admin123', NULL),
-('u2', 'Brian Mwangi', 'deputy@kinder.app', 'deputy', 'verified', '+254700000002', '2025-01-12', 'deputy123', NULL),
-('u3', 'Grace Wanjiku', 'grace@kinder.app', 'teacher', 'verified', '+254700000003', '2025-02-01', 'grace123', 'c5'),
-('u4', 'Peter Otieno', 'peter@kinder.app', 'teacher', 'verified', '+254700000004', '2025-02-03', 'peter123', 'c2'),
-('u5', 'Lucy Achieng', 'lucy@kinder.app', 'teacher', 'pending', '+254700000005', '2025-06-15', 'lucy123', NULL),
-('u6', 'James Kariuki', 'james@kinder.app', 'teacher', 'verified', '+254700000006', '2025-06-16', 'james123', 'c1'),
-('u7', 'Sarah Muthoni', 'sarah@kinder.app', 'teacher', 'verified', '+254700000007', '2025-03-05', 'sarah123', 'c3');
+-- 1. Insert Classes (leaving teacher_id NULL temporarily to avoid circular reference)
+INSERT INTO classes (id, name, teacher_id, school_id) VALUES
+('c1', 'Baby Class', NULL, 's1'),
+('c2', 'Middle Class', NULL, 's1'),
+('c3', 'Top Class', NULL, 's1'),
+('c4', 'Pre-Unit', NULL, 's1'),
+('c5', 'Sunflower', NULL, 's1'),
+('c6', 'Vanguard Class', NULL, 's2');
+
+-- 2. Insert Users (including Super Admin)
+INSERT INTO users (id, name, email, role, status, phone, registered_at, password, class_id, school_id) VALUES
+('superadmin', 'System Administrator', 'superadmin@kinder.app', 'super_admin', 'verified', '+254700000000', '2025-01-01', 'admin123', NULL, NULL),
+('u1', 'Amina Okello', 'admin@kinder.app', 'admin', 'verified', '+254700000001', '2025-01-10', 'admin123', NULL, 's1'),
+('u2', 'Brian Mwangi', 'deputy@kinder.app', 'deputy', 'verified', '+254700000002', '2025-01-12', 'deputy123', NULL, 's1'),
+('u3', 'Grace Wanjiku', 'grace@kinder.app', 'teacher', 'verified', '+254700000003', '2025-02-01', 'grace123', 'c5', 's1'),
+('u4', 'Peter Otieno', 'peter@kinder.app', 'teacher', 'verified', '+254700000004', '2025-02-03', 'peter123', 'c2', 's1'),
+('u5', 'Lucy Achieng', 'lucy@kinder.app', 'teacher', 'pending', '+254700000005', '2025-06-15', 'lucy123', NULL, 's1'),
+('u6', 'James Kariuki', 'james@kinder.app', 'teacher', 'verified', '+254700000006', '2025-06-16', 'james123', 'c1', 's1'),
+('u7', 'Sarah Muthoni', 'sarah@kinder.app', 'teacher', 'verified', '+254700000007', '2025-03-05', 'sarah123', 'c3', 's1'),
+('u8', 'Sunshine Admin', 'sunshineadmin@kinder.app', 'admin', 'verified', '+254733333333', '2025-01-06', 'admin123', NULL, 's2');
 
 -- 3. Update Classes to map teacher_ids
 UPDATE classes SET teacher_id = 'u6' WHERE id = 'c1';
@@ -25,34 +33,37 @@ UPDATE classes SET teacher_id = 'u7' WHERE id = 'c3';
 UPDATE classes SET teacher_id = 'u3' WHERE id = 'c5';
 
 -- 4. Insert Parents
-INSERT INTO parents (id, name, phone, email, relationship) VALUES
-('p1', 'Mary Atieno', '+254712000001', 'mary@example.com', 'Mother'),
-('p2', 'John Kamau', '+254712000002', 'john@example.com', 'Father'),
-('p3', 'Sarah Njeri', '+254712000003', 'sarah@example.com', 'Mother'),
-('p4', 'David Mutua', '+254712000004', 'david@example.com', 'Father'),
-('p5', 'Esther Wambui', '+254712000005', 'esther@example.com', 'Guardian'),
-('p6', 'Paul Ochieng', '+254712000006', 'paul@example.com', 'Father'),
-('p7', 'Jane Wangari', '+254712000007', 'jane@example.com', 'Mother'),
-('p8', 'Michael Kipchoge', '+254712000008', 'michael@example.com', 'Father'),
-('p9', 'Christine Auma', '+254712000009', 'christine@example.com', 'Mother'),
-('p10', 'Robert Njenga', '+254712000010', 'robert@example.com', 'Guardian');
+INSERT INTO parents (id, name, phone, email, relationship, school_id) VALUES
+('p1', 'Mary Atieno', '+254712000001', 'mary@example.com', 'Mother', 's1'),
+('p2', 'John Kamau', '+254712000002', 'john@example.com', 'Father', 's1'),
+('p3', 'Sarah Njeri', '+254712000003', 'sarah@example.com', 'Mother', 's1'),
+('p4', 'David Mutua', '+254712000004', 'david@example.com', 'Father', 's1'),
+('p5', 'Esther Wambui', '+254712000005', 'esther@example.com', 'Guardian', 's1'),
+('p6', 'Paul Ochieng', '+254712000006', 'paul@example.com', 'Father', 's1'),
+('p7', 'Jane Wangari', '+254712000007', 'jane@example.com', 'Mother', 's1'),
+('p8', 'Michael Kipchoge', '+254712000008', 'michael@example.com', 'Father', 's1'),
+('p9', 'Christine Auma', '+254712000009', 'christine@example.com', 'Mother', 's1'),
+('p10', 'Robert Njenga', '+254712000010', 'robert@example.com', 'Guardian', 's1'),
+('p11', 'Sunshine Parent', '+254712000011', 'sunshineparent@example.com', 'Mother', 's2');
 
 -- 5. Insert Pupils
-INSERT INTO pupils (id, admission_no, first_name, last_name, gender, dob, class_id, photo, active) VALUES
--- Baby Class
-('k1', 'KG-001', 'Liam', 'Atieno', 'M', '2020-05-12', 'c1', NULL, TRUE),
-('k2', 'KG-002', 'Emma', 'Ochieng', 'F', '2020-06-18', 'c1', NULL, TRUE),
-('k3', 'KG-003', 'Noah', 'Kipchoge', 'M', '2020-04-25', 'c1', NULL, TRUE),
--- Middle Class
-('k4', 'KG-004', 'Ava', 'Mutua', 'F', '2020-02-19', 'c2', NULL, TRUE),
-('k5', 'KG-005', 'Oliver', 'Njenga', 'M', '2019-12-10', 'c2', NULL, TRUE),
--- Top Class
-('k6', 'KG-006', 'Sophia', 'Njeri', 'F', '2019-09-15', 'c3', NULL, TRUE),
-('k7', 'KG-007', 'Eli', 'Wambui', 'M', '2019-09-30', 'c3', NULL, TRUE),
--- Sunflower Class (Teacher's class)
-('k8', 'KG-008', 'Zuri', 'Kamau', 'F', '2020-08-22', 'c5', NULL, TRUE),
-('k9', 'KG-009', 'Maya', 'Auma', 'F', '2020-07-14', 'c5', NULL, TRUE),
-('k10', 'KG-010', 'Ethan', 'Wangari', 'M', '2020-05-03', 'c5', NULL, TRUE);
+INSERT INTO pupils (id, admission_no, first_name, last_name, gender, dob, class_id, photo, active, school_id) VALUES
+-- Baby Class (s1)
+('k1', 'KG-001', 'Liam', 'Atieno', 'M', '2020-05-12', 'c1', NULL, TRUE, 's1'),
+('k2', 'KG-002', 'Emma', 'Ochieng', 'F', '2020-06-18', 'c1', NULL, TRUE, 's1'),
+('k3', 'KG-003', 'Noah', 'Kipchoge', 'M', '2020-04-25', 'c1', NULL, TRUE, 's1'),
+-- Middle Class (s1)
+('k4', 'KG-004', 'Ava', 'Mutua', 'F', '2020-02-19', 'c2', NULL, TRUE, 's1'),
+('k5', 'KG-005', 'Oliver', 'Njenga', 'M', '2019-12-10', 'c2', NULL, TRUE, 's1'),
+-- Top Class (s1)
+('k6', 'KG-006', 'Sophia', 'Njeri', 'F', '2019-09-15', 'c3', NULL, TRUE, 's1'),
+('k7', 'KG-007', 'Eli', 'Wambui', 'M', '2019-09-30', 'c3', NULL, TRUE, 's1'),
+-- Sunflower Class (s1)
+('k8', 'KG-008', 'Zuri', 'Kamau', 'F', '2020-08-22', 'c5', NULL, TRUE, 's1'),
+('k9', 'KG-009', 'Maya', 'Auma', 'F', '2020-07-14', 'c5', NULL, TRUE, 's1'),
+('k10', 'KG-010', 'Ethan', 'Wangari', 'M', '2020-05-03', 'c5', NULL, TRUE, 's1'),
+-- Vanguard Class (s2)
+('k11', 'KG-011', 'Sunny', 'Boy', 'M', '2020-01-01', 'c6', NULL, TRUE, 's2');
 
 -- 6. Insert Pupil-Parents Join Relationships (Many-to-Many mapping)
 INSERT INTO pupil_parents (pupil_id, parent_id) VALUES
@@ -65,7 +76,8 @@ INSERT INTO pupil_parents (pupil_id, parent_id) VALUES
 ('k7', 'p5'),
 ('k8', 'p2'),
 ('k9', 'p9'),
-('k10', 'p7');
+('k10', 'p7'),
+('k11', 'p11');
 
 -- 7. Insert Attendance Records for today
 INSERT INTO attendance (
@@ -115,4 +127,3 @@ INSERT INTO marks (id, pupil_id, subject, term, year, score, max_score, grade, t
 -- Term 2 Marks
 ('m7', 'k8', 'Reading', 'Term 2', '2025', 88, 100, 'A', 'Consistent improvement!', 'u3', '2025-06-20 10:30:00+03'),
 ('m8', 'k8', 'Math', 'Term 2', '2025', 82, 100, 'A', 'Much better understanding of concepts.', 'u3', '2025-06-20 10:35:00+03');
-

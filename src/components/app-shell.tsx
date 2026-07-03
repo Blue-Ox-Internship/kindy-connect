@@ -9,15 +9,18 @@ import {
   ScrollText,
   LogOut,
   BookOpen,
+  School,
+  Building2,
 } from "lucide-react";
 import { useStore } from "@/lib/mock-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { SchoolSelector } from "@/components/school-selector";
 import { useEffect, type ReactNode } from "react";
 
 export function AppShell({ children, title }: { children: ReactNode; title: string }) {
-  const { currentUser, users, logout } = useStore();
+  const { currentUser, users, logout, schools } = useStore();
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
@@ -31,15 +34,26 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
     return null;
   }
 
+  const isSuperAdmin = currentUser.role === "super_admin";
   const isStaff = currentUser.role === "admin" || currentUser.role === "deputy";
   const pendingCount = users.filter((u) => u.role === "teacher" && u.status === "pending").length;
+  const currentSchool = schools.find((s) => s.id === currentUser.schoolId);
 
-  const items = isStaff
+  const items = isSuperAdmin
+    ? [
+        { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { to: "/app/schools", label: "Schools", icon: School },
+        { to: "/app/teachers", label: "Users", icon: Users, badge: pendingCount },
+        { to: "/app/classes", label: "Classes", icon: GraduationCap },
+        { to: "/app/audit", label: "Audit log", icon: ScrollText },
+      ]
+    : isStaff
     ? [
         { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
         { to: "/app/pupils", label: "Pupils", icon: Baby },
         { to: "/app/parents", label: "Parents", icon: Users },
         { to: "/app/teachers", label: "Teachers", icon: GraduationCap, badge: pendingCount },
+        { to: "/app/classes", label: "Classes", icon: BookOpen },
         { to: "/app/attendance", label: "Attendance", icon: CalendarCheck },
         { to: "/app/marks", label: "Marks", icon: BookOpen },
         { to: "/app/reports", label: "Reports", icon: BarChart3 },
@@ -56,10 +70,15 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
       <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
         <div className="flex items-center gap-2 px-5 py-5 border-b">
           <div>
-            <div className="font-semibold leading-tight">Little Stars</div>
-            <div className="text-xs text-muted-foreground">Kindergarten</div>
+            <div className="font-semibold leading-tight truncate max-w-[200px]">
+              {isSuperAdmin ? "System Admin" : currentSchool?.name || "Little Stars"}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {isSuperAdmin ? "Management Console" : "Kindergarten Section"}
+            </div>
           </div>
         </div>
+        <SchoolSelector />
         <nav className="flex-1 p-3 space-y-1">
           {items.map((it) => {
             const active = path === it.to;
@@ -91,7 +110,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium truncate">{currentUser.name}</div>
-            <div className="text-xs text-muted-foreground capitalize">{currentUser.role}</div>
+            <div className="text-xs text-muted-foreground capitalize">{currentUser.role.replace("_", " ")}</div>
           </div>
           <Button size="icon" variant="ghost" onClick={() => { logout(); navigate({ to: "/" }); }}>
             <LogOut className="h-4 w-4" />
@@ -103,7 +122,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 backdrop-blur px-6 py-4">
           <h1 className="text-2xl font-semibold">{title}</h1>
           <div className="hidden sm:flex items-center gap-2">
-            <Badge variant="outline" className="capitalize">{currentUser.role}</Badge>
+            <Badge variant="outline" className="capitalize">{currentUser.role.replace("_", " ")}</Badge>
           </div>
         </header>
         <div className="p-6">{children}</div>

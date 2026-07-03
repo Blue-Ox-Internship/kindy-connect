@@ -22,11 +22,13 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  const { currentUser, login, registerUser } = useStore();
+  const { currentUser, login, registerUser, schools } = useStore();
   const navigate = useNavigate();
   const [assignedId, setAssignedId] = useState("");
   const [regOpen, setRegOpen] = useState(false);
   const [reg, setReg] = useState({ id: "", name: "", email: "", phone: "", role: "teacher" as Role });
+  const [schoolId, setSchoolId] = useState("");
+  const [newSchoolName, setNewSchoolName] = useState("");
 
   useEffect(() => {
     if (currentUser) navigate({ to: "/app/dashboard" });
@@ -40,9 +42,25 @@ function Landing() {
     navigate({ to: "/app/dashboard" });
   };
 
+  const changeRole = (role: Role) => {
+    setReg({ ...reg, role });
+    if (role === "teacher" && schoolId === "new") {
+      setSchoolId("");
+      setNewSchoolName("");
+    }
+  };
+
   const submitReg = () => {
     if (!reg.id || !reg.name || !reg.email || !reg.phone) return toast.error("Fill all fields");
-    registerUser(reg);
+    if (!schoolId) return toast.error("Please select a school");
+    if (schoolId === "new" && !newSchoolName.trim()) return toast.error("Please enter the new school's name");
+
+    registerUser({
+      ...reg,
+      schoolId,
+      newSchoolName: schoolId === "new" ? newSchoolName.trim() : undefined,
+    });
+
     if (reg.role === "admin") {
       toast.success("Admin registration completed - you can now log in with the assigned ID!");
     } else {
@@ -50,6 +68,8 @@ function Landing() {
     }
     setRegOpen(false);
     setReg({ id: "", name: "", email: "", phone: "", role: "teacher" });
+    setSchoolId("");
+    setNewSchoolName("");
   };
 
   return (
@@ -75,13 +95,42 @@ function Landing() {
                 <Label>Role</Label>
                 <select
                   value={reg.role}
-                  onChange={(e) => setReg({ ...reg, role: e.target.value as Role })}
+                  onChange={(e) => changeRole(e.target.value as Role)}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring file:border-0 file:bg-transparent file:text-sm file:font-medium md:text-sm"
                 >
                   <option value="teacher">Teacher</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
+              <div>
+                <Label>School</Label>
+                <select
+                  value={schoolId}
+                  onChange={(e) => {
+                    setSchoolId(e.target.value);
+                    if (e.target.value !== "new") setNewSchoolName("");
+                  }}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring file:border-0 file:bg-transparent file:text-sm file:font-medium md:text-sm"
+                >
+                  <option value="">Select school</option>
+                  {schools.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                  {reg.role === "admin" && (
+                    <option value="new">[Register a New School]</option>
+                  )}
+                </select>
+              </div>
+              {schoolId === "new" && (
+                <div>
+                  <Label>New School Name</Label>
+                  <Input 
+                    value={newSchoolName} 
+                    onChange={(e) => setNewSchoolName(e.target.value)} 
+                    placeholder="e.g. Sunshine Kindergarten" 
+                  />
+                </div>
+              )}
             </div>
             <DialogFooter><Button onClick={submitReg}>Submit registration</Button></DialogFooter>
           </DialogContent>

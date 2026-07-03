@@ -1,17 +1,27 @@
 import { createServerFn } from "@tanstack/react-start";
 import { sql, toCamel, toSnake } from "./db";
 
+export interface School {
+  id: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  registeredAt: string;
+}
+
 // Types matching frontend
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "deputy" | "teacher";
+  role: "super_admin" | "admin" | "deputy" | "teacher";
   status: "pending" | "verified" | "rejected";
   phone?: string;
   classId?: string;
   registeredAt: string;
   password?: string;
+  schoolId?: string;
 }
 
 export interface Pupil {
@@ -25,6 +35,7 @@ export interface Pupil {
   photo?: string;
   active: boolean;
   parentIds: string[];
+  schoolId: string;
 }
 
 export interface ParentInput {
@@ -40,12 +51,14 @@ export interface Parent {
   phone: string;
   email: string;
   relationship: string;
+  schoolId: string;
 }
 
 export interface ClassRoom {
   id: string;
   name: string;
   teacherId?: string;
+  schoolId: string;
 }
 
 export interface Attendance {
@@ -107,6 +120,7 @@ export interface Mark {
 export const getInitialData = createServerFn({ method: "GET" })
   .handler(async () => {
     try {
+      const schools = await sql`SELECT * FROM schools ORDER BY name ASC`;
       const users = await sql`SELECT * FROM users ORDER BY registered_at DESC`;
       const classes = await sql`SELECT * FROM classes ORDER BY name ASC`;
       const parents = await sql`SELECT * FROM parents ORDER BY name ASC`;
@@ -116,7 +130,7 @@ export const getInitialData = createServerFn({ method: "GET" })
         SELECT p.*, COALESCE(ARRAY_AGG(pp.parent_id) FILTER (WHERE pp.parent_id IS NOT NULL), '{}') as parent_ids
         FROM pupils p
         LEFT JOIN pupil_parents pp ON p.id = pp.pupil_id
-        GROUP BY p.id, p.admission_no, p.first_name, p.last_name, p.gender, p.dob, p.class_id, p.photo, p.active
+        GROUP BY p.id, p.admission_no, p.first_name, p.last_name, p.gender, p.dob, p.class_id, p.photo, p.active, p.school_id
         ORDER BY p.first_name ASC, p.last_name ASC
       `;
       
@@ -126,6 +140,7 @@ export const getInitialData = createServerFn({ method: "GET" })
       const marks = await sql`SELECT * FROM marks ORDER BY recorded_at DESC`;
 
       return {
+        schools: toCamel<School[]>(schools),
         users: toCamel<User[]>(users),
         classes: toCamel<ClassRoom[]>(classes),
         parents: toCamel<Parent[]>(parents),
@@ -167,24 +182,48 @@ export const loginUser = createServerFn({ method: "POST" })
   });
 
 export const registerUser = createServerFn({ method: "POST" })
-  .validator((d: Omit<User, "status" | "registeredAt">) => d)
+  .validator((d: Omit<User, "status" | "registeredAt"> & { schoolId?: string; newSchoolName?: string; status?: "pending" | "verified" | "rejected" }) => d)
   .handler(async ({ data }) => {
     const id = data.id.trim();
-    const status = data.role === "admin" ? "verified" : "pending";
+    const status = data.status || (data.role === "admin" ? "verified" : "pending");
     const registeredAt = new Date().toISOString().slice(0, 10);
     
-    const dbUser = toSnake({
-      id,
-      ...data,
-      status,
-      registeredAt,
-    });
-    
     try {
-      await sql`
-        INSERT INTO users ${sql(dbUser)}
-      `;
-      return toCamel<User>(dbUser);
+      const result = await sql.begin(async (sql) => {
+        let finalSchoolId = data.schoolId;
+        let newSchool: any = null;
+
+        if (data.schoolId === "new" && data.newSchoolName) {
+          const generatedSchoolId = "s-" + Math.random().toString(36).slice(2, 10);
+          const dbSchool = toSnake({
+            id: generatedSchoolId,
+            name: data.newSchoolName,
+            registeredAt,
+          });
+          await sql`INSERT INTO schools ${sql(dbSchool)}`;
+          finalSchoolId = generatedSchoolId;
+          newSchool = toCamel<School>(dbSchool);
+        }
+
+        const dbUser = toSnake({
+          id,
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          role: data.role,
+          status,
+          registeredAt,
+          password: data.password || "admin123",
+          schoolId: finalSchoolId || null,
+        });
+
+        await sql`INSERT INTO users ${sql(dbUser)}`;
+        return {
+          user: toCamel<User>(dbUser),
+          school: newSchool,
+        };
+      });
+      return result;
     } catch (error) {
       console.error("Error in registerUser:", error);
       throw error;
@@ -247,13 +286,19 @@ export const rejectTeacher = createServerFn({ method: "POST" })
 // 3. Pupil CRUD Functions
 // ----------------------------------------------------
 export const addPupil = createServerFn({ method: "POST" })
-  .validator((d: { pupil: Omit<Pupil, "id" | "active">; parent?: ParentInput; actorId: string; actorName: string }) => d)
+  .validator((d: { pupil: Omit<Pupil, "id" | "active">; parent: ParentInput; actorId: string; actorName: string }) => d)
   .handler(async ({ data }) => {
     const { pupil, parent, actorId, actorName } = data;
+
+    // Server-side validation: parent info is required
+    if (!parent.name || !parent.phone || !parent.email || !parent.relationship) {
+      throw new Error("Parent / guardian details are required");
+    }
+
     const id = Math.random().toString(36).slice(2, 10);
     const logId = Math.random().toString(36).slice(2, 10);
-    const parentId = parent ? Math.random().toString(36).slice(2, 10) : null;
-    
+    const parentId = Math.random().toString(36).slice(2, 10);
+
     const dbPupil = toSnake({
       id,
       admissionNo: pupil.admissionNo,
@@ -264,40 +309,37 @@ export const addPupil = createServerFn({ method: "POST" })
       classId: pupil.classId,
       photo: pupil.photo,
       active: true,
+      schoolId: pupil.schoolId,
     });
-    
+
     try {
       await sql.begin(async (sql) => {
-        if (parent && parentId) {
-          await sql`INSERT INTO parents ${sql(toSnake({ id: parentId, ...parent }))}`;
-        }
+        await sql`INSERT INTO parents ${sql(toSnake({ id: parentId, ...parent, schoolId: pupil.schoolId }))}`;
 
         await sql`INSERT INTO pupils ${sql(dbPupil)}`;
-        
-        if (parentId) {
-          await sql`INSERT INTO pupil_parents ${sql([{ pupil_id: id, parent_id: parentId }], "pupil_id", "parent_id")}`;
-        }
+
+        await sql`INSERT INTO pupil_parents ${sql([{ pupil_id: id, parent_id: parentId }], "pupil_id", "parent_id")}`;
 
         if (pupil.parentIds && pupil.parentIds.length > 0) {
-          const rows = pupil.parentIds.map(parentId => ({
+          const rows = pupil.parentIds.map(pid => ({
             pupil_id: id,
-            parent_id: parentId,
+            parent_id: pid,
           }));
           await sql`INSERT INTO pupil_parents ${sql(rows, "pupil_id", "parent_id")}`;
         }
-        
+
         const targetDesc = `${pupil.firstName} ${pupil.lastName} (${pupil.admissionNo})`;
         await sql`
           INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp)
           VALUES (${logId}, ${actorId}, ${actorName}, 'Created pupil', ${targetDesc}, CURRENT_TIMESTAMP)
         `;
       });
-      
+
       return {
         id,
         ...pupil,
         active: true,
-        parentIds: parentId ? [parentId, ...(pupil.parentIds || [])] : pupil.parentIds || [],
+        parentIds: [parentId, ...(pupil.parentIds || [])],
       };
     } catch (error) {
       console.error("Error in addPupil:", error);
@@ -717,6 +759,121 @@ export const deleteMark = createServerFn({ method: "POST" })
       return { id: data.id };
     } catch (error) {
       console.error("Error in deleteMark:", error);
+      throw error;
+    }
+  });
+
+// ----------------------------------------------------
+// 7. School Management Functions
+// ----------------------------------------------------
+export const addSchool = createServerFn({ method: "POST" })
+  .validator((d: { name: string; address?: string; phone?: string; email?: string }) => d)
+  .handler(async ({ data }) => {
+    const id = "s-" + Math.random().toString(36).slice(2, 10);
+    const registeredAt = new Date().toISOString().slice(0, 10);
+    const dbSchool = toSnake({
+      id,
+      ...data,
+      registeredAt,
+    });
+    try {
+      await sql`INSERT INTO schools ${sql(dbSchool)}`;
+      return toCamel<School>(dbSchool);
+    } catch (error) {
+      console.error("Error in addSchool:", error);
+      throw error;
+    }
+  });
+
+export const updateSchool = createServerFn({ method: "POST" })
+  .validator((d: { id: string; data: Partial<Omit<School, "id" | "registeredAt">> }) => d)
+  .handler(async ({ data }) => {
+    const { id, data: schoolData } = data;
+    const dbFields = toSnake(schoolData);
+    try {
+      await sql`UPDATE schools SET ${sql(dbFields)} WHERE id = ${id}`;
+      return { id, data: schoolData };
+    } catch (error) {
+      console.error("Error in updateSchool:", error);
+      throw error;
+    }
+  });
+
+export const deleteSchool = createServerFn({ method: "POST" })
+  .validator((d: { id: string }) => d)
+  .handler(async ({ data }) => {
+    try {
+      await sql`DELETE FROM schools WHERE id = ${data.id}`;
+      return { id: data.id };
+    } catch (error) {
+      console.error("Error in deleteSchool:", error);
+      throw error;
+    }
+  });
+
+// ----------------------------------------------------
+// 8. Class Management Functions
+// ----------------------------------------------------
+export const addClass = createServerFn({ method: "POST" })
+  .validator((d: { id?: string; name: string; schoolId: string; teacherId?: string }) => d)
+  .handler(async ({ data }) => {
+    const id = data.id || "c-" + Math.random().toString(36).slice(2, 10);
+    const dbClass = toSnake({
+      id,
+      name: data.name,
+      schoolId: data.schoolId,
+      teacherId: data.teacherId || null,
+    });
+    try {
+      await sql.begin(async (sql) => {
+        await sql`INSERT INTO classes ${sql(dbClass)}`;
+        if (data.teacherId) {
+          await sql`UPDATE users SET class_id = ${id} WHERE id = ${data.teacherId}`;
+        }
+      });
+      return toCamel<ClassRoom>(dbClass);
+    } catch (error) {
+      console.error("Error in addClass:", error);
+      throw error;
+    }
+  });
+
+export const updateClass = createServerFn({ method: "POST" })
+  .validator((d: { id: string; data: Partial<Omit<ClassRoom, "id">> }) => d)
+  .handler(async ({ data }) => {
+    const { id, data: classData } = data;
+    const dbFields = toSnake(classData);
+    try {
+      await sql.begin(async (sql) => {
+        if (Object.keys(dbFields).length > 0) {
+          await sql`UPDATE classes SET ${sql(dbFields)} WHERE id = ${id}`;
+        }
+        if (classData.teacherId !== undefined) {
+          // Reset previous teacher for this class
+          await sql`UPDATE users SET class_id = NULL WHERE class_id = ${id}`;
+          if (classData.teacherId) {
+            await sql`UPDATE users SET class_id = ${id} WHERE id = ${classData.teacherId}`;
+          }
+        }
+      });
+      return { id, data: classData };
+    } catch (error) {
+      console.error("Error in updateClass:", error);
+      throw error;
+    }
+  });
+
+export const deleteClass = createServerFn({ method: "POST" })
+  .validator((d: { id: string }) => d)
+  .handler(async ({ data }) => {
+    try {
+      await sql.begin(async (sql) => {
+        await sql`UPDATE users SET class_id = NULL WHERE class_id = ${data.id}`;
+        await sql`DELETE FROM classes WHERE id = ${data.id}`;
+      });
+      return { id: data.id };
+    } catch (error) {
+      console.error("Error in deleteClass:", error);
       throw error;
     }
   });

@@ -10,12 +10,24 @@ DROP TABLE IF EXISTS pupils CASCADE;
 DROP TABLE IF EXISTS parents CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS classes CASCADE;
+DROP TABLE IF EXISTS schools CASCADE;
+
+-- 0. Schools Table
+CREATE TABLE schools (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    address VARCHAR(255),
+    phone VARCHAR(50),
+    email VARCHAR(255),
+    registered_at DATE NOT NULL DEFAULT CURRENT_DATE
+);
 
 -- 1. Classes Table
 CREATE TABLE classes (
     id VARCHAR(50) PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    teacher_id VARCHAR(50)
+    teacher_id VARCHAR(50),
+    school_id VARCHAR(50) NOT NULL
 );
 
 -- 2. Users Table
@@ -23,12 +35,13 @@ CREATE TABLE users (
     id VARCHAR(50) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
-    role VARCHAR(50) NOT NULL CHECK (role IN ('admin', 'deputy', 'teacher')),
+    role VARCHAR(50) NOT NULL CHECK (role IN ('super_admin', 'admin', 'deputy', 'teacher')),
     status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'verified', 'rejected')),
     phone VARCHAR(50),
     class_id VARCHAR(50),
     registered_at DATE NOT NULL DEFAULT CURRENT_DATE,
-    password VARCHAR(255) NOT NULL
+    password VARCHAR(255) NOT NULL,
+    school_id VARCHAR(50)
 );
 
 -- 3. Parents Table
@@ -37,7 +50,8 @@ CREATE TABLE parents (
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(50) NOT NULL,
     email VARCHAR(255) NOT NULL,
-    relationship VARCHAR(100) NOT NULL
+    relationship VARCHAR(100) NOT NULL,
+    school_id VARCHAR(50) NOT NULL
 );
 
 -- 4. Pupils Table
@@ -50,7 +64,8 @@ CREATE TABLE pupils (
     dob DATE NOT NULL,
     class_id VARCHAR(50) NOT NULL,
     photo TEXT,
-    active BOOLEAN NOT NULL DEFAULT TRUE
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    school_id VARCHAR(50) NOT NULL
 );
 
 -- 5. Pupil-Parents Join Table (Many-to-Many relationship)
@@ -120,13 +135,19 @@ CREATE TABLE marks (
 
 -- Add Foreign Key Constraints (separately to resolve circular dependency at table creation)
 ALTER TABLE classes 
-    ADD CONSTRAINT fk_classes_teacher FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE SET NULL;
+    ADD CONSTRAINT fk_classes_teacher FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE SET NULL,
+    ADD CONSTRAINT fk_classes_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE;
 
 ALTER TABLE users 
-    ADD CONSTRAINT fk_users_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL;
+    ADD CONSTRAINT fk_users_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL,
+    ADD CONSTRAINT fk_users_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE SET NULL;
 
 ALTER TABLE pupils 
-    ADD CONSTRAINT fk_pupils_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE RESTRICT;
+    ADD CONSTRAINT fk_pupils_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE RESTRICT,
+    ADD CONSTRAINT fk_pupils_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE;
+
+ALTER TABLE parents 
+    ADD CONSTRAINT fk_parents_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE;
 
 ALTER TABLE pupil_parents 
     ADD CONSTRAINT fk_pupil_parents_pupil FOREIGN KEY (pupil_id) REFERENCES pupils(id) ON DELETE CASCADE,
@@ -148,7 +169,11 @@ ALTER TABLE marks
 
 -- Create Indexes for performance
 CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_school ON users(school_id);
+CREATE INDEX idx_classes_school ON classes(school_id);
 CREATE INDEX idx_pupils_class ON pupils(class_id);
+CREATE INDEX idx_pupils_school ON pupils(school_id);
+CREATE INDEX idx_parents_school ON parents(school_id);
 CREATE INDEX idx_attendance_pupil_date ON attendance(pupil_id, date);
 CREATE INDEX idx_marks_pupil ON marks(pupil_id);
 CREATE INDEX idx_notifications_pupil ON notifications(pupil_id);

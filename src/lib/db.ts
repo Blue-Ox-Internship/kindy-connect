@@ -45,3 +45,30 @@ export function toSnake<T = any>(obj: any): T {
   }
   return obj;
 }
+
+/**
+ * Set Row Level Security (RLS) context for multi-tenant queries
+ * Sets PostgreSQL session variables used by RLS policies
+ * @param sql - PostgreSQL client instance
+ * @param userId - ID of the authenticated user
+ */
+export async function setRLSContext(sql: any, userId: string) {
+  // Query user to get role and school_id
+  const users = await sql`SELECT role, school_id FROM users WHERE id = ${userId}`;
+  
+  if (users.length === 0) {
+    throw new Error("Unauthorized: User not found");
+  }
+  
+  const user = users[0];
+  
+  // Set user_id for all users
+  await sql`SET LOCAL app.user_id = ${userId}`;
+  
+  // Set school_id only for school-scoped users (not super_admin)
+  if (user.role !== 'super_admin' && user.school_id) {
+    await sql`SET LOCAL app.school_id = ${user.school_id}`;
+  }
+  
+  return { role: user.role, schoolId: user.school_id };
+}

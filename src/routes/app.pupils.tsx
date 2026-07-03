@@ -42,9 +42,8 @@ function PupilsPage() {
   const submit = () => {
     if (!form.admissionNo || !form.firstName || !form.lastName) return toast.error("Fill required fields");
     if (pupils.some((p) => p.admissionNo === form.admissionNo)) return toast.error("Admission number already exists");
-    const parentProvided = form.parentName || form.parentPhone || form.parentEmail;
-    if (parentProvided && (!form.parentName || !form.parentPhone || !form.parentEmail)) {
-      return toast.error("Fill all parent fields or leave them blank");
+    if (!form.parentName || !form.parentPhone || !form.parentEmail) {
+      return toast.error("Parent / guardian details are required");
     }
 
     addPupil({
@@ -55,17 +54,13 @@ function PupilsPage() {
       dob: form.dob,
       classId: form.classId,
       parentIds: [],
-      ...(parentProvided
-        ? {
-            parent: {
-              name: form.parentName,
-              phone: form.parentPhone,
-              email: form.parentEmail,
-              relationship: form.parentRelationship,
-            },
-          }
-        : {}),
-    } as Omit<Pupil, "id" | "active"> & { parent?: { name: string; phone: string; email: string; relationship: string } });
+      parent: {
+        name: form.parentName,
+        phone: form.parentPhone,
+        email: form.parentEmail,
+        relationship: form.parentRelationship,
+      },
+    } as Omit<Pupil, "id" | "active"> & { parent: { name: string; phone: string; email: string; relationship: string } });
     toast.success("Pupil registered");
     setOpen(false);
     setForm({
@@ -115,11 +110,11 @@ function PupilsPage() {
                     </Select>
                   </div>
                   <div className="col-span-2 rounded-xl border p-3 space-y-3 bg-muted/20">
-                    <div className="text-sm font-medium">Parent / guardian details</div>
-                    <div><Label>Full name</Label><Input value={form.parentName} onChange={(e) => setForm({ ...form, parentName: e.target.value })} /></div>
-                    <div><Label>Phone</Label><Input value={form.parentPhone} onChange={(e) => setForm({ ...form, parentPhone: e.target.value })} placeholder="+254..." /></div>
-                    <div><Label>Email</Label><Input type="email" value={form.parentEmail} onChange={(e) => setForm({ ...form, parentEmail: e.target.value })} /></div>
-                    <div><Label>Relationship</Label>
+                    <div className="text-sm font-medium">Parent / guardian details <span className="text-destructive">*</span></div>
+                    <div><Label>Full name <span className="text-destructive">*</span></Label><Input value={form.parentName} onChange={(e) => setForm({ ...form, parentName: e.target.value })} /></div>
+                    <div><Label>Phone <span className="text-destructive">*</span></Label><Input value={form.parentPhone} onChange={(e) => setForm({ ...form, parentPhone: e.target.value })} placeholder="+254..." /></div>
+                    <div><Label>Email <span className="text-destructive">*</span></Label><Input type="email" value={form.parentEmail} onChange={(e) => setForm({ ...form, parentEmail: e.target.value })} /></div>
+                    <div><Label>Relationship <span className="text-destructive">*</span></Label>
                       <Select value={form.parentRelationship} onValueChange={(v) => setForm({ ...form, parentRelationship: v })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
