@@ -2,18 +2,21 @@
 
 -- 1. Insert Schools
 INSERT INTO schools (id, name, address, phone, email, registered_at) VALUES
-('s1', 'Little Stars Kindergarten', '123 Sunshine Blvd, Nairobi', '+254711111111', 'littlestars@kinder.app', '2025-01-01');
+('s1', 'Little Stars Kindergarten', '123 Sunshine Blvd, Nairobi', '+254711111111', 'littlestars@kinder.app', '2025-01-01'),
+('s3', 'NOBLE Primary School', '789 Education Lane, Nairobi', '+254733333333', 'noble@kinder.app', '2025-01-10');
 
 -- 2. Insert Classes
 INSERT INTO classes (id, name, teacher_id, school_id) VALUES
-('c1', 'Sunflower', NULL, 's1');
+('c1', 'Sunflower', NULL, 's1'),
+('c7', 'Grade 1', NULL, 's3');
 
 -- 3. Insert Users (including Super Admin, Admin, Deputy, Teacher)
 INSERT INTO users (id, name, email, role, status, phone, registered_at, password, class_id, school_id) VALUES
 ('KC001', 'System Administrator', 'superadmin@kinder.app', 'super_admin', 'verified', '+254700000000', '2025-01-01', 'admin123', NULL, NULL),
 ('u1', 'Amina Okello', 'admin@kinder.app', 'admin', 'verified', '+254700000001', '2025-01-10', 'admin123', NULL, 's1'),
 ('u2', 'Brian Mwangi', 'deputy@kinder.app', 'deputy', 'verified', '+254700000002', '2025-01-12', 'deputy123', NULL, 's1'),
-('u3', 'Grace Wanjiku', 'grace@kinder.app', 'teacher', 'verified', '+254700000003', '2025-02-01', 'grace123', 'c1', 's1');
+('u3', 'Grace Wanjiku', 'grace@kinder.app', 'teacher', 'verified', '+254700000003', '2025-02-01', 'grace123', 'c1', 's1'),
+('noble', 'NOBLE Admin', 'nobleadmin@kinder.app', 'admin', 'verified', '+254744444444', '2025-01-10', 'admin123', NULL, 's3');
 
 -- 4. Update Classes to map teacher
 UPDATE classes SET teacher_id = 'u3' WHERE id = 'c1';

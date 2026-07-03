@@ -3,7 +3,8 @@
 -- 0. Insert Schools
 INSERT INTO schools (id, name, address, phone, email, registered_at) VALUES
 ('s1', 'Little Stars Kindergarten', '123 Sunshine Blvd, Nairobi', '+254711111111', 'littlestars@kinder.app', '2025-01-01'),
-('s2', 'Sunshine Academy', '456 Bright Road, Mombasa', '+254722222222', 'sunshine@kinder.app', '2025-01-05');
+('s2', 'Sunshine Academy', '456 Bright Road, Mombasa', '+254722222222', 'sunshine@kinder.app', '2025-01-05'),
+('s3', 'NOBLE Primary School', '789 Education Lane, Nairobi', '+254733333333', 'noble@kinder.app', '2025-01-10');
 
 -- 1. Insert Classes (leaving teacher_id NULL temporarily to avoid circular reference)
 INSERT INTO classes (id, name, teacher_id, school_id) VALUES
@@ -12,7 +13,9 @@ INSERT INTO classes (id, name, teacher_id, school_id) VALUES
 ('c3', 'Top Class', NULL, 's1'),
 ('c4', 'Pre-Unit', NULL, 's1'),
 ('c5', 'Sunflower', NULL, 's1'),
-('c6', 'Vanguard Class', NULL, 's2');
+('c6', 'Vanguard Class', NULL, 's2'),
+('c7', 'Grade 1', NULL, 's3'),
+('c8', 'Grade 2', NULL, 's3');
 
 -- 2. Insert Users (including Super Admin)
 INSERT INTO users (id, name, email, role, status, phone, registered_at, password, class_id, school_id) VALUES
@@ -24,7 +27,8 @@ INSERT INTO users (id, name, email, role, status, phone, registered_at, password
 ('u5', 'Lucy Achieng', 'lucy@kinder.app', 'teacher', 'pending', '+254700000005', '2025-06-15', 'lucy123', NULL, 's1'),
 ('u6', 'James Kariuki', 'james@kinder.app', 'teacher', 'verified', '+254700000006', '2025-06-16', 'james123', 'c1', 's1'),
 ('u7', 'Sarah Muthoni', 'sarah@kinder.app', 'teacher', 'verified', '+254700000007', '2025-03-05', 'sarah123', 'c3', 's1'),
-('u8', 'Sunshine Admin', 'sunshineadmin@kinder.app', 'admin', 'verified', '+254733333333', '2025-01-06', 'admin123', NULL, 's2');
+('u8', 'Sunshine Admin', 'sunshineadmin@kinder.app', 'admin', 'verified', '+254733333333', '2025-01-06', 'admin123', NULL, 's2'),
+('noble', 'NOBLE Admin', 'nobleadmin@kinder.app', 'admin', 'verified', '+254744444444', '2025-01-10', 'admin123', NULL, 's3');
 
 -- 3. Update Classes to map teacher_ids
 UPDATE classes SET teacher_id = 'u6' WHERE id = 'c1';
