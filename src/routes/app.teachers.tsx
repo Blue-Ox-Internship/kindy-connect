@@ -108,7 +108,7 @@ function TeachersPage() {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>User ID</TableHead>
+          {isSuperAdmin && <TableHead>User ID</TableHead>}
           <TableHead>Name</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Phone</TableHead>
@@ -125,7 +125,7 @@ function TeachersPage() {
           const schoolName = schools.find((s) => s.id === t.schoolId)?.name || "System Admin";
           return (
             <TableRow key={t.id}>
-              <TableCell className="font-mono text-xs font-semibold">{t.id}</TableCell>
+              {isSuperAdmin && <TableCell className="font-mono text-xs font-semibold">{t.id}</TableCell>}
               <TableCell className="font-medium">{t.name}</TableCell>
               <TableCell>{t.email}</TableCell>
               <TableCell>{t.phone}</TableCell>
@@ -178,7 +178,7 @@ function TeachersPage() {
         {list.length === 0 && (
           <TableRow>
             <TableCell
-              colSpan={withActions ? (isSuperAdmin ? 10 : 9) : (isSuperAdmin ? 9 : 8)}
+              colSpan={withActions ? (isSuperAdmin ? 10 : 8) : (isSuperAdmin ? 9 : 7)}
               className="text-center text-muted-foreground py-8"
             >
               No accounts in this category.
