@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Edit } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -19,9 +19,11 @@ export const Route = createFileRoute("/app/pupils")({
 });
 
 function PupilsPage() {
-  const { pupils, classes, parents, addPupil, deactivatePupil } = useStore();
+  const { pupils, classes, parents, addPupil, updatePupil, deactivatePupil } = useStore();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingPupil, setEditingPupil] = useState<Pupil | null>(null);
   const [form, setForm] = useState({
     admissionNo: "",
     firstName: "",
@@ -33,6 +35,14 @@ function PupilsPage() {
     parentPhone: "",
     parentEmail: "",
     parentRelationship: "Mother",
+  });
+  const [editForm, setEditForm] = useState({
+    admissionNo: "",
+    firstName: "",
+    lastName: "",
+    gender: "M" as "M" | "F",
+    dob: "",
+    classId: "",
   });
 
   const filtered = pupils.filter(
@@ -75,6 +85,45 @@ function PupilsPage() {
       parentEmail: "",
       parentRelationship: "Mother",
     });
+  };
+
+  const openEdit = (pupil: Pupil) => {
+    setEditingPupil(pupil);
+    setEditForm({
+      admissionNo: pupil.admissionNo,
+      firstName: pupil.firstName,
+      lastName: pupil.lastName,
+      gender: pupil.gender,
+      dob: pupil.dob,
+      classId: pupil.classId,
+    });
+    setEditOpen(true);
+  };
+
+  const submitEdit = async () => {
+    if (!editingPupil) return;
+    if (!editForm.admissionNo || !editForm.firstName || !editForm.lastName) {
+      return toast.error("Fill required fields");
+    }
+    
+    // Check if admission number changed and is already taken
+    if (editForm.admissionNo !== editingPupil.admissionNo && 
+        pupils.some((p) => p.admissionNo === editForm.admissionNo)) {
+      return toast.error("Admission number already exists");
+    }
+
+    await updatePupil(editingPupil.id, {
+      admissionNo: editForm.admissionNo,
+      firstName: editForm.firstName,
+      lastName: editForm.lastName,
+      gender: editForm.gender,
+      dob: editForm.dob,
+      classId: editForm.classId,
+    });
+    
+    toast.success(`${editForm.firstName} ${editForm.lastName} updated successfully`);
+    setEditOpen(false);
+    setEditingPupil(null);
   };
 
   return (
@@ -147,6 +196,9 @@ function PupilsPage() {
                   <TableCell>{p.parentIds.length}</TableCell>
                   <TableCell>{p.active ? <Badge>Active</Badge> : <Badge variant="secondary">Inactive</Badge>}</TableCell>
                   <TableCell className="text-right">
+                    <Button size="sm" variant="ghost" onClick={() => openEdit(p)}>
+                      <Edit className="h-4 w-4 mr-1" /> Edit
+                    </Button>
                     {p.active && <Button size="sm" variant="ghost" onClick={() => { deactivatePupil(p.id); toast.success("Pupil deactivated"); }}>Deactivate</Button>}
                   </TableCell>
                 </TableRow>
@@ -155,6 +207,54 @@ function PupilsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Edit Pupil Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Pupil Details</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <Label>Admission number</Label>
+              <Input value={editForm.admissionNo} onChange={(e) => setEditForm({ ...editForm, admissionNo: e.target.value })} />
+            </div>
+            <div>
+              <Label>First name</Label>
+              <Input value={editForm.firstName} onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })} />
+            </div>
+            <div>
+              <Label>Last name</Label>
+              <Input value={editForm.lastName} onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })} />
+            </div>
+            <div>
+              <Label>Gender</Label>
+              <Select value={editForm.gender} onValueChange={(v) => setEditForm({ ...editForm, gender: v as "M" | "F" })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="M">Male</SelectItem>
+                  <SelectItem value="F">Female</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Date of birth</Label>
+              <Input type="date" value={editForm.dob} onChange={(e) => setEditForm({ ...editForm, dob: e.target.value })} />
+            </div>
+            <div className="col-span-2">
+              <Label>Class</Label>
+              <Select value={editForm.classId} onValueChange={(v) => setEditForm({ ...editForm, classId: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button onClick={submitEdit}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

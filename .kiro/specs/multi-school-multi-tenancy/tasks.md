@@ -6,7 +6,7 @@ This implementation plan transforms Kindy Connect from a single-school system in
 
 ## Tasks
 
-- [ ] 1. Database schema migrations and constraints
+- [x] 1. Database schema migrations and constraints
   - Create migration file for multi-tenancy schema updates
   - Add CHECK constraints on users table (super_admin must have null school_id, others must have non-null school_id)
   - Add indexes on school_id columns if not present
