@@ -68,6 +68,15 @@ function MarksPage() {
   );
 
   const subjects = ["Reading", "Math", "Writing", "Art", "Music", "Physical Education", "Science"];
+  
+  // Filter subjects for teachers - they can only see their assigned subjects
+  const availableSubjects = useMemo(() => {
+    if (isTeacher && currentUser?.subjects && currentUser.subjects.length > 0) {
+      return subjects.filter(s => currentUser.subjects?.includes(s));
+    }
+    return subjects;
+  }, [isTeacher, currentUser]);
+  
   const terms = ["Term 1", "Term 2", "Term 3"];
 
   const handleAddMark = () => {
@@ -262,7 +271,7 @@ function MarksPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {subjects.map((s) => (
+                  {availableSubjects.map((s) => (
                     <SelectItem key={s} value={s}>
                       {s}
                     </SelectItem>

@@ -22,6 +22,7 @@ export interface User {
   registeredAt: string;
   password?: string;
   schoolId?: string;
+  subjects?: string[];
 }
 
 export interface Pupil {

@@ -41,7 +41,8 @@ CREATE TABLE users (
     class_id VARCHAR(50),
     registered_at DATE NOT NULL DEFAULT CURRENT_DATE,
     password VARCHAR(255) NOT NULL,
-    school_id VARCHAR(50)
+    school_id VARCHAR(50),
+    subjects TEXT[]
 );
 
 -- 3. Parents Table

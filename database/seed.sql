@@ -18,19 +18,19 @@ INSERT INTO classes (id, name, teacher_id, school_id) VALUES
 ('c8', 'Grade 2', NULL, 's3');
 
 -- 2. Insert Users (including Super Admins)
-INSERT INTO users (id, name, email, role, status, phone, registered_at, password, class_id, school_id) VALUES
-('KC001', 'System Administrator', 'superadmin@kinder.app', 'super_admin', 'verified', '+254700000000', '2025-01-01', 'admin123', NULL, NULL),
-('KC002', 'System Administrator 2', 'superadmin2@kinder.app', 'super_admin', 'verified', '+254700000001', '2025-01-01', 'admin123', NULL, NULL),
-('KC003', 'System Administrator 3', 'superadmin3@kinder.app', 'super_admin', 'verified', '+254700000002', '2025-01-01', 'admin123', NULL, NULL),
-('u1', 'Amina Okello', 'admin@kinder.app', 'admin', 'verified', '+254700000003', '2025-01-10', 'admin123', NULL, 's1'),
-('u2', 'Brian Mwangi', 'deputy@kinder.app', 'admin', 'verified', '+254700000004', '2025-01-12', 'admin123', NULL, 's2'),
-('u3', 'Grace Wanjiku', 'grace@kinder.app', 'admin', 'verified', '+254700000005', '2025-02-01', 'admin123', NULL, 's3'),
-('u4', 'Peter Otieno', 'peter@kinder.app', 'teacher', 'verified', '+254700000006', '2025-02-03', 'peter123', 'c2', 's1'),
-('u5', 'Lucy Achieng', 'lucy@kinder.app', 'teacher', 'pending', '+254700000007', '2025-06-15', 'lucy123', NULL, 's1'),
-('u6', 'James Kariuki', 'james@kinder.app', 'teacher', 'verified', '+254700000008', '2025-06-16', 'james123', 'c1', 's1'),
-('u7', 'Sarah Muthoni', 'sarah@kinder.app', 'teacher', 'verified', '+254700000009', '2025-03-05', 'sarah123', 'c3', 's1'),
-('u8', 'Sunshine Admin', 'sunshineadmin@kinder.app', 'admin', 'verified', '+254733333333', '2025-01-06', 'admin123', NULL, 's2'),
-('noble', 'NOBLE Admin', 'nobleadmin@kinder.app', 'admin', 'verified', '+254744444444', '2025-01-10', 'admin123', NULL, 's3');
+INSERT INTO users (id, name, email, role, status, phone, registered_at, password, class_id, school_id, subjects) VALUES
+('KC001', 'System Administrator', 'superadmin@kinder.app', 'super_admin', 'verified', '+254700000000', '2025-01-01', 'admin123', NULL, NULL, NULL),
+('KC002', 'System Administrator 2', 'superadmin2@kinder.app', 'super_admin', 'verified', '+254700000001', '2025-01-01', 'admin123', NULL, NULL, NULL),
+('KC003', 'System Administrator 3', 'superadmin3@kinder.app', 'super_admin', 'verified', '+254700000002', '2025-01-01', 'admin123', NULL, NULL, NULL),
+('u1', 'Amina Okello', 'admin@kinder.app', 'admin', 'verified', '+254700000003', '2025-01-10', 'admin123', NULL, 's1', NULL),
+('u2', 'Brian Mwangi', 'deputy@kinder.app', 'admin', 'verified', '+254700000004', '2025-01-12', 'admin123', NULL, 's2', NULL),
+('u3', 'Grace Wanjiku', 'grace@kinder.app', 'admin', 'verified', '+254700000005', '2025-02-01', 'admin123', NULL, 's3', NULL),
+('u4', 'Peter Otieno (Math & Science)', 'peter@kinder.app', 'teacher', 'verified', '+254700000006', '2025-02-03', 'peter123', 'c2', 's1', ARRAY['Math', 'Science']),
+('u5', 'Lucy Achieng (Reading & Writing)', 'lucy@kinder.app', 'teacher', 'pending', '+254700000007', '2025-06-15', 'lucy123', NULL, 's1', ARRAY['Reading', 'Writing']),
+('u6', 'James Kariuki (All Subjects)', 'james@kinder.app', 'teacher', 'verified', '+254700000008', '2025-06-16', 'james123', 'c1', 's1', ARRAY['Reading', 'Math', 'Writing', 'Art', 'Music', 'Physical Education', 'Science']),
+('u7', 'Sarah Muthoni (Art & Music)', 'sarah@kinder.app', 'teacher', 'verified', '+254700000009', '2025-03-05', 'sarah123', 'c3', 's1', ARRAY['Art', 'Music']),
+('u8', 'Sunshine Admin', 'sunshineadmin@kinder.app', 'admin', 'verified', '+254733333333', '2025-01-06', 'admin123', NULL, 's2', NULL),
+('noble', 'NOBLE Admin', 'nobleadmin@kinder.app', 'admin', 'verified', '+254744444444', '2025-01-10', 'admin123', NULL, 's3', NULL);
 
 -- 3. Update Classes to map teacher_ids
 UPDATE classes SET teacher_id = 'u6' WHERE id = 'c1';
