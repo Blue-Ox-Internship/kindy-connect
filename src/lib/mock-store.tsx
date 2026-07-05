@@ -5,6 +5,7 @@ import {
   registerUser as registerUserDb,
   approveTeacher as approveTeacherDb,
   rejectTeacher as rejectTeacherDb,
+  deleteUser as deleteUserDb,
   addPupil as addPupilDb,
   updatePupil as updatePupilDb,
   deactivatePupil as deactivatePupilDb,
@@ -54,6 +55,7 @@ interface Store {
   registerUser: (data: { id: string; name: string; email: string; phone: string; password?: string; role: Role; schoolId?: string; newSchoolName?: string; status?: TeacherStatus; subjects?: string[] }) => Promise<void>;
   approveTeacher: (id: string) => Promise<void>;
   rejectTeacher: (id: string) => Promise<void>;
+  deleteUser: (id: string) => Promise<void>;
   addPupil: (data: Omit<Pupil, "id" | "active"> & { parent?: Omit<Parent, "id"> }) => Promise<void>;
   updatePupil: (id: string, data: Partial<Pupil>) => Promise<void>;
   deactivatePupil: (id: string) => Promise<void>;
@@ -354,6 +356,29 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
           ...s.audit,
         ],
       }));
+    },
+
+    deleteUser: async (id) => {
+      if (!currentUser) return;
+      await deleteUserDb({ data: { id, actorId: currentUser.id, actorName: currentUser.name } });
+      setState(s => {
+        const deletedUser = s.users.find(u => u.id === id);
+        return {
+          ...s,
+          users: s.users.filter(u => u.id !== id),
+          audit: [
+            {
+              id: Math.random().toString(36).slice(2, 10),
+              actorId: currentUser.id,
+              actorName: currentUser.name,
+              action: "Deleted user",
+              target: deletedUser ? `${deletedUser.name} (${deletedUser.role})` : id,
+              timestamp: new Date().toISOString(),
+            },
+            ...s.audit,
+          ],
+        };
+      });
     },
 
     addPupil: async (pupilData) => {

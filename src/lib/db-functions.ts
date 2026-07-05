@@ -973,3 +973,55 @@ export const deleteClass = createServerFn({ method: "POST" })
       throw error;
     }
   });
+
+// ----------------------------------------------------
+// 9. User Management Functions
+// ----------------------------------------------------
+export const deleteUser = createServerFn({ method: "POST" })
+  .validator((d: { id: string; actorId: string; actorName: string }) => d)
+  .handler(async ({ data }) => {
+    const { id, actorId, actorName } = data;
+    const logId = Math.random().toString(36).slice(2, 10);
+    
+    try {
+      await sql.begin(async (sql) => {
+        // Get user details before deletion for audit log
+        const users = await sql`
+          SELECT name, role FROM users WHERE id = ${id}
+        `;
+        
+        if (users.length === 0) {
+          throw new Error("User not found");
+        }
+        
+        const deletedUser = users[0];
+        
+        // Prevent super admins from deleting themselves
+        if (id === actorId) {
+          throw new Error("You cannot delete your own account");
+        }
+        
+        // Only super_admin can delete other admins
+        const actor = await sql`SELECT role FROM users WHERE id = ${actorId}`;
+        if (actor.length === 0 || actor[0].role !== 'super_admin') {
+          if (deletedUser.role === 'super_admin' || deletedUser.role === 'admin') {
+            throw new Error("Unauthorized: Only super admins can delete admin accounts");
+          }
+        }
+        
+        // Delete user
+        await sql`DELETE FROM users WHERE id = ${id}`;
+        
+        // Log the deletion
+        await sql`
+          INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp)
+          VALUES (${logId}, ${actorId}, ${actorName}, 'Deleted user', ${deletedUser.name + ' (' + deletedUser.role + ')'}, CURRENT_TIMESTAMP)
+        `;
+      });
+      
+      return { id };
+    } catch (error) {
+      console.error("Error in deleteUser:", error);
+      throw error;
+    }
+  });

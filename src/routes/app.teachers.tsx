@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Check, X, Plus, Search } from "lucide-react";
+import { Check, X, Plus, Search, Trash2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/app/teachers")({
 });
 
 function TeachersPage() {
-  const { currentUser, users, schools, approveTeacher, rejectTeacher, registerUser } = useStore();
+  const { currentUser, users, schools, approveTeacher, rejectTeacher, registerUser, deleteUser } = useStore();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
 
@@ -115,7 +115,7 @@ function TeachersPage() {
     });
   };
 
-  const renderTable = (list: typeof users, withActions = false) => (
+  const renderTable = (list: typeof users, withActions = false, showDelete = false) => (
     <Table>
       <TableHeader>
         <TableRow>
@@ -128,12 +128,14 @@ function TeachersPage() {
           {(isSuperAdmin || isSchoolAdmin) && <TableHead>Password</TableHead>}
           <TableHead>Registered</TableHead>
           <TableHead>Status</TableHead>
-          {withActions && <TableHead>Actions</TableHead>}
+          {(withActions || showDelete) && <TableHead>Actions</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
         {list.map((t) => {
           const schoolName = schools.find((s) => s.id === t.schoolId)?.name || "System Admin";
+          const canDelete = isSuperAdmin && t.id !== currentUser?.id;
+          
           return (
             <TableRow key={t.id}>
               {isSuperAdmin && <TableCell className="font-mono text-xs font-semibold">{t.id}</TableCell>}
@@ -158,29 +160,53 @@ function TeachersPage() {
                   {t.status}
                 </Badge>
               </TableCell>
-              {withActions && (
+              {(withActions || showDelete) && (
                 <TableCell className="space-x-2">
-                  <Button
-                    size="sm"
-                    onClick={async () => {
-                      await approveTeacher(t.id);
-                      toast.success(`${t.name} approved - account active`);
-                    }}
-                  >
-                    <Check className="h-4 w-4 mr-1" />
-                    Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={async () => {
-                      await rejectTeacher(t.id);
-                      toast(`${t.name} status set to rejected`);
-                    }}
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Reject
-                  </Button>
+                  {withActions && (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          await approveTeacher(t.id);
+                          toast.success(`${t.name} approved - account active`);
+                        }}
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={async () => {
+                          await rejectTeacher(t.id);
+                          toast(`${t.name} status set to rejected`);
+                        }}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                  {showDelete && canDelete && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={async () => {
+                        if (confirm(`Are you sure you want to delete ${t.name}? This action cannot be undone.`)) {
+                          try {
+                            await deleteUser(t.id);
+                            toast.success(`${t.name} has been deleted`);
+                          } catch (error: any) {
+                            toast.error(error.message || "Failed to delete user");
+                          }
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
+                    </Button>
+                  )}
                 </TableCell>
               )}
             </TableRow>
@@ -189,7 +215,7 @@ function TeachersPage() {
         {list.length === 0 && (
           <TableRow>
             <TableCell
-              colSpan={withActions ? (isSuperAdmin ? 10 : 8) : (isSuperAdmin ? 9 : 7)}
+              colSpan={(withActions || showDelete) ? (isSuperAdmin ? 10 : 8) : (isSuperAdmin ? 9 : 7)}
               className="text-center text-muted-foreground py-8"
             >
               No accounts in this category.
@@ -354,13 +380,13 @@ function TeachersPage() {
               <TabsTrigger value="rejected">Rejected</TabsTrigger>
             </TabsList>
             <TabsContent value="pending" className="mt-4">
-              {renderTable(pending, true)}
+              {renderTable(pending, true, false)}
             </TabsContent>
             <TabsContent value="verified" className="mt-4">
-              {renderTable(verified)}
+              {renderTable(verified, false, true)}
             </TabsContent>
             <TabsContent value="rejected" className="mt-4">
-              {renderTable(rejected)}
+              {renderTable(rejected, false, true)}
             </TabsContent>
           </Tabs>
         </CardContent>
