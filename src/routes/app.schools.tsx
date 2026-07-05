@@ -47,6 +47,9 @@ function SchoolsPage() {
     );
   }, [schools, q]);
 
+  const formatDate = (value: string | Date) =>
+    value instanceof Date ? value.toISOString().slice(0, 10) : value;
+
   const submitCreate = async () => {
     if (!form.name.trim()) return toast.error("School name is required");
     await addSchool({
@@ -249,7 +252,7 @@ function SchoolsPage() {
                         <span className="font-semibold">{schoolTeachers}</span> teachers
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {s.registeredAt}
+                        {formatDate(s.registeredAt)}
                       </TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button size="icon" variant="ghost" onClick={() => startEdit(s)}>
