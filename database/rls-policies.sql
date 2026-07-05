@@ -457,7 +457,7 @@ WITH CHECK (
 -- MARKS TABLE POLICIES
 -- ===========================================
 
--- SELECT: Teachers see their class marks, admins/deputies see all
+-- SELECT: Teachers see their class marks for assigned subjects only, admins/deputies see all
 CREATE POLICY "marks_select_policy" ON marks
 FOR SELECT
 TO authenticated
@@ -469,12 +469,16 @@ USING (
         AND users.status = 'verified'
         AND (
             users.role IN ('admin', 'deputy')
-            OR (users.role = 'teacher' AND users.class_id = pupils.class_id)
+            OR (
+                users.role = 'teacher' 
+                AND users.class_id = pupils.class_id
+                AND marks.subject = ANY(users.subjects)
+            )
         )
     )
 );
 
--- INSERT: Teachers can add marks for their class, admins/deputies for all
+-- INSERT: Teachers can add marks for their class AND assigned subjects only, admins/deputies for all
 CREATE POLICY "marks_insert_policy" ON marks
 FOR INSERT
 TO authenticated
@@ -486,12 +490,16 @@ WITH CHECK (
         AND users.status = 'verified'
         AND (
             users.role IN ('admin', 'deputy')
-            OR (users.role = 'teacher' AND users.class_id = pupils.class_id)
+            OR (
+                users.role = 'teacher' 
+                AND users.class_id = pupils.class_id
+                AND marks.subject = ANY(users.subjects)
+            )
         )
     )
 );
 
--- UPDATE: Teachers can update marks for their class, admins/deputies for all
+-- UPDATE: Teachers can update marks for their class AND assigned subjects only, admins/deputies for all
 CREATE POLICY "marks_update_policy" ON marks
 FOR UPDATE
 TO authenticated
@@ -503,7 +511,11 @@ USING (
         AND users.status = 'verified'
         AND (
             users.role IN ('admin', 'deputy')
-            OR (users.role = 'teacher' AND users.class_id = pupils.class_id)
+            OR (
+                users.role = 'teacher' 
+                AND users.class_id = pupils.class_id
+                AND marks.subject = ANY(users.subjects)
+            )
         )
     )
 );

@@ -713,6 +713,33 @@ export const addMark = createServerFn({ method: "POST" })
     const id = Math.random().toString(36).slice(2, 10);
     const recordedAt = new Date().toISOString();
     
+    // Authorization check: Verify teacher can add marks for this subject
+    const actor = await sql`SELECT role, class_id, subjects FROM users WHERE id = ${actorId}`;
+    if (actor.length === 0) {
+      throw new Error("Unauthorized: User not found");
+    }
+    
+    const user = toCamel<User>(actor[0]);
+    
+    // If user is a teacher, verify they're authorized for this subject
+    if (user.role === "teacher") {
+      // Check if teacher is assigned to the pupil's class
+      const pupilCheck = await sql`SELECT class_id FROM pupils WHERE id = ${mark.pupilId}`;
+      if (pupilCheck.length === 0) {
+        throw new Error("Pupil not found");
+      }
+      
+      const pupilClassId = pupilCheck[0].class_id;
+      if (user.classId !== pupilClassId) {
+        throw new Error("Unauthorized: You can only add marks for pupils in your assigned class");
+      }
+      
+      // Check if teacher is assigned to this subject
+      if (!user.subjects || !user.subjects.includes(mark.subject)) {
+        throw new Error(`Unauthorized: You are not assigned to teach ${mark.subject}`);
+      }
+    }
+    
     // Calculate grade based on score percentage
     const percentage = (mark.score / mark.maxScore) * 100;
     let grade = "E";
@@ -741,9 +768,49 @@ export const addMark = createServerFn({ method: "POST" })
   });
 
 export const updateMark = createServerFn({ method: "POST" })
-  .validator((d: { id: string; data: Partial<Omit<Mark, "id" | "recordedBy" | "recordedAt">> }) => d)
+  .validator((d: { id: string; data: Partial<Omit<Mark, "id" | "recordedBy" | "recordedAt">>; actorId?: string }) => d)
   .handler(async ({ data }) => {
-    const { id, data: markData } = data;
+    const { id, data: markData, actorId } = data;
+    
+    // Authorization check if actorId is provided
+    if (actorId) {
+      const actor = await sql`SELECT role, class_id, subjects FROM users WHERE id = ${actorId}`;
+      if (actor.length === 0) {
+        throw new Error("Unauthorized: User not found");
+      }
+      
+      const user = toCamel<User>(actor[0]);
+      
+      // If user is a teacher, verify they're authorized for this mark's subject
+      if (user.role === "teacher") {
+        // Get the mark's current subject and pupil
+        const existingMark = await sql`
+          SELECT m.subject, m.pupil_id, p.class_id 
+          FROM marks m
+          JOIN pupils p ON p.id = m.pupil_id
+          WHERE m.id = ${id}
+        `;
+        
+        if (existingMark.length === 0) {
+          throw new Error("Mark not found");
+        }
+        
+        const mark = existingMark[0];
+        const pupilClassId = mark.class_id;
+        const markSubject = mark.subject;
+        
+        // Check class assignment
+        if (user.classId !== pupilClassId) {
+          throw new Error("Unauthorized: You can only update marks for pupils in your assigned class");
+        }
+        
+        // Check subject assignment - verify against current subject or new subject if being updated
+        const subjectToCheck = markData.subject || markSubject;
+        if (!user.subjects || !user.subjects.includes(subjectToCheck)) {
+          throw new Error(`Unauthorized: You are not assigned to teach ${subjectToCheck}`);
+        }
+      }
+    }
     
     // If score or maxScore changed, recalculate grade
     let grade: string | undefined = undefined;

@@ -509,7 +509,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
 
     updateMark: async (id, markData) => {
       if (!currentUser) return;
-      const res = await updateMarkDb({ data: { id, data: markData } });
+      const res = await updateMarkDb({ data: { id, data: markData, actorId: currentUser.id } });
       
       setState(s => {
         const existingMark = s.marks.find(m => m.id === id);
