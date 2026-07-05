@@ -30,6 +30,9 @@ function TeachersPage() {
   // Super Admin School filtering
   const [schoolFilter, setSchoolFilter] = useState<string>("all");
 
+  // Available subjects for selection
+  const availableSubjects = ["Reading", "Math", "Writing", "Art", "Music", "Physical Education", "Science"];
+
   // Create User Form State
   const [form, setForm] = useState({
     id: "",
@@ -39,6 +42,7 @@ function TeachersPage() {
     role: "teacher" as Role,
     schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
     password: "admin123",
+    subjects: [] as string[],
   });
 
   const listToDisplay = useMemo(() => {
@@ -74,6 +78,11 @@ function TeachersPage() {
       return toast.error("Please fill in all fields");
     }
 
+    // Validate subjects for teachers
+    if (form.role === "teacher" && form.subjects.length === 0) {
+      return toast.error("Please select at least one subject for the teacher");
+    }
+
     // School mapping
     const targetSchoolId = isSuperAdmin ? form.schoolId : (currentUser?.schoolId ?? "");
     if (!isSuperAdmin && !targetSchoolId) {
@@ -89,11 +98,21 @@ function TeachersPage() {
       password: form.password,
       schoolId: isSuperAdmin && form.role === "super_admin" ? undefined : targetSchoolId,
       status: "verified", // Administrator creates verified accounts immediately
+      subjects: form.role === "teacher" ? form.subjects : undefined,
     });
 
     toast.success(`Account for ${form.name} created successfully!`);
     setOpen(false);
     setForm({
+      id: "",
+      name: "",
+      email: "",
+      phone: "",
+      role: "teacher",
+      schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
+      password: "admin123",
+      subjects: [],
+    });
       id: "",
       name: "",
       email: "",
@@ -278,6 +297,30 @@ function TeachersPage() {
                     </div>
                   )}
                 </div>
+                {form.role === "teacher" && (
+                  <div>
+                    <Label htmlFor="create-subjects">Subjects (Select at least one) *</Label>
+                    <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md">
+                      {availableSubjects.map((subject) => (
+                        <label key={subject} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={form.subjects.includes(subject)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setForm({ ...form, subjects: [...form.subjects, subject] });
+                              } else {
+                                setForm({ ...form, subjects: form.subjects.filter(s => s !== subject) });
+                              }
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <span className="text-sm">{subject}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button onClick={submitCreateUser}>Create Account</Button>
