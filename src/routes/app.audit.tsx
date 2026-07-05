@@ -10,7 +10,22 @@ export const Route = createFileRoute("/app/audit")({
 });
 
 function AuditPage() {
-  const { audit } = useStore();
+  const { currentUser, audit } = useStore();
+  
+  const isSuperAdmin = currentUser?.role === "super_admin";
+  const isSchoolAdmin = currentUser?.role === "admin";
+  const isAuthorized = isSuperAdmin || isSchoolAdmin;
+
+  if (!isAuthorized) {
+    return (
+      <AppShell title="Unauthorized">
+        <div className="text-center py-12 text-muted-foreground">
+          You do not have permission to view audit logs.
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell title="Audit log">
       <Card className="border-0 shadow-sm"><CardContent className="p-5">
