@@ -113,14 +113,6 @@ function TeachersPage() {
       password: "admin123",
       subjects: [],
     });
-      id: "",
-      name: "",
-      email: "",
-      phone: "",
-      role: "teacher",
-      schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
-      password: "admin123",
-    });
   };
 
   const renderTable = (list: typeof users, withActions = false) => (
