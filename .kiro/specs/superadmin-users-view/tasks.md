@@ -112,8 +112,7 @@ This implementation plan breaks down the Superadmin Users View feature into disc
   - [ ] 7.1 Add delete button to user rows
     - Display "Delete" button with Trash2 icon for all users in Verified and Rejected tabs
     - Conditionally disable delete button for currently logged-in superadmin
-    - Conditionally disable delete button for system accounts with user IDs "u1" or "u2"
-    - _Requirements: 7.1, 7.8, 7.9_
+    - _Requirements: 7.1, 7.8_
 
   - [ ] 7.2 Create delete confirmation dialog
     - Display confirmation dialog when delete button is clicked
@@ -124,11 +123,10 @@ This implementation plan breaks down the Superadmin Users View feature into disc
 
   - [ ] 7.3 Implement delete handler
     - Call deleteUser store action with user ID on confirmation
-    - Add server-side check to prevent deletion of "u1" or "u2" accounts
     - Display success toast notification on successful deletion
-    - Display error toast notification on failure (including system account protection)
+    - Display error toast notification on failure
     - Remove user from the displayed list after successful deletion
-    - _Requirements: 7.5, 7.6, 7.7, 7.9, 7.10_
+    - _Requirements: 7.5, 7.6, 7.7, 7.9_
 
 - [ ] 8. Checkpoint - Basic viewing and management complete
   - Verify users view displays correctly with all filters
