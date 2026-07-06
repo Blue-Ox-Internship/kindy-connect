@@ -99,14 +99,14 @@ function PupilsPage() {
     reader.readAsDataURL(file);
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (!form.admissionNo || !form.firstName || !form.lastName) return toast.error("Fill required fields");
     if (pupils.some((p) => p.admissionNo === form.admissionNo)) return toast.error("Admission number already exists");
     if (!form.parentName || !form.parentPhone || !form.parentEmail) {
       return toast.error("Parent / guardian details are required");
     }
 
-    addPupil({
+    await addPupil({
       admissionNo: form.admissionNo,
       firstName: form.firstName,
       lastName: form.lastName,
