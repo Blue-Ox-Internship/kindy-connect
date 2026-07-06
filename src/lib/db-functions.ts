@@ -228,7 +228,7 @@ export const registerUser = createServerFn({ method: "POST" })
           role: data.role,
           status,
           registeredAt,
-          password: data.password || "admin123",
+          password: data.password,
           schoolId: finalSchoolId || null,
           subjects: data.subjects || null,
         });

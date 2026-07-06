@@ -41,7 +41,7 @@ function TeachersPage() {
     phone: "",
     role: "teacher" as Role,
     schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
-    password: "admin123",
+    password: "",
     subjects: [] as string[],
   });
 
@@ -83,7 +83,7 @@ function TeachersPage() {
     value instanceof Date ? value.toISOString().slice(0, 10) : value;
 
   const submitCreateUser = async () => {
-    if (!form.id.trim() || !form.name.trim() || !form.email.trim() || !form.phone.trim()) {
+    if (!form.id.trim() || !form.name.trim() || !form.email.trim() || !form.phone.trim() || !form.password.trim()) {
       return toast.error("Please fill in all fields");
     }
 
@@ -119,7 +119,7 @@ function TeachersPage() {
       phone: "",
       role: "teacher",
       schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
-      password: "admin123",
+      password: "",
       subjects: [],
     });
   };
