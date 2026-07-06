@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, type ReactNode } from "react";
 import {
   getInitialData,
   loginUser,
@@ -77,6 +77,7 @@ interface Store {
   addClass: (data: { name: string; schoolId: string; teacherId?: string }) => Promise<void>;
   updateClass: (id: string, data: Partial<Omit<ClassRoom, "id">>) => Promise<void>;
   deleteClass: (id: string) => Promise<void>;
+  refreshData: () => Promise<void>;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -134,6 +135,27 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
       }
     }
     loadData();
+  }, []);
+
+  // Refresh function to reload data from database
+  const refreshData = useCallback(async () => {
+    try {
+      const data = await getInitialData();
+      setState(s => ({
+        ...s,
+        schools: data.schools || [],
+        users: data.users,
+        pupils: data.pupils,
+        parents: data.parents,
+        classes: data.classes,
+        attendance: data.attendance,
+        notifications: data.notifications,
+        audit: data.audit,
+        marks: data.marks,
+      }));
+    } catch (err) {
+      console.error("Failed to refresh database data:", err);
+    }
   }, []);
 
   // Sync user session to local storage
@@ -403,22 +425,9 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
           actorName: currentUser.name,
         },
       });
-      setState(s => ({
-        ...s,
-        pupils: [...s.pupils, newPupil],
-        parents: createdParent ? [...s.parents, createdParent] : s.parents,
-        audit: [
-          {
-            id: Math.random().toString(36).slice(2, 10),
-            actorId: currentUser.id,
-            actorName: currentUser.name,
-            action: "Created pupil",
-            target: `${newPupil.firstName} ${newPupil.lastName} (${newPupil.admissionNo})`,
-            timestamp: new Date().toISOString(),
-          },
-          ...s.audit,
-        ],
-      }));
+      
+      // Refresh data from database to ensure dashboard updates
+      await refreshData();
     },
 
     updatePupil: async (id, data) => {
@@ -645,6 +654,8 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
         users: s.users.map((u) => (u.classId === id ? { ...u, classId: undefined } : u)),
       }));
     },
+
+    refreshData,
   };
 
   if (loading) {
