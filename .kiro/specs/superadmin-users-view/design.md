@@ -276,6 +276,11 @@ type StatusFilterValue = "all" | TeacherStatus;
 - **Handling**: Client-side check disables delete button, server-side check rejects request
 - **User Feedback**: Toast notification: "Cannot delete your own account"
 
+**System Account Protection**:
+- **Condition**: Superadmin attempts to delete system accounts (user IDs "u1" or "u2")
+- **Handling**: Client-side check disables delete button, server-side check rejects request
+- **User Feedback**: Toast notification: "Cannot delete system accounts (u1, u2)"
+
 ### Error Recovery
 
 1. **Retry Mechanism**: For network errors, display "Retry" button in error toast

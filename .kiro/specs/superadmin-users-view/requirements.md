@@ -117,7 +117,8 @@ The Superadmin Users View feature enables superadministrators to view and manage
 6. WHEN a user deletion succeeds, THE System SHALL display a success notification
 7. WHEN a user deletion fails, THE System SHALL display an error notification with details
 8. THE System SHALL prevent deletion of the currently logged-in superadmin account
-9. THE System SHALL log all user deletion actions in the audit_logs table
+9. THE System SHALL prevent deletion of system accounts with user IDs "u1" or "u2"
+10. THE System SHALL log all user deletion actions in the audit_logs table
 
 ### Requirement 8: Create New User
 
