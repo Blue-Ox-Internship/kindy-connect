@@ -163,6 +163,7 @@ function PupilsPage() {
                     <div><Label>Full name <span className="text-destructive">*</span></Label><Input value={form.parentName} onChange={(e) => setForm({ ...form, parentName: e.target.value })} /></div>
                     <div><Label>Phone <span className="text-destructive">*</span></Label><Input value={form.parentPhone} onChange={(e) => setForm({ ...form, parentPhone: e.target.value })} placeholder="+254..." /></div>
                     <div><Label>Email <span className="text-destructive">*</span></Label><Input type="email" value={form.parentEmail} onChange={(e) => setForm({ ...form, parentEmail: e.target.value })} /></div>
+                    <div className="pt-2"><Button onClick={submit} className="w-full">Save pupil</Button></div>
                     <div><Label>Relationship <span className="text-destructive">*</span></Label>
                       <Select value={form.parentRelationship} onValueChange={(v) => setForm({ ...form, parentRelationship: v })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -175,7 +176,6 @@ function PupilsPage() {
                     </div>
                   </div>
                 </div>
-                <DialogFooter><Button onClick={submit}>Save pupil</Button></DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
