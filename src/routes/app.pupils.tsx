@@ -35,6 +35,7 @@ function PupilsPage() {
     parentPhone: "",
     parentEmail: "",
     parentRelationship: "Mother",
+    photo: "",
   });
   const [editForm, setEditForm] = useState({
     admissionNo: "",
@@ -43,11 +44,60 @@ function PupilsPage() {
     gender: "M" as "M" | "F",
     dob: "",
     classId: "",
+    photo: "",
   });
 
   const filtered = pupils.filter(
     (p) => `${p.firstName} ${p.lastName} ${p.admissionNo}`.toLowerCase().includes(q.toLowerCase()),
   );
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image size must be less than 2MB");
+      return;
+    }
+    
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setForm({ ...form, photo: reader.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleEditPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image size must be less than 2MB");
+      return;
+    }
+    
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setEditForm({ ...editForm, photo: reader.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const submit = () => {
     if (!form.admissionNo || !form.firstName || !form.lastName) return toast.error("Fill required fields");
@@ -63,6 +113,7 @@ function PupilsPage() {
       gender: form.gender,
       dob: form.dob,
       classId: form.classId,
+      photo: form.photo || undefined,
       parentIds: [],
       parent: {
         name: form.parentName,
@@ -84,6 +135,7 @@ function PupilsPage() {
       parentPhone: "",
       parentEmail: "",
       parentRelationship: "Mother",
+      photo: "",
     });
   };
 
@@ -96,6 +148,7 @@ function PupilsPage() {
       gender: pupil.gender,
       dob: pupil.dob,
       classId: pupil.classId,
+      photo: pupil.photo || "",
     });
     setEditOpen(true);
   };
@@ -119,6 +172,7 @@ function PupilsPage() {
       gender: editForm.gender,
       dob: editForm.dob,
       classId: editForm.classId,
+      photo: editForm.photo || undefined,
     });
     
     toast.success(`${editForm.firstName} ${editForm.lastName} updated successfully`);
@@ -158,6 +212,15 @@ function PupilsPage() {
                       <SelectContent>{classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
+                  <div className="col-span-2">
+                    <Label>Photo</Label>
+                    <Input type="file" accept="image/*" onChange={handlePhotoChange} />
+                    {form.photo && (
+                      <div className="mt-2">
+                        <img src={form.photo} alt="Preview" className="w-24 h-24 object-cover rounded-md border" />
+                      </div>
+                    )}
+                  </div>
                   <div className="col-span-2 rounded-xl border p-3 space-y-3 bg-muted/20">
                     <div className="text-sm font-medium">Parent / guardian details <span className="text-destructive">*</span></div>
                     <div><Label>Full name <span className="text-destructive">*</span></Label><Input value={form.parentName} onChange={(e) => setForm({ ...form, parentName: e.target.value })} /></div>
@@ -183,12 +246,21 @@ function PupilsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Adm. No</TableHead><TableHead>Name</TableHead><TableHead>Class</TableHead><TableHead>Gender</TableHead><TableHead>Guardians</TableHead><TableHead>Status</TableHead><TableHead></TableHead>
+                <TableHead>Photo</TableHead><TableHead>Adm. No</TableHead><TableHead>Name</TableHead><TableHead>Class</TableHead><TableHead>Gender</TableHead><TableHead>Guardians</TableHead><TableHead>Status</TableHead><TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map((p) => (
                 <TableRow key={p.id}>
+                  <TableCell>
+                    {p.photo ? (
+                      <img src={p.photo} alt={`${p.firstName} ${p.lastName}`} className="w-10 h-10 object-cover rounded-full border" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
+                        {p.firstName[0]}{p.lastName[0]}
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="font-mono text-xs">{p.admissionNo}</TableCell>
                   <TableCell className="font-medium">{p.firstName} {p.lastName}</TableCell>
                   <TableCell>{classes.find((c) => c.id === p.classId)?.name ?? "-"}</TableCell>
@@ -210,7 +282,7 @@ function PupilsPage() {
 
       {/* Edit Pupil Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Edit Pupil Details</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
@@ -247,6 +319,15 @@ function PupilsPage() {
                   {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="col-span-2">
+              <Label>Photo</Label>
+              <Input type="file" accept="image/*" onChange={handleEditPhotoChange} />
+              {editForm.photo && (
+                <div className="mt-2">
+                  <img src={editForm.photo} alt="Preview" className="w-24 h-24 object-cover rounded-md border" />
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
