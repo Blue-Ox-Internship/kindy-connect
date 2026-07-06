@@ -22,6 +22,8 @@ export const Route = createFileRoute("/app/marks")({
 function MarksPage() {
   const { currentUser, pupils, classes, marks, addMark, updateMark, deleteMark, schools } = useStore();
   const isTeacher = currentUser?.role === "teacher";
+  const isSchoolAdmin = currentUser?.role === "admin";
+  const canEditMarks = isTeacher || isSchoolAdmin;
 
   // Super Admin School filtering
   const [superSchoolId, setSuperSchoolId] = useState<string>(schools[0]?.id ?? "");
@@ -70,6 +72,7 @@ function MarksPage() {
   const subjects = ["Reading", "Math", "Writing", "Art", "Music", "Physical Education", "Science"];
   
   // Filter subjects for teachers - they can only see their assigned subjects
+  // School admins can see all subjects
   const availableSubjects = useMemo(() => {
     if (isTeacher && currentUser?.subjects && currentUser.subjects.length > 0) {
       return subjects.filter(s => currentUser.subjects?.includes(s));
