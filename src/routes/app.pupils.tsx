@@ -105,6 +105,9 @@ function PupilsPage() {
     if (!form.parentName || !form.parentPhone || !form.parentEmail) {
       return toast.error("Parent / guardian details are required");
     }
+    if (!form.photo) {
+      return toast.error("Pupil photo is required");
+    }
 
     addPupil({
       admissionNo: form.admissionNo,
@@ -213,8 +216,8 @@ function PupilsPage() {
                     </Select>
                   </div>
                   <div className="col-span-2">
-                    <Label>Photo</Label>
-                    <Input type="file" accept="image/*" onChange={handlePhotoChange} />
+                    <Label>Photo <span className="text-destructive">*</span></Label>
+                    <Input type="file" accept="image/*" onChange={handlePhotoChange} required />
                     {form.photo && (
                       <div className="mt-2">
                         <img src={form.photo} alt="Preview" className="w-24 h-24 object-cover rounded-md border" />

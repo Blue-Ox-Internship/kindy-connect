@@ -23,6 +23,7 @@ export interface User {
   password?: string;
   schoolId?: string;
   subjects?: string[];
+  photo?: string;
 }
 
 export interface Pupil {
@@ -183,7 +184,7 @@ export const loginUser = createServerFn({ method: "POST" })
   });
 
 export const registerUser = createServerFn({ method: "POST" })
-  .validator((d: Omit<User, "status" | "registeredAt"> & { schoolId?: string; newSchoolName?: string; status?: "pending" | "verified" | "rejected"; subjects?: string[] }) => d)
+  .validator((d: Omit<User, "status" | "registeredAt"> & { schoolId?: string; newSchoolName?: string; status?: "pending" | "verified" | "rejected"; subjects?: string[]; photo?: string }) => d)
   .handler(async ({ data }) => {
     const id = data.id.trim();
     const status = data.status || (data.role === "admin" ? "verified" : "pending");
@@ -231,6 +232,7 @@ export const registerUser = createServerFn({ method: "POST" })
           password: data.password,
           schoolId: finalSchoolId || null,
           subjects: data.subjects || null,
+          photo: data.photo || null,
         });
 
         await sql`INSERT INTO users ${sql(dbUser)}`;

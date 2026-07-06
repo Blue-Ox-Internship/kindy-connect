@@ -52,7 +52,7 @@ interface Store {
   loginAs: (role: Role) => Promise<void>;
   logout: () => void;
   setSchoolContext: (schoolId: string | null) => void;
-  registerUser: (data: { id: string; name: string; email: string; phone: string; password?: string; role: Role; schoolId?: string; newSchoolName?: string; status?: TeacherStatus; subjects?: string[] }) => Promise<void>;
+  registerUser: (data: { id: string; name: string; email: string; phone: string; password?: string; role: Role; schoolId?: string; newSchoolName?: string; status?: TeacherStatus; subjects?: string[]; photo?: string }) => Promise<void>;
   approveTeacher: (id: string) => Promise<void>;
   rejectTeacher: (id: string) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
@@ -327,8 +327,8 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
       setState(s => ({ ...s, selectedSchoolId: schoolId }));
     },
 
-    registerUser: async ({ id, name, email, phone, role, schoolId, newSchoolName, status, subjects }) => {
-      const res = await registerUserDb({ data: { id, name, email, phone, role, schoolId, newSchoolName, status, subjects } });
+    registerUser: async ({ id, name, email, phone, role, schoolId, newSchoolName, status, subjects, photo }) => {
+      const res = await registerUserDb({ data: { id, name, email, phone, role, schoolId, newSchoolName, status, subjects, photo } });
       setState(s => {
         const nextUsers = [...s.users, res.user];
         const nextSchools = res.school ? [...s.schools, res.school] : s.schools;

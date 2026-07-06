@@ -33,6 +33,30 @@ function TeachersPage() {
   // Available subjects for selection
   const availableSubjects = ["Reading", "Math", "Writing", "Art", "Music", "Physical Education", "Science"];
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image size must be less than 2MB");
+      return;
+    }
+    
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setForm({ ...form, photo: reader.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Create User Form State
   const [form, setForm] = useState({
     id: "",
@@ -43,6 +67,7 @@ function TeachersPage() {
     schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
     password: "",
     subjects: [] as string[],
+    photo: "",
   });
 
   const listToDisplay = useMemo(() => {
@@ -87,6 +112,10 @@ function TeachersPage() {
       return toast.error("Please fill in all fields");
     }
 
+    if (!form.photo) {
+      return toast.error("User photo is required");
+    }
+
     // Validate subjects for teachers
     if (form.role === "teacher" && form.subjects.length === 0) {
       return toast.error("Please select at least one subject for the teacher");
@@ -108,6 +137,7 @@ function TeachersPage() {
       schoolId: isSuperAdmin && form.role === "super_admin" ? undefined : targetSchoolId,
       status: "verified", // Administrator creates verified accounts immediately
       subjects: form.role === "teacher" ? form.subjects : undefined,
+      photo: form.photo,
     });
 
     toast.success(`Account for ${form.name} created successfully!`);
@@ -121,6 +151,7 @@ function TeachersPage() {
       schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
       password: "",
       subjects: [],
+      photo: "",
     });
   };
 
@@ -348,6 +379,15 @@ function TeachersPage() {
                     </div>
                   </div>
                 )}
+                <div>
+                  <Label htmlFor="create-photo">Photo <span className="text-destructive">*</span></Label>
+                  <Input id="create-photo" type="file" accept="image/*" onChange={handlePhotoChange} required />
+                  {form.photo && (
+                    <div className="mt-2">
+                      <img src={form.photo} alt="Preview" className="w-24 h-24 object-cover rounded-md border" />
+                    </div>
+                  )}
+                </div>
               </div>
               <DialogFooter>
                 <Button onClick={submitCreateUser}>Create Account</Button>

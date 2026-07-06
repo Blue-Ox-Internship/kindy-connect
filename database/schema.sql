@@ -42,7 +42,8 @@ CREATE TABLE users (
     registered_at DATE NOT NULL DEFAULT CURRENT_DATE,
     password VARCHAR(255) NOT NULL,
     school_id VARCHAR(50),
-    subjects TEXT[]
+    subjects TEXT[],
+    photo TEXT
 );
 
 -- 3. Parents Table
