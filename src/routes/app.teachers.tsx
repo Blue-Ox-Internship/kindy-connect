@@ -112,10 +112,6 @@ function TeachersPage() {
       return toast.error("Please fill in all fields");
     }
 
-    if (!form.photo) {
-      return toast.error("User photo is required");
-    }
-
     // Validate subjects for teachers
     if (form.role === "teacher" && form.subjects.length === 0) {
       return toast.error("Please select at least one subject for the teacher");
@@ -380,8 +376,8 @@ function TeachersPage() {
                   </div>
                 )}
                 <div>
-                  <Label htmlFor="create-photo">Photo <span className="text-destructive">*</span></Label>
-                  <Input id="create-photo" type="file" accept="image/*" onChange={handlePhotoChange} required />
+                  <Label htmlFor="create-photo">Photo</Label>
+                  <Input id="create-photo" type="file" accept="image/*" onChange={handlePhotoChange} />
                   {form.photo && (
                     <div className="mt-2">
                       <img src={form.photo} alt="Preview" className="w-24 h-24 object-cover rounded-md border" />
