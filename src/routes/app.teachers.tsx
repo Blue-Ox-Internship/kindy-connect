@@ -46,9 +46,18 @@ function TeachersPage() {
   });
 
   const listToDisplay = useMemo(() => {
-    let list = isSuperAdmin || isSchoolAdmin ? users : users.filter((u) => u.role === "teacher");
+    // Super admin sees all users, school admin sees users in their school, others see only teachers
+    let list = users;
+    
+    if (!isSuperAdmin && isSchoolAdmin) {
+      // School admin: filter by their school
+      list = list.filter((u) => u.schoolId === currentUser?.schoolId);
+    } else if (!isSuperAdmin && !isSchoolAdmin) {
+      // Deputy: see only teachers in their school
+      list = list.filter((u) => u.role === "teacher" && u.schoolId === currentUser?.schoolId);
+    }
 
-    // Apply Super Admin school filter
+    // Apply Super Admin school filter (only for super admin)
     if (isSuperAdmin && schoolFilter !== "all") {
       list = list.filter((u) => u.schoolId === schoolFilter);
     }
@@ -64,7 +73,7 @@ function TeachersPage() {
     }
 
     return list;
-  }, [users, isSuperAdmin, isSchoolAdmin, schoolFilter, q]);
+  }, [users, isSuperAdmin, isSchoolAdmin, schoolFilter, q, currentUser]);
 
   const pending = useMemo(() => listToDisplay.filter((t) => t.status === "pending"), [listToDisplay]);
   const verified = useMemo(() => listToDisplay.filter((t) => t.status === "verified"), [listToDisplay]);
@@ -244,7 +253,7 @@ function TeachersPage() {
             <CardTitle>Accounts Manager</CardTitle>
             <CardDescription>
               {isSuperAdmin
-                ? "Manage system-wide admin and staff credentials."
+                ? `Manage system-wide admin and staff credentials. Viewing ${listToDisplay.length} user(s).`
                 : "Approve pending teacher requests and view school credentials."}
             </CardDescription>
           </div>
