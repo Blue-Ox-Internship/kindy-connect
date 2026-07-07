@@ -106,37 +106,42 @@ function PupilsPage() {
       return toast.error("Parent / guardian details are required");
     }
 
-    await addPupil({
-      admissionNo: form.admissionNo,
-      firstName: form.firstName,
-      lastName: form.lastName,
-      gender: form.gender,
-      dob: form.dob,
-      classId: form.classId,
-      photo: form.photo || undefined,
-      parentIds: [],
-      parent: {
-        name: form.parentName,
-        phone: form.parentPhone,
-        email: form.parentEmail,
-        relationship: form.parentRelationship,
-      },
-    } as Omit<Pupil, "id" | "active"> & { parent: { name: string; phone: string; email: string; relationship: string } });
-    toast.success("Pupil registered");
-    setOpen(false);
-    setForm({
-      admissionNo: "",
-      firstName: "",
-      lastName: "",
-      gender: "M",
-      dob: "",
-      classId: classes[0]?.id ?? "",
-      parentName: "",
-      parentPhone: "",
-      parentEmail: "",
-      parentRelationship: "Mother",
-      photo: "",
-    });
+    try {
+      await addPupil({
+        admissionNo: form.admissionNo,
+        firstName: form.firstName,
+        lastName: form.lastName,
+        gender: form.gender,
+        dob: form.dob,
+        classId: form.classId,
+        photo: form.photo || undefined,
+        parentIds: [],
+        parent: {
+          name: form.parentName,
+          phone: form.parentPhone,
+          email: form.parentEmail,
+          relationship: form.parentRelationship,
+        },
+      } as Omit<Pupil, "id" | "active"> & { parent: { name: string; phone: string; email: string; relationship: string } });
+      toast.success("Pupil registered successfully and saved to database");
+      setOpen(false);
+      setForm({
+        admissionNo: "",
+        firstName: "",
+        lastName: "",
+        gender: "M",
+        dob: "",
+        classId: classes[0]?.id ?? "",
+        parentName: "",
+        parentPhone: "",
+        parentEmail: "",
+        parentRelationship: "Mother",
+        photo: "",
+      });
+    } catch (error: any) {
+      console.error("Error saving pupil:", error);
+      toast.error(`Failed to save pupil: ${error.message || "Unknown error"}`);
+    }
   };
 
   const openEdit = (pupil: Pupil) => {
