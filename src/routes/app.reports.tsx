@@ -12,6 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Download, FileSpreadsheet, FileText, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useMemo, useEffect } from "react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/app/reports")({
   head: () => ({ meta: [{ title: "Reports - Little Stars" }] }),
@@ -66,6 +69,92 @@ function ReportsPage() {
       return;
     }
     toast.success(`${kind} export prepared (demo)`);
+  };
+
+  const exportToPDF = (reportType: string) => {
+    if (!isAdmin) {
+      toast.error("Only admins can export reports");
+      return;
+    }
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header
+    doc.setFontSize(18);
+    doc.text("Little Stars Kindergarten", pageWidth / 2, 15, { align: "center" });
+    doc.setFontSize(12);
+    doc.text(`${reportType} Attendance Report`, pageWidth / 2, 22, { align: "center" });
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, 28, { align: "center" });
+
+    // Prepare table data
+    const tableData = todayAtt.map((a) => {
+      const p = pupils.find((x) => x.id === a.pupilId);
+      const c = classes.find((cl) => cl.id === p?.classId);
+      return [
+        p ? `${p.firstName} ${p.lastName}` : "Unknown",
+        c?.name || "N/A",
+        a.arrival || "-",
+        a.departure || "-"
+      ];
+    });
+
+    // Create table
+    autoTable(doc, {
+      startY: 35,
+      head: [["Pupil Name", "Class", "Arrival", "Departure"]],
+      body: tableData,
+      theme: "grid",
+      headStyles: { fillColor: [41, 128, 185] },
+      styles: { fontSize: 9 }
+    });
+
+    // Save
+    doc.save(`attendance-report-${today}.pdf`);
+    toast.success("PDF report downloaded");
+  };
+
+  const exportToExcel = (reportType: string) => {
+    if (!isAdmin) {
+      toast.error("Only admins can export reports");
+      return;
+    }
+
+    // Prepare data
+    const data = todayAtt.map((a) => {
+      const p = pupils.find((x) => x.id === a.pupilId);
+      const c = classes.find((cl) => cl.id === p?.classId);
+      return {
+        "Pupil Name": p ? `${p.firstName} ${p.lastName}` : "Unknown",
+        "Admission No": p?.admissionNo || "N/A",
+        "Class": c?.name || "N/A",
+        "Arrival": a.arrival || "-",
+        "Departure": a.departure || "-",
+        "Arrival Transport": a.arrivalTransport || "-",
+        "Departure Transport": a.departureTransport || "-"
+      };
+    });
+
+    // Create workbook
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+
+    // Column widths
+    ws["!cols"] = [
+      { wch: 20 }, // Pupil Name
+      { wch: 12 }, // Admission No
+      { wch: 15 }, // Class
+      { wch: 10 }, // Arrival
+      { wch: 10 }, // Departure
+      { wch: 15 }, // Arrival Transport
+      { wch: 15 }  // Departure Transport
+    ];
+
+    // Save
+    XLSX.writeFile(wb, `attendance-report-${today}.xlsx`);
+    toast.success("Excel report downloaded");
   };
 
   const terms = ["Term 1", "Term 2", "Term 3"];
@@ -140,7 +229,89 @@ function ReportsPage() {
   };
 
   const downloadReportCard = () => {
-    toast.success("Report card downloaded as PDF (demo)");
+    if (!previewPupil) return;
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setFont(undefined, "bold");
+    doc.text("Little Stars Kindergarten", pageWidth / 2, 20, { align: "center" });
+    doc.setFontSize(14);
+    doc.text("Academic Report Card", pageWidth / 2, 28, { align: "center" });
+    
+    // Pupil Info Box
+    doc.setFontSize(10);
+    doc.setFont(undefined, "normal");
+    doc.setFillColor(240, 240, 240);
+    doc.rect(15, 35, pageWidth - 30, 35, "F");
+    
+    doc.setFont(undefined, "bold");
+    doc.text("Pupil Name:", 20, 43);
+    doc.setFont(undefined, "normal");
+    doc.text(`${previewPupil.firstName} ${previewPupil.lastName}`, 60, 43);
+    
+    doc.setFont(undefined, "bold");
+    doc.text("Admission No:", 20, 50);
+    doc.setFont(undefined, "normal");
+    doc.text(previewPupil.admissionNo, 60, 50);
+    
+    doc.setFont(undefined, "bold");
+    doc.text("Class:", 20, 57);
+    doc.setFont(undefined, "normal");
+    doc.text(classes.find((c) => c.id === previewPupil.classId)?.name || "N/A", 60, 57);
+    
+    doc.setFont(undefined, "bold");
+    doc.text("Term:", 20, 64);
+    doc.setFont(undefined, "normal");
+    doc.text(`${selectedTerm} ${selectedYear}`, 60, 64);
+
+    // Marks Table
+    const marksData = previewPupil.marks.map((mark: any) => [
+      mark.subject,
+      `${mark.score}/${mark.maxScore}`,
+      `${((mark.score / mark.maxScore) * 100).toFixed(0)}%`,
+      mark.grade || "-",
+      mark.teacherComment || "-"
+    ]);
+
+    autoTable(doc, {
+      startY: 75,
+      head: [["Subject", "Score", "Percentage", "Grade", "Teacher Comment"]],
+      body: marksData,
+      theme: "grid",
+      headStyles: { fillColor: [41, 128, 185], fontStyle: "bold" },
+      styles: { fontSize: 9 },
+      columnStyles: {
+        4: { cellWidth: 50 }
+      }
+    });
+
+    // Summary Box
+    const finalY = (doc as any).lastAutoTable.finalY || 75;
+    const average = calculateAverage(previewPupil.id);
+    const overallGrade = getOverallGrade(average);
+    
+    doc.setFillColor(230, 240, 255);
+    doc.rect(15, finalY + 10, pageWidth - 30, 20, "F");
+    
+    doc.setFontSize(12);
+    doc.setFont(undefined, "bold");
+    doc.text("Overall Average:", 20, finalY + 18);
+    doc.text(`${average?.toFixed(1)}%`, 70, finalY + 18);
+    
+    doc.text("Overall Grade:", 120, finalY + 18);
+    doc.text(overallGrade, 160, finalY + 18);
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setFont(undefined, "normal");
+    doc.text(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+
+    // Save
+    doc.save(`report-card-${previewPupil.firstName}-${previewPupil.lastName}-${selectedTerm}-${selectedYear}.pdf`);
+    toast.success("Report card downloaded as PDF");
     setPreviewDialogOpen(false);
   };
 
@@ -160,10 +331,10 @@ function ReportsPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Today - {today}</CardTitle>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => exportToast("PDF")} disabled={!isAdmin}>
+                <Button size="sm" variant="outline" onClick={() => exportToPDF("Daily")} disabled={!isAdmin}>
                   <FileText className="h-4 w-4 mr-1" />PDF
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => exportToast("Excel")} disabled={!isAdmin}>
+                <Button size="sm" variant="outline" onClick={() => exportToExcel("Daily")} disabled={!isAdmin}>
                   <FileSpreadsheet className="h-4 w-4 mr-1" />Excel
                 </Button>
               </div>
