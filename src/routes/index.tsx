@@ -24,6 +24,7 @@ function Landing() {
   const { currentUser, login } = useStore();
   const navigate = useNavigate();
   const [assignedId, setAssignedId] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (currentUser) navigate({ to: "/app/dashboard" });
@@ -31,10 +32,27 @@ function Landing() {
 
   const doLogin = async () => {
     if (!assignedId.trim()) return toast.error("Enter your assigned ID");
-    const u = await login(assignedId.trim());
-    if (!u) return toast.error("Invalid ID or account not verified");
-    toast.success(`Welcome, ${u.name.split(" ")[0]}`);
-    navigate({ to: "/app/dashboard" });
+    setIsLoading(true);
+    try {
+      const u = await login(assignedId.trim());
+      if (!u) {
+        toast.error("Invalid ID or account not verified");
+        setIsLoading(false);
+        return;
+      }
+      toast.success(`Welcome, ${u.name.split(" ")[0]}`);
+      navigate({ to: "/app/dashboard" });
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Failed to sign in. Please try again.");
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !isLoading) {
+      doLogin();
+    }
   };
 
   return (
@@ -72,8 +90,19 @@ function Landing() {
             <h2 className="text-2xl font-semibold">Sign in</h2>
             <p className="text-sm text-muted-foreground mb-5">Enter the ID assigned by your admin.</p>
             <div className="space-y-3 mt-4">
-              <div><Label>Assigned ID</Label><Input value={assignedId} onChange={(e) => setAssignedId(e.target.value)} placeholder="kst-001" /></div>
-              <Button className="w-full" onClick={doLogin}>Sign in</Button>
+              <div>
+                <Label>Assigned ID</Label>
+                <Input 
+                  value={assignedId} 
+                  onChange={(e) => setAssignedId(e.target.value)} 
+                  onKeyPress={handleKeyPress}
+                  placeholder="kst-001" 
+                  disabled={isLoading}
+                />
+              </div>
+              <Button className="w-full" onClick={doLogin} disabled={isLoading}>
+                {isLoading ? "Signing in..." : "Sign in"}
+              </Button>
               <p className="text-xs text-muted-foreground text-center">Ask your administrator for your login ID.</p>
             </div>
           </CardContent>
