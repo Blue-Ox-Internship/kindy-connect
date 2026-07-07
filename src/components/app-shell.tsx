@@ -67,8 +67,8 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
       ];
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
-      <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
+    <div className="flex h-screen w-full bg-background overflow-hidden">
+      <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground overflow-y-auto">
         <div className="flex items-center gap-2 px-5 py-5 border-b">
           <div>
             <div className="font-semibold leading-tight truncate max-w-[200px]">
@@ -119,14 +119,14 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         </div>
       </aside>
 
-      <main className="flex-1 min-w-0 overflow-y-auto">
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 backdrop-blur px-6 py-4">
+      <main className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 backdrop-blur px-6 py-4 shrink-0">
           <h1 className="text-2xl font-semibold">{title}</h1>
           <div className="hidden sm:flex items-center gap-2">
             <Badge variant="outline" className="capitalize">{currentUser.role.replace("_", " ")}</Badge>
           </div>
         </header>
-        <div className="p-6">{children}</div>
+        <div className="flex-1 overflow-y-auto p-6">{children}</div>
       </main>
     </div>
   );
