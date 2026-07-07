@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/app/marks")({
   head: () => ({ meta: [{ title: "Marks & Grades - Little Stars" }] }),
@@ -109,10 +109,38 @@ function MarksPage() {
     });
 
     toast.success(`Mark added for ${pupil?.firstName} ${pupil?.lastName}`);
-    setAddDialogOpen(false);
-    setSelectedPupilId("");
+    
+    // Move to next pupil automatically
+    navigateToNextPupil();
+    
+    // Clear form but keep dialog open
     setFormData({ score: "", maxScore: "100", teacherComment: "" });
   };
+
+  const navigateToPreviousPupil = () => {
+    if (!selectedPupilId || classPupils.length === 0) return;
+    const currentIndex = classPupils.findIndex((p) => p.id === selectedPupilId);
+    if (currentIndex > 0) {
+      setSelectedPupilId(classPupils[currentIndex - 1].id);
+      setFormData({ score: "", maxScore: "100", teacherComment: "" });
+    }
+  };
+
+  const navigateToNextPupil = () => {
+    if (!selectedPupilId || classPupils.length === 0) return;
+    const currentIndex = classPupils.findIndex((p) => p.id === selectedPupilId);
+    if (currentIndex < classPupils.length - 1) {
+      setSelectedPupilId(classPupils[currentIndex + 1].id);
+      setFormData({ score: "", maxScore: "100", teacherComment: "" });
+    }
+  };
+
+  const getCurrentPupilIndex = () => {
+    if (!selectedPupilId) return -1;
+    return classPupils.findIndex((p) => p.id === selectedPupilId);
+  };
+
+  const currentPupilIndex = getCurrentPupilIndex();
 
   const handleEditMark = () => {
     if (!editingMark || !formData.score || !formData.maxScore) {
@@ -180,7 +208,32 @@ function MarksPage() {
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label htmlFor="add-pupil">Pupil</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="add-pupil">Pupil</Label>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={navigateToPreviousPupil}
+                          disabled={currentPupilIndex <= 0 || !selectedPupilId}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                          {currentPupilIndex >= 0 ? `${currentPupilIndex + 1} / ${classPupils.length}` : "-"}
+                        </span>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={navigateToNextPupil}
+                          disabled={currentPupilIndex >= classPupils.length - 1 || !selectedPupilId}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
                     <Select value={selectedPupilId} onValueChange={setSelectedPupilId}>
                       <SelectTrigger id="add-pupil">
                         <SelectValue placeholder="Select pupil" />
@@ -229,8 +282,12 @@ function MarksPage() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleAddMark}>Add Mark</Button>
+                  <Button variant="outline" onClick={() => {
+                    setAddDialogOpen(false);
+                    setSelectedPupilId("");
+                    setFormData({ score: "", maxScore: "100", teacherComment: "" });
+                  }}>Close</Button>
+                  <Button onClick={handleAddMark}>Add & Next</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
