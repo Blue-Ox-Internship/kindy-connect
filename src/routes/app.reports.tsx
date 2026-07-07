@@ -23,6 +23,10 @@ function ReportsPage() {
   const today = new Date().toISOString().slice(0, 10);
   const todayAtt = attendance.filter((a) => a.date === today);
 
+  // Check if user is admin (can generate reports)
+  const isAdmin = currentUser?.role === "admin" || currentUser?.role === "deputy" || currentUser?.role === "super_admin";
+  const isTeacher = currentUser?.role === "teacher";
+
   // Super Admin School filtering
   const [superSchoolId, setSuperSchoolId] = useState<string>(schools[0]?.id ?? "");
 
@@ -56,7 +60,13 @@ function ReportsPage() {
   const lateThreshold = "08:00";
   const late = todayAtt.filter((a) => a.arrival && a.arrival > lateThreshold);
 
-  const exportToast = (kind: string) => toast.success(`${kind} export prepared (demo)`);
+  const exportToast = (kind: string) => {
+    if (!isAdmin) {
+      toast.error("Only admins can export reports");
+      return;
+    }
+    toast.success(`${kind} export prepared (demo)`);
+  };
 
   const terms = ["Term 1", "Term 2", "Term 3"];
 
@@ -108,6 +118,11 @@ function ReportsPage() {
   };
 
   const generateAllReportCards = () => {
+    if (!isAdmin) {
+      toast.error("Only admins can generate report cards");
+      return;
+    }
+
     const classPupils = pupils.filter((p) => p.classId === selectedClass && p.active);
     const pupilsWithMarks = classPupils.filter((p) => {
       const pupilMarks = marks.filter(
@@ -145,8 +160,12 @@ function ReportsPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Today - {today}</CardTitle>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => exportToast("PDF")}><FileText className="h-4 w-4 mr-1" />PDF</Button>
-                <Button size="sm" variant="outline" onClick={() => exportToast("Excel")}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
+                <Button size="sm" variant="outline" onClick={() => exportToast("PDF")} disabled={!isAdmin}>
+                  <FileText className="h-4 w-4 mr-1" />PDF
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => exportToast("Excel")} disabled={!isAdmin}>
+                  <FileSpreadsheet className="h-4 w-4 mr-1" />Excel
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -254,11 +273,17 @@ function ReportsPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button onClick={generateAllReportCards}>
+                  <Button onClick={generateAllReportCards} disabled={!isAdmin}>
                     <FileText className="h-4 w-4 mr-2" />
                     Generate All Report Cards
                   </Button>
                 </div>
+
+                {isTeacher && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+                    <strong>Note:</strong> Only administrators can generate report cards. You can preview individual report cards below.
+                  </div>
+                )}
 
                 <div className="border rounded-lg">
                   <Table>
