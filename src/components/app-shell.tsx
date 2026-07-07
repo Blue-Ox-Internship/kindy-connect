@@ -119,7 +119,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         </div>
       </aside>
 
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 min-w-0 overflow-y-auto">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 backdrop-blur px-6 py-4">
           <h1 className="text-2xl font-semibold">{title}</h1>
           <div className="hidden sm:flex items-center gap-2">
