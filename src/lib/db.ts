@@ -2,17 +2,21 @@ import postgres from "postgres";
 
 // Initialize PostgreSQL client.
 // In TanStack Start (running on Nitro), process.env is populated from the .env file.
+// Only create connection on server side (when DATABASE_URL is available)
 const connectionString = process.env.DATABASE_URL;
 
-if (!connectionString) {
+if (!connectionString && typeof window === "undefined") {
   console.warn("WARNING: DATABASE_URL is not set in environment variables!");
 }
 
-export const sql = postgres(connectionString || "", {
-  max: 10,
-  idle_timeout: 20,
-  connect_timeout: 10,
-});
+// Only create the connection if we're on the server (not in browser)
+export const sql = typeof window === "undefined" 
+  ? postgres(connectionString || "", {
+      max: 10,
+      idle_timeout: 20,
+      connect_timeout: 10,
+    })
+  : null as any; // On client side, sql will be null (it should never be called)
 
 /**
  * Deeply converts an object's keys from snake_case to camelCase
