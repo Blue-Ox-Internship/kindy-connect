@@ -43,7 +43,8 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
     ? [
         { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
         { to: "/app/schools", label: "Schools", icon: School },
-        { to: "/app/teachers", label: "Users", icon: Users, badge: pendingCount },
+        { to: "/app/users", label: "Users", icon: Users },
+        { to: "/app/teachers", label: "Teachers", icon: GraduationCap, badge: pendingCount },
         { to: "/app/classes", label: "Classes", icon: GraduationCap },
         { to: "/app/audit", label: "Audit log", icon: ScrollText },
       ]
