@@ -274,7 +274,17 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
   }, [state.selectedSchoolId]);
 
   const currentUser = useMemo(
-    () => state.users.find((u: User) => u.id === state.currentUserId) ?? null,
+    () => {
+      const user = state.users.find((u: User) => u.id === state.currentUserId) ?? null;
+      if (!user && state.currentUserId) {
+        console.error('[MockStore] Current user not found in users array!', {
+          currentUserId: state.currentUserId,
+          usersLoaded: state.users.length,
+          userIds: state.users.map(u => u.id),
+        });
+      }
+      return user;
+    },
     [state.users, state.currentUserId],
   );
 

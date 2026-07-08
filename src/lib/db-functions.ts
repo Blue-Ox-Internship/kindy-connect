@@ -177,8 +177,13 @@ export const getInitialData = createServerFn({ method: "GET" })
       if (isSuperAdmin) {
         console.log('[getInitialData] Loading data for super admin');
         schoolsPromise = sql`SELECT * FROM schools ORDER BY name ASC`;
-        // Load only recent users for super admin (they can view specific schools separately)
-        usersPromise = sql`SELECT * FROM users ORDER BY registered_at DESC LIMIT 30`;
+        // CRITICAL FIX: Always include current user + 29 other recent users
+        // Use UNION to ensure current user is always included
+        usersPromise = sql`
+          (SELECT * FROM users WHERE id = ${userId})
+          UNION
+          (SELECT * FROM users WHERE id != ${userId} ORDER BY registered_at DESC LIMIT 29)
+        `;
         classesPromise = sql`SELECT * FROM classes ORDER BY name ASC LIMIT 50`;
         parentsPromise = sql`SELECT * FROM parents ORDER BY name ASC LIMIT 50`;
         pupilsPromise = sql`
