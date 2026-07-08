@@ -269,14 +269,8 @@ export const getInitialData = createServerFn({ method: "GET" })
         audit: [],
         marks: [],
       };
-    } catch (error) {
-      console.error("Error in getInitialData server function:", error);
-      console.error("Error details:", {
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-        userId,
-      });
-      // Return empty data instead of throwing to allow page to load
+    } catch (err) {
+      console.error("Error in getInitialData:", err);
       return {
         schools: [],
         users: [],
