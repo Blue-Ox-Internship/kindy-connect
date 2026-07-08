@@ -3,6 +3,7 @@ import { AppShell } from "@/components/app-shell";
 import { useStore } from "@/lib/mock-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { InlineLoading } from "@/components/loading-spinner";
 import {
   Select,
   SelectContent,
@@ -40,7 +41,7 @@ export const Route = createFileRoute("/app/marks")({
 });
 
 function MarksPage() {
-  const { currentUser, pupils, classes, marks, addMark, updateMark, deleteMark, schools, loadMarks } =
+  const { currentUser, pupils, classes, marks, addMark, updateMark, deleteMark, schools, loadMarks, isLoadingMarks, isLoadingCore } =
     useStore();
   const isTeacher = currentUser?.role === "teacher";
   const isSchoolAdmin = currentUser?.role === "admin";
@@ -425,52 +426,59 @@ function MarksPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {classPupils.map((p) => {
-                const mark = filteredMarks.find((m) => m.pupilId === p.id);
-                return (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-medium">
-                      {p.firstName} {p.lastName}
-                    </TableCell>
-                    <TableCell>{p.admissionNo}</TableCell>
-                    <TableCell>{mark ? `${mark.score}/${mark.maxScore}` : "-"}</TableCell>
-                    <TableCell>
-                      {mark ? (
-                        <Badge className={getGradeColor(mark.grade || "")}>{mark.grade}</Badge>
-                      ) : (
-                        <Badge variant="secondary">Not graded</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {mark?.teacherComment || "-"}
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      {mark ? (
-                        <>
-                          <Button size="sm" variant="outline" onClick={() => openEditDialog(mark)}>
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDelete(mark.id, `${p.firstName} ${p.lastName}`)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">No mark</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              {classPupils.length === 0 && (
+              {isLoadingCore || isLoadingMarks ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    <InlineLoading text={isLoadingCore ? "Loading pupils..." : "Loading marks..."} />
+                  </TableCell>
+                </TableRow>
+              ) : classPupils.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     No pupils in this class.
                   </TableCell>
                 </TableRow>
+              ) : (
+                classPupils.map((p) => {
+                  const mark = filteredMarks.find((m) => m.pupilId === p.id);
+                  return (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-medium">
+                        {p.firstName} {p.lastName}
+                      </TableCell>
+                      <TableCell>{p.admissionNo}</TableCell>
+                      <TableCell>{mark ? `${mark.score}/${mark.maxScore}` : "-"}</TableCell>
+                      <TableCell>
+                        {mark ? (
+                          <Badge className={getGradeColor(mark.grade || "")}>{mark.grade}</Badge>
+                        ) : (
+                          <Badge variant="secondary">Not graded</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {mark?.teacherComment || "-"}
+                      </TableCell>
+                      <TableCell className="text-right space-x-2">
+                        {mark ? (
+                          <>
+                            <Button size="sm" variant="outline" onClick={() => openEditDialog(mark)}>
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDelete(mark.id, `${p.firstName} ${p.lastName}`)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">No mark</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>

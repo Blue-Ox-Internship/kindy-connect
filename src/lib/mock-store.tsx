@@ -72,6 +72,12 @@ interface Store {
   audit: AuditLog[];
   marks: Mark[];
   schools: School[];
+  // Loading states for progressive data loading
+  isLoadingCore: boolean; // Schools, users, classes, pupils, parents
+  isLoadingAttendance: boolean;
+  isLoadingMarks: boolean;
+  isLoadingNotifications: boolean;
+  isLoadingAudit: boolean;
   login: (id: string) => Promise<User | null>;
   loginAs: (role: Role) => Promise<void>;
   logout: () => void;
@@ -148,6 +154,13 @@ const SCHOOL_CONTEXT_KEY = "kinder.selectedSchoolId";
 
 export function MockStoreProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
+  const [loadingStates, setLoadingStates] = useState({
+    core: true,
+    attendance: false,
+    marks: false,
+    notifications: false,
+    audit: false,
+  });
   const [state, setState] = useState(() => {
     let savedUserId: string | null = null;
     let savedSchoolId: string | null = null;
@@ -176,11 +189,17 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!state.currentUserId) {
       setLoading(false);
+      setLoadingStates(prev => ({ ...prev, core: false }));
       return;
     }
     async function loadData() {
       try {
         console.log('[MockStore] Loading initial data for user:', state.currentUserId);
+        
+        // PERFORMANCE: Set loading to false early so UI can render with loading states
+        // Pages will show their own loading indicators while data loads
+        setLoading(false);
+        
         const data = await getInitialData({ userId: state.currentUserId });
         console.log('[MockStore] Loaded data:', {
           schools: data.schools?.length || 0,
@@ -202,6 +221,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
           audit: [],
           marks: [],
         }));
+        setLoadingStates(prev => ({ ...prev, core: false }));
       } catch (err) {
         console.error("Failed to load live database data:", err);
         // Even on error, allow the app to load with empty data
@@ -217,18 +237,11 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
           audit: [],
           marks: [],
         }));
-      } finally {
-        setLoading(false);
+        setLoadingStates(prev => ({ ...prev, core: false }));
       }
     }
     
-    // Set a timeout to ensure loading doesn't block forever
-    const timeout = setTimeout(() => {
-      console.warn('[MockStore] Loading timeout - forcing page load');
-      setLoading(false);
-    }, 10000); // 10 second timeout
-    
-    loadData().finally(() => clearTimeout(timeout));
+    loadData();
   }, []); // Run only on mount
 
   // Refresh function to reload data from database
@@ -406,11 +419,29 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     audit: filteredAudit,
     marks: filteredMarks,
     schools: state.schools,
+    // Loading states for progressive data loading
+    isLoadingCore: loadingStates.core,
+    isLoadingAttendance: loadingStates.attendance,
+    isLoadingMarks: loadingStates.marks,
+    isLoadingNotifications: loadingStates.notifications,
+    isLoadingAudit: loadingStates.audit,
 
     login: async (id) => {
+      console.log('[MockStore] Login attempt for ID:', id);
       const u = await loginUser({ data: { id } });
       if (u) {
+        console.log('[MockStore] User found:', u.name, u.id);
         const data = await getInitialData({ userId: u.id });
+        console.log('[MockStore] Initial data loaded, users count:', data.users.length);
+        
+        // Verify the logged-in user exists in the users array
+        const userExistsInData = data.users.find(user => user.id === u.id);
+        if (!userExistsInData) {
+          console.error('[MockStore] CRITICAL: Logged-in user not in users data!', u.id);
+        } else {
+          console.log('[MockStore] ✓ Logged-in user found in users data');
+        }
+        
         setState((s) => ({
           ...s,
           currentUserId: u.id,
@@ -425,6 +456,9 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
           audit: [],
           marks: [],
         }));
+        console.log('[MockStore] State updated with currentUserId:', u.id);
+      } else {
+        console.log('[MockStore] User not found or not verified');
       }
       return u;
     },
@@ -448,6 +482,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     loadAttendance: async (limit = 200) => {
       if (!state.currentUserId) return;
       try {
+        setLoadingStates(prev => ({ ...prev, attendance: true }));
         const data = await getAttendanceData({
           userId: state.currentUserId,
           schoolId: state.selectedSchoolId || undefined,
@@ -456,12 +491,15 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, attendance: data }));
       } catch (err) {
         console.error("Failed to load attendance data:", err);
+      } finally {
+        setLoadingStates(prev => ({ ...prev, attendance: false }));
       }
     },
 
     loadMarks: async (limit = 200) => {
       if (!state.currentUserId) return;
       try {
+        setLoadingStates(prev => ({ ...prev, marks: true }));
         const data = await getMarksData({
           userId: state.currentUserId,
           schoolId: state.selectedSchoolId || undefined,
@@ -470,12 +508,15 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, marks: data }));
       } catch (err) {
         console.error("Failed to load marks data:", err);
+      } finally {
+        setLoadingStates(prev => ({ ...prev, marks: false }));
       }
     },
 
     loadNotifications: async (limit = 100) => {
       if (!state.currentUserId) return;
       try {
+        setLoadingStates(prev => ({ ...prev, notifications: true }));
         const data = await getNotificationsData({
           userId: state.currentUserId,
           schoolId: state.selectedSchoolId || undefined,
@@ -484,12 +525,15 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, notifications: data }));
       } catch (err) {
         console.error("Failed to load notifications data:", err);
+      } finally {
+        setLoadingStates(prev => ({ ...prev, notifications: false }));
       }
     },
 
     loadAuditLogs: async (limit = 100) => {
       if (!state.currentUserId) return;
       try {
+        setLoadingStates(prev => ({ ...prev, audit: true }));
         const data = await getAuditLogsData({
           userId: state.currentUserId,
           schoolId: state.selectedSchoolId || undefined,
@@ -498,6 +542,8 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, audit: data }));
       } catch (err) {
         console.error("Failed to load audit logs data:", err);
+      } finally {
+        setLoadingStates(prev => ({ ...prev, audit: false }));
       }
     },
 

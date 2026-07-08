@@ -33,9 +33,13 @@ function Landing() {
   const [assignedId, setAssignedId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Only redirect if we have a current user and we're not in the middle of logging in
   useEffect(() => {
-    if (currentUser) navigate({ to: "/app/dashboard" });
-  }, [currentUser, navigate]);
+    if (currentUser && !isLoading) {
+      console.log('[Landing] Current user detected, redirecting to dashboard:', currentUser.id);
+      navigate({ to: "/app/dashboard" });
+    }
+  }, [currentUser, navigate, isLoading]);
 
   const doLogin = async () => {
     if (!assignedId.trim()) return toast.error("Enter your assigned ID");
@@ -43,12 +47,13 @@ function Landing() {
     try {
       const u = await login(assignedId.trim());
       if (!u) {
-        toast.error("Invalid ID or account not verified");
+        toast.error(`Login ID "${assignedId.trim()}" not found or account not verified. Please check with your administrator.`);
         setIsLoading(false);
         return;
       }
-      toast.success(`Welcome, ${u.name.split(" ")[0]}`);
-      navigate({ to: "/app/dashboard" });
+      toast.success(`Welcome back, ${u.name.split(" ")[0]}!`);
+      // State update will trigger the useEffect above which will navigate
+      setIsLoading(false);
     } catch (error) {
       console.error("Login error:", error);
       toast.error("Failed to sign in. Please try again.");

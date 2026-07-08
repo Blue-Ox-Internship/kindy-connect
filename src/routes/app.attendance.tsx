@@ -3,6 +3,7 @@ import { AppShell } from "@/components/app-shell";
 import { useStore } from "@/lib/mock-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { InlineLoading } from "@/components/loading-spinner";
 import {
   Select,
   SelectContent,
@@ -39,7 +40,7 @@ export const Route = createFileRoute("/app/attendance")({
 });
 
 function AttendancePage() {
-  const { currentUser, pupils, classes, attendance, markArrival, markDeparture, schools, loadAttendance } =
+  const { currentUser, pupils, classes, attendance, markArrival, markDeparture, schools, loadAttendance, isLoadingAttendance, isLoadingCore } =
     useStore();
   const today = new Date().toISOString().slice(0, 10);
   const isTeacher = currentUser?.role === "teacher";
@@ -257,7 +258,20 @@ function AttendancePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {classPupils.map((p) => {
+              {isLoadingCore || isLoadingAttendance ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    <InlineLoading text={isLoadingCore ? "Loading pupils..." : "Loading attendance..."} />
+                  </TableCell>
+                </TableRow>
+              ) : classPupils.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    No pupils in this class.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                classPupils.map((p) => {
                 const att = dayAtt.find((a) => a.pupilId === p.id);
                 const isToday = date === today;
                 return (
@@ -369,13 +383,7 @@ function AttendancePage() {
                     </TableCell>
                   </TableRow>
                 );
-              })}
-              {classPupils.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    No pupils in this class.
-                  </TableCell>
-                </TableRow>
+              })
               )}
             </TableBody>
           </Table>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { InlineLoading } from "@/components/loading-spinner";
 import {
   Dialog,
   DialogContent,
@@ -39,7 +40,7 @@ export const Route = createFileRoute("/app/pupils")({
 });
 
 function PupilsPage() {
-  const { pupils, classes, parents, addPupil, updatePupil, deactivatePupil } = useStore();
+  const { pupils, classes, parents, addPupil, updatePupil, deactivatePupil, isLoadingCore } = useStore();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -371,21 +372,31 @@ function PupilsPage() {
             </Dialog>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Photo</TableHead>
-                <TableHead>Adm. No</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Gender</TableHead>
-                <TableHead>Guardians</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((p) => (
+          {isLoadingCore ? (
+            <InlineLoading text="Loading pupils..." />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Photo</TableHead>
+                  <TableHead>Adm. No</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Class</TableHead>
+                  <TableHead>Gender</TableHead>
+                  <TableHead>Guardians</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      No pupils found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filtered.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>
                     {p.photo ? (
@@ -429,9 +440,11 @@ function PupilsPage() {
                     )}
                   </TableCell>
                 </TableRow>
-              ))}
+              ))
+            )}
             </TableBody>
           </Table>
+          )}
         </CardContent>
       </Card>
 
