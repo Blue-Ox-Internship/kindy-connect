@@ -103,6 +103,7 @@ graph LR
 **Location**: `src/routes/app.pupils.tsx` (within Dialog component)
 
 **Props Interface**:
+
 ```typescript
 interface RegisterButtonProps {
   onClick: () => void | Promise<void>;
@@ -113,12 +114,14 @@ interface RegisterButtonProps {
 ```
 
 **Responsibilities**:
+
 - Render the primary action button with appropriate styling
 - Display loading state during submission
 - Manage disabled state based on form validity and submission status
 - Trigger form validation and submission on click
 
 **State Management**:
+
 ```typescript
 const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 const [isDisabled, setIsDisabled] = useState<boolean>(false);
@@ -129,12 +132,13 @@ const [isDisabled, setIsDisabled] = useState<boolean>(false);
 **Location**: `src/lib/validation/pupil-registration.ts` (new file)
 
 **Interface**:
+
 ```typescript
 interface PupilFormData {
   admissionNo: string;
   firstName: string;
   lastName: string;
-  gender: 'M' | 'F';
+  gender: "M" | "F";
   dob: string;
   classId: string;
   parentName: string;
@@ -158,23 +162,24 @@ interface ValidationService {
 ```
 
 **Zod Schema**:
+
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
 const phoneRegex = /^\+?\d{10,15}$/;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const pupilRegistrationSchema = z.object({
-  admissionNo: z.string().min(1, 'Admission number is required'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  gender: z.enum(['M', 'F']),
-  dob: z.string().min(1, 'Date of birth is required'),
-  classId: z.string().min(1, 'Class is required'),
-  parentName: z.string().min(1, 'Parent/guardian name is required'),
-  parentPhone: z.string().regex(phoneRegex, 'Invalid phone number format'),
-  parentEmail: z.string().regex(emailRegex, 'Invalid email format'),
-  parentRelationship: z.string().min(1, 'Relationship is required'),
+  admissionNo: z.string().min(1, "Admission number is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  gender: z.enum(["M", "F"]),
+  dob: z.string().min(1, "Date of birth is required"),
+  classId: z.string().min(1, "Class is required"),
+  parentName: z.string().min(1, "Parent/guardian name is required"),
+  parentPhone: z.string().regex(phoneRegex, "Invalid phone number format"),
+  parentEmail: z.string().regex(emailRegex, "Invalid email format"),
+  parentRelationship: z.string().min(1, "Relationship is required"),
 });
 
 export type PupilRegistrationData = z.infer<typeof pupilRegistrationSchema>;
@@ -185,6 +190,7 @@ export type PupilRegistrationData = z.infer<typeof pupilRegistrationSchema>;
 **Location**: `src/lib/handlers/pupil-registration.ts` (new file)
 
 **Interface**:
+
 ```typescript
 interface SubmissionHandler {
   handleRegistration(
@@ -194,12 +200,12 @@ interface SubmissionHandler {
       onSuccess: () => void;
       onError: (error: Error) => void;
       onFinally: () => void;
-    }
+    },
   ): Promise<void>;
 }
 
 interface RegistrationError extends Error {
-  code: 'VALIDATION_ERROR' | 'DATABASE_ERROR' | 'NETWORK_ERROR' | 'AUTH_ERROR';
+  code: "VALIDATION_ERROR" | "DATABASE_ERROR" | "NETWORK_ERROR" | "AUTH_ERROR";
   details?: Record<string, any>;
 }
 ```
@@ -207,11 +213,14 @@ interface RegistrationError extends Error {
 ### 4. Store Integration
 
 **Existing Interface** (from mock-store.tsx):
+
 ```typescript
 interface Store {
-  addPupil(data: Omit<Pupil, "id" | "active"> & { 
-    parent?: Omit<Parent, "id"> 
-  }): Promise<void>;
+  addPupil(
+    data: Omit<Pupil, "id" | "active"> & {
+      parent?: Omit<Parent, "id">;
+    },
+  ): Promise<void>;
   currentUser: User | null;
   pupils: Pupil[];
   parents: Parent[];
@@ -221,6 +230,7 @@ interface Store {
 
 **Store Method Enhancement**:
 The existing `addPupil` method will be utilized without modification. It already:
+
 - Creates parent record if provided
 - Creates pupil record with parent association
 - Logs audit trail
@@ -232,6 +242,7 @@ The existing `addPupil` method will be utilized without modification. It already
 **Location**: Inline within `PupilsPage` component
 
 **Interface**:
+
 ```typescript
 interface AccessControl {
   canRegisterPupils(user: User | null): boolean;
@@ -239,9 +250,9 @@ interface AccessControl {
 
 const canRegisterPupils = (user: User | null): boolean => {
   if (!user) return false;
-  
-  const allowedRoles: Role[] = ['super_admin', 'school_admin', 'teacher'];
-  return allowedRoles.includes(user.role) && user.status === 'verified';
+
+  const allowedRoles: Role[] = ["super_admin", "school_admin", "teacher"];
+  return allowedRoles.includes(user.role) && user.status === "verified";
 };
 ```
 
@@ -251,16 +262,16 @@ const canRegisterPupils = (user: User | null): boolean => {
 
 ```typescript
 interface Pupil {
-  id: string;                    // Unique identifier (UUID)
-  admissionNo: string;           // Unique admission number
-  firstName: string;             // Pupil first name
-  lastName: string;              // Pupil last name
-  gender: 'M' | 'F';            // Gender
-  dob: string;                   // Date of birth (ISO 8601)
-  classId: string;               // Foreign key to ClassRoom
-  parentIds: string[];           // Foreign keys to Parent records
-  schoolId: string;              // Foreign key to School
-  active: boolean;               // Active status (default: true)
+  id: string; // Unique identifier (UUID)
+  admissionNo: string; // Unique admission number
+  firstName: string; // Pupil first name
+  lastName: string; // Pupil last name
+  gender: "M" | "F"; // Gender
+  dob: string; // Date of birth (ISO 8601)
+  classId: string; // Foreign key to ClassRoom
+  parentIds: string[]; // Foreign keys to Parent records
+  schoolId: string; // Foreign key to School
+  active: boolean; // Active status (default: true)
 }
 ```
 
@@ -268,12 +279,12 @@ interface Pupil {
 
 ```typescript
 interface Parent {
-  id: string;                    // Unique identifier (UUID)
-  name: string;                  // Full name
-  phone: string;                 // Phone number
-  email: string;                 // Email address
-  relationship: string;          // Relationship to pupil (Mother/Father/Guardian)
-  schoolId: string;              // Foreign key to School
+  id: string; // Unique identifier (UUID)
+  name: string; // Full name
+  phone: string; // Phone number
+  email: string; // Email address
+  relationship: string; // Relationship to pupil (Mother/Father/Guardian)
+  schoolId: string; // Foreign key to School
 }
 ```
 
@@ -284,7 +295,7 @@ interface PupilRegistrationFormState {
   admissionNo: string;
   firstName: string;
   lastName: string;
-  gender: 'M' | 'F';
+  gender: "M" | "F";
   dob: string;
   classId: string;
   parentName: string;
@@ -294,16 +305,16 @@ interface PupilRegistrationFormState {
 }
 
 const defaultFormState: PupilRegistrationFormState = {
-  admissionNo: '',
-  firstName: '',
-  lastName: '',
-  gender: 'M',
-  dob: '',
-  classId: '',
-  parentName: '',
-  parentPhone: '',
-  parentEmail: '',
-  parentRelationship: 'Mother',
+  admissionNo: "",
+  firstName: "",
+  lastName: "",
+  gender: "M",
+  dob: "",
+  classId: "",
+  parentName: "",
+  parentPhone: "",
+  parentEmail: "",
+  parentRelationship: "Mother",
 };
 ```
 
@@ -316,37 +327,37 @@ interface ValidationErrors {
 
 // Example:
 const validationErrors: ValidationErrors = {
-  admissionNo: 'Admission number already exists',
-  parentEmail: 'Invalid email format',
-  parentPhone: 'Invalid phone number format',
+  admissionNo: "Admission number already exists",
+  parentEmail: "Invalid email format",
+  parentPhone: "Invalid phone number format",
 };
 ```
 
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 ### Property 1: Required Field Validation Completeness
 
-*For any* pupil registration form submission, if any required field (admissionNo, firstName, lastName, dob, classId, parentName, parentPhone, parentEmail, parentRelationship) is empty or missing, the validation SHALL fail and return an error identifying all missing required fields.
+_For any_ pupil registration form submission, if any required field (admissionNo, firstName, lastName, dob, classId, parentName, parentPhone, parentEmail, parentRelationship) is empty or missing, the validation SHALL fail and return an error identifying all missing required fields.
 
 **Validates: Requirements 2.1, 2.2**
 
 ### Property 2: Admission Number Uniqueness Validation
 
-*For any* admission number and list of existing pupils, if the admission number already exists in the system, the validation SHALL fail with an error message indicating the admission number is already in use, and if the admission number is unique, validation SHALL pass this check.
+_For any_ admission number and list of existing pupils, if the admission number already exists in the system, the validation SHALL fail with an error message indicating the admission number is already in use, and if the admission number is unique, validation SHALL pass this check.
 
 **Validates: Requirements 2.3, 2.4**
 
 ### Property 3: Email Format Validation
 
-*For any* string input in the parent email field, the validation SHALL correctly identify whether the string matches valid email format (contains @ symbol, has characters before and after @, has domain extension) and reject invalid formats with an appropriate error message.
+_For any_ string input in the parent email field, the validation SHALL correctly identify whether the string matches valid email format (contains @ symbol, has characters before and after @, has domain extension) and reject invalid formats with an appropriate error message.
 
 **Validates: Requirements 2.5, 2.6**
 
 ### Property 4: Phone Number Format Validation
 
-*For any* string input in the parent phone field, the validation SHALL correctly identify whether the string matches valid phone number format (10-15 digits, optional + prefix, no letters or special characters except +) and reject invalid formats with an appropriate error message.
+_For any_ string input in the parent phone field, the validation SHALL correctly identify whether the string matches valid phone number format (10-15 digits, optional + prefix, no letters or special characters except +) and reject invalid formats with an appropriate error message.
 
 **Validates: Requirements 2.7, 2.8**
 
@@ -360,19 +371,21 @@ const validationErrors: ValidationErrors = {
 **Handling Strategy**: Display field-specific error messages, keep form data intact, keep form open
 
 **Examples**:
+
 - Empty required fields
 - Invalid email format
 - Invalid phone format
 - Duplicate admission number
 
 **User Experience**:
+
 ```typescript
 // Show error toast with general message
 toast.error("Please correct the validation errors");
 
 // Display field-specific errors inline
-<Input 
-  error={errors.parentEmail} 
+<Input
+  error={errors.parentEmail}
   aria-invalid={!!errors.parentEmail}
 />
 ```
@@ -383,19 +396,22 @@ toast.error("Please correct the validation errors");
 **Handling Strategy**: Display user-friendly error message, preserve form data, log detailed error server-side
 
 **Examples**:
+
 - Database connection failure
 - Constraint violation
 - Transaction timeout
 
 **User Experience**:
+
 ```typescript
 toast.error("Failed to save pupil record. Please try again.");
 // Form data preserved for retry
 ```
 
 **Error Logging**:
+
 ```typescript
-console.error('[PupilRegistration] Database error:', {
+console.error("[PupilRegistration] Database error:", {
   error: error.message,
   code: error.code,
   timestamp: new Date().toISOString(),
@@ -410,11 +426,13 @@ console.error('[PupilRegistration] Database error:', {
 **Handling Strategy**: Display connectivity error message, preserve form data, suggest retry
 
 **Examples**:
+
 - Network timeout
 - Server unreachable
 - Request aborted
 
 **User Experience**:
+
 ```typescript
 toast.error("Connection problem. Please check your internet and try again.");
 // Form data preserved for retry
@@ -426,15 +444,17 @@ toast.error("Connection problem. Please check your internet and try again.");
 **Handling Strategy**: Display access denied message, redirect to login if unauthenticated
 
 **Examples**:
+
 - User not authenticated
 - User lacks pupil registration permission
 - Session expired
 
 **User Experience**:
+
 ```typescript
 // For unauthenticated
 toast.error("Please log in to register pupils");
-router.navigate({ to: '/login' });
+router.navigate({ to: "/login" });
 
 // For unauthorized
 toast.error("You don't have permission to register pupils");
@@ -451,10 +471,10 @@ const [preservedForm, setPreservedForm] = useState<PupilRegistrationFormState | 
 const handleError = (error: RegistrationError) => {
   // Preserve current form state
   setPreservedForm(form);
-  
+
   // Display error
   showErrorToast(error);
-  
+
   // Re-enable submit button for retry
   setIsSubmitting(false);
 };
@@ -483,6 +503,7 @@ This feature requires a dual testing approach combining example-based tests for 
 #### Component Tests
 
 **Register Button State Management** (Requirements 1.1-1.4, 4.1-4.3):
+
 - Button renders with correct label
 - Button positioned at form bottom
 - Button displays primary styling
@@ -491,11 +512,13 @@ This feature requires a dual testing approach combining example-based tests for 
 - Button re-enabled after completion or error
 
 **Form Reset Behavior** (Requirements 6.1-6.3):
+
 - Form clears after successful submission
 - All fields reset to default state
 - Multiple sequential registrations supported
 
 **Access Control** (Requirements 7.1-7.2):
+
 - Button hidden for unauthenticated users
 - Button hidden for users without permissions
 - Button visible for authorized users
@@ -503,6 +526,7 @@ This feature requires a dual testing approach combining example-based tests for 
 #### Validation Unit Tests
 
 **Required Fields Validation** (Requirements 2.1-2.2):
+
 - Empty admissionNo rejected
 - Empty firstName rejected
 - Empty lastName rejected
@@ -512,6 +536,7 @@ This feature requires a dual testing approach combining example-based tests for 
 - All required fields validation combined
 
 **Error Message Tests**:
+
 - Each validation error returns appropriate message
 - Multiple errors reported together
 
@@ -526,35 +551,35 @@ This feature requires a dual testing approach combining example-based tests for 
 **Feature: pupil-registration-button, Property 1: Required field validation SHALL identify all missing required fields**
 
 ```typescript
-import fc from 'fast-check';
+import fc from "fast-check";
 
-describe('Property 1: Required Field Validation', () => {
-  it('should reject forms with any required field missing', () => {
+describe("Property 1: Required Field Validation", () => {
+  it("should reject forms with any required field missing", () => {
     fc.assert(
       fc.property(
         fc.record({
-          admissionNo: fc.option(fc.string(), { nil: '' }),
-          firstName: fc.option(fc.string(), { nil: '' }),
-          lastName: fc.option(fc.string(), { nil: '' }),
-          dob: fc.option(fc.string(), { nil: '' }),
-          classId: fc.option(fc.string(), { nil: '' }),
-          parentName: fc.option(fc.string(), { nil: '' }),
-          parentPhone: fc.option(fc.string(), { nil: '' }),
-          parentEmail: fc.option(fc.string(), { nil: '' }),
-          parentRelationship: fc.option(fc.string(), { nil: '' }),
+          admissionNo: fc.option(fc.string(), { nil: "" }),
+          firstName: fc.option(fc.string(), { nil: "" }),
+          lastName: fc.option(fc.string(), { nil: "" }),
+          dob: fc.option(fc.string(), { nil: "" }),
+          classId: fc.option(fc.string(), { nil: "" }),
+          parentName: fc.option(fc.string(), { nil: "" }),
+          parentPhone: fc.option(fc.string(), { nil: "" }),
+          parentEmail: fc.option(fc.string(), { nil: "" }),
+          parentRelationship: fc.option(fc.string(), { nil: "" }),
         }),
         (formData) => {
           const result = validateRequiredFields(formData);
-          
-          const hasEmptyField = Object.values(formData).some(v => !v || v.trim() === '');
-          
+
+          const hasEmptyField = Object.values(formData).some((v) => !v || v.trim() === "");
+
           if (hasEmptyField) {
             expect(result.isValid).toBe(false);
             expect(Object.keys(result.errors).length).toBeGreaterThan(0);
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     );
   });
 });
@@ -565,29 +590,31 @@ describe('Property 1: Required Field Validation', () => {
 **Feature: pupil-registration-button, Property 2: Admission number uniqueness SHALL be correctly validated**
 
 ```typescript
-describe('Property 2: Admission Number Uniqueness', () => {
-  it('should detect duplicate admission numbers', () => {
+describe("Property 2: Admission Number Uniqueness", () => {
+  it("should detect duplicate admission numbers", () => {
     fc.assert(
       fc.property(
         fc.string({ minLength: 1, maxLength: 20 }),
-        fc.array(fc.record({
-          id: fc.uuid(),
-          admissionNo: fc.string({ minLength: 1, maxLength: 20 }),
-        })),
+        fc.array(
+          fc.record({
+            id: fc.uuid(),
+            admissionNo: fc.string({ minLength: 1, maxLength: 20 }),
+          }),
+        ),
         (testAdmissionNo, existingPupils) => {
-          const isDuplicate = existingPupils.some(p => p.admissionNo === testAdmissionNo);
+          const isDuplicate = existingPupils.some((p) => p.admissionNo === testAdmissionNo);
           const result = validateAdmissionNumber(testAdmissionNo, existingPupils);
-          
+
           if (isDuplicate) {
             expect(result.isValid).toBe(false);
-            expect(result.errors.admissionNo).toContain('already exists');
+            expect(result.errors.admissionNo).toContain("already exists");
           } else {
             expect(result.isValid).toBe(true);
             expect(result.errors.admissionNo).toBeUndefined();
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     );
   });
 });
@@ -598,32 +625,32 @@ describe('Property 2: Admission Number Uniqueness', () => {
 **Feature: pupil-registration-button, Property 3: Email format validation SHALL correctly identify valid and invalid emails**
 
 ```typescript
-describe('Property 3: Email Format Validation', () => {
-  it('should validate email formats correctly', () => {
+describe("Property 3: Email Format Validation", () => {
+  it("should validate email formats correctly", () => {
     fc.assert(
       fc.property(
         fc.oneof(
           fc.emailAddress(), // Valid emails
           fc.string(), // Random strings
-          fc.constant(''), // Empty
-          fc.constant('invalid@'), // Missing domain
-          fc.constant('@invalid.com'), // Missing local part
-          fc.constant('no-at-sign.com'), // No @ symbol
+          fc.constant(""), // Empty
+          fc.constant("invalid@"), // Missing domain
+          fc.constant("@invalid.com"), // Missing local part
+          fc.constant("no-at-sign.com"), // No @ symbol
         ),
         (email) => {
           const result = validateEmail(email);
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           const isValidFormat = emailRegex.test(email);
-          
+
           if (isValidFormat) {
             expect(result.isValid).toBe(true);
           } else {
             expect(result.isValid).toBe(false);
             expect(result.errors.parentEmail).toBeDefined();
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     );
   });
 });
@@ -634,14 +661,14 @@ describe('Property 3: Email Format Validation', () => {
 **Feature: pupil-registration-button, Property 4: Phone number format validation SHALL correctly identify valid and invalid phone numbers**
 
 ```typescript
-describe('Property 4: Phone Number Format Validation', () => {
-  it('should validate phone number formats correctly', () => {
+describe("Property 4: Phone Number Format Validation", () => {
+  it("should validate phone number formats correctly", () => {
     fc.assert(
       fc.property(
         fc.oneof(
           fc.stringMatching(/^\+?\d{10,15}$/), // Valid phones
           fc.string(), // Random strings
-          fc.constant(''), // Empty
+          fc.constant(""), // Empty
           fc.stringMatching(/^\d{1,9}$/), // Too short
           fc.stringMatching(/^\d{16,}$/), // Too long
           fc.stringMatching(/^[a-zA-Z]+$/), // Letters only
@@ -651,16 +678,16 @@ describe('Property 4: Phone Number Format Validation', () => {
           const result = validatePhoneNumber(phone);
           const phoneRegex = /^\+?\d{10,15}$/;
           const isValidFormat = phoneRegex.test(phone);
-          
+
           if (isValidFormat) {
             expect(result.isValid).toBe(true);
           } else {
             expect(result.isValid).toBe(false);
             expect(result.errors.parentPhone).toBeDefined();
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     );
   });
 });
@@ -673,6 +700,7 @@ describe('Property 4: Phone Number Format Validation', () => {
 #### Database Integration Tests (Requirements 3.1-3.5)
 
 **Successful Registration**:
+
 - Test with 2-3 example pupils
 - Verify pupil record created with all fields
 - Verify parent record created and associated
@@ -680,11 +708,13 @@ describe('Property 4: Phone Number Format Validation', () => {
 - Verify success message displayed
 
 **Database Error Handling** (Requirement 5.1):
+
 - Mock database failure
 - Verify error message displayed
 - Verify form data preserved
 
 **Network Error Handling** (Requirement 5.2):
+
 - Mock network timeout
 - Verify connection error message
 - Verify form data preserved
@@ -692,6 +722,7 @@ describe('Property 4: Phone Number Format Validation', () => {
 #### Authorization Integration Tests (Requirements 7.3-7.4)
 
 **Backend Auth Verification**:
+
 - Test with authenticated, authorized user (success)
 - Test with authenticated, unauthorized user (rejection)
 - Test with unauthenticated user (rejection)
@@ -700,6 +731,7 @@ describe('Property 4: Phone Number Format Validation', () => {
 #### End-to-End Flow Tests
 
 **Complete Registration Flow**:
+
 1. Open form as authorized user
 2. Fill all fields with valid data
 3. Click register button
@@ -709,6 +741,7 @@ describe('Property 4: Phone Number Format Validation', () => {
 7. Verify new pupil in list
 
 **Multiple Sequential Registrations** (Requirement 6.3):
+
 1. Complete first registration
 2. Immediately start second registration
 3. Verify form is ready for new data
@@ -718,45 +751,42 @@ describe('Property 4: Phone Number Format Validation', () => {
 ### Test Data Generation
 
 **Valid Test Pupils**:
+
 ```typescript
 const validPupilData: PupilFormData[] = [
   {
-    admissionNo: 'ADM001',
-    firstName: 'John',
-    lastName: 'Doe',
-    gender: 'M',
-    dob: '2018-05-15',
-    classId: 'class-001',
-    parentName: 'Jane Doe',
-    parentPhone: '+254712345678',
-    parentEmail: 'jane.doe@example.com',
-    parentRelationship: 'Mother',
+    admissionNo: "ADM001",
+    firstName: "John",
+    lastName: "Doe",
+    gender: "M",
+    dob: "2018-05-15",
+    classId: "class-001",
+    parentName: "Jane Doe",
+    parentPhone: "+254712345678",
+    parentEmail: "jane.doe@example.com",
+    parentRelationship: "Mother",
   },
   // Additional examples...
 ];
 ```
 
 **Invalid Test Cases**:
+
 ```typescript
-const invalidEmailCases = [
-  'plaintext',
-  '@example.com',
-  'user@',
-  'user @example.com',
-  '',
-];
+const invalidEmailCases = ["plaintext", "@example.com", "user@", "user @example.com", ""];
 
 const invalidPhoneCases = [
-  '123', // Too short
-  'abcdefghij', // Letters
-  '+254 712 345 678', // Spaces
-  '', // Empty
+  "123", // Too short
+  "abcdefghij", // Letters
+  "+254 712 345 678", // Spaces
+  "", // Empty
 ];
 ```
 
 ### Testing Execution
 
 **Test Commands**:
+
 ```bash
 # Run all tests
 npm run test
@@ -772,6 +802,7 @@ npm run test -- --grep "Integration"
 ```
 
 **CI/CD Integration**:
+
 - All tests run on pull request
 - Property tests run with 100 iterations in CI
 - Coverage reports generated and tracked
@@ -782,12 +813,14 @@ npm run test -- --grep "Integration"
 ### Library Selection: fast-check
 
 **Rationale**: fast-check is the recommended property-based testing library for TypeScript/JavaScript projects. It provides:
+
 - Comprehensive generator library (strings, numbers, emails, records, arrays)
 - Shrinking capability to find minimal failing cases
 - Good TypeScript support
 - Active maintenance and community
 
 **Installation**:
+
 ```bash
 npm install --save-dev fast-check @types/fast-check
 ```
@@ -795,6 +828,7 @@ npm install --save-dev fast-check @types/fast-check
 ### Validation Implementation
 
 The validation logic will be extracted into a separate validation service to:
+
 - Enable easier property-based testing of pure functions
 - Improve code reusability
 - Separate concerns (validation vs UI state management)
@@ -803,6 +837,7 @@ The validation logic will be extracted into a separate validation service to:
 ### Existing Code Integration
 
 The register button functionality is currently implemented inline within the `PupilsPage` component. The refactoring will:
+
 1. Extract validation logic to `src/lib/validation/pupil-registration.ts`
 2. Extract submission handler to `src/lib/handlers/pupil-registration.ts`
 3. Maintain existing UI structure and user experience
@@ -816,4 +851,3 @@ The register button functionality is currently implemented inline within the `Pu
 3. **Phase 3**: Refactor existing component to use new services
 4. **Phase 4**: Add comprehensive test coverage
 5. **Phase 5**: Verify all requirements met
-

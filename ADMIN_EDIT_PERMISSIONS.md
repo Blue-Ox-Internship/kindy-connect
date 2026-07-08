@@ -9,6 +9,7 @@ School Admins can edit everything within their assigned school. This document tr
 ### ✅ Fully Implemented
 
 #### 1. **Classes** (`/app/classes`)
+
 - ✅ Edit class name
 - ✅ Edit assigned teacher
 - ✅ Delete class
@@ -16,12 +17,14 @@ School Admins can edit everything within their assigned school. This document tr
 - **Functions**: `updateClass()`, `deleteClass()`
 
 #### 2. **Marks** (`/app/marks`)
+
 - ✅ Edit mark details (score, grade, teacher comment)
 - ✅ Delete marks
 - **Location**: `src/routes/app.marks.tsx`
 - **Functions**: `updateMark()`, `deleteMark()`
 
 #### 3. **Pupils** (`/app/pupils`)
+
 - ✅ Edit pupil details (admission no, name, gender, DOB, class)
 - ✅ Deactivate pupils
 - **Location**: `src/routes/app.pupils.tsx`
@@ -29,6 +32,7 @@ School Admins can edit everything within their assigned school. This document tr
 - **Status**: ✅ **JUST ADDED** - Edit button and dialog now available
 
 #### 4. **Users/Teachers** (`/app/teachers`)
+
 - ✅ Create new users (admin, deputy, teacher)
 - ✅ Approve pending teachers
 - ✅ Reject pending teachers
@@ -39,18 +43,21 @@ School Admins can edit everything within their assigned school. This document tr
 ### ❌ Not Yet Implemented
 
 #### 5. **Parents** (`/app/parents`)
+
 - ❌ No edit functionality
 - ❌ No update function exists
 - **Location**: `src/routes/app.parents.tsx`
 - **Missing**: `updateParent()` function
 
 #### 6. **User Account Editing** (`/app/teachers`)
+
 - ❌ Cannot edit existing user details (name, email, phone)
 - ❌ Cannot change user roles
 - ❌ Cannot reset passwords
 - **Missing**: User edit dialog and `updateUser()` function
 
 #### 7. **Attendance Records** (`/app/attendance`)
+
 - ❌ Cannot edit arrival/departure times
 - ❌ Cannot edit transport details
 - **Missing**: Attendance edit functionality
@@ -58,20 +65,24 @@ School Admins can edit everything within their assigned school. This document tr
 ## Implementation Priority
 
 ### High Priority (Core Editing)
+
 1. ✅ **Pupils** - DONE
 2. ❌ **Parents** - Need to add updateParent()
 3. ❌ **Users** - Edit user details
 
 ### Medium Priority
+
 4. ❌ **Attendance** - Edit arrival/departure times
 
 ### Low Priority
+
 5. ✅ **Classes** - Already implemented
 6. ✅ **Marks** - Already implemented
 
 ## Permissions Model
 
 ### School Admin Can Edit:
+
 - ✅ Classes in their school
 - ✅ Pupils in their school
 - ✅ Marks for pupils in their school
@@ -80,6 +91,7 @@ School Admins can edit everything within their assigned school. This document tr
 - ❌ Attendance records (view only)
 
 ### School Admin Cannot Edit:
+
 - ❌ Other schools' data
 - ❌ Super Admin accounts
 - ❌ Their own role or school assignment
@@ -88,6 +100,7 @@ School Admins can edit everything within their assigned school. This document tr
 ## Super Admin Permissions
 
 ### Super Admin Can Edit:
+
 - ✅ All schools
 - ✅ All users across all schools
 - ✅ All classes across all schools
@@ -98,9 +111,11 @@ School Admins can edit everything within their assigned school. This document tr
 ## Technical Implementation
 
 ### Database Functions
+
 All edit operations go through server functions in `src/lib/db-functions.ts`:
 
 **Implemented**:
+
 - `updatePupil()` - Update pupil details
 - `updateClass()` - Update class details
 - `updateMark()` - Update mark details
@@ -109,32 +124,37 @@ All edit operations go through server functions in `src/lib/db-functions.ts`:
 - `deactivatePupil()` - Soft delete pupil
 
 **Missing**:
+
 - `updateParent()` - Update parent details
 - `updateUser()` - Update user details
 - `updateAttendance()` - Update attendance records
 
 ### State Management
+
 Edit operations update the global state in `src/lib/mock-store.tsx`:
 
 ```typescript
 updatePupil: async (id, data) => {
   await updatePupilDb({ data: { id, data } });
-  setState(s => ({
+  setState((s) => ({
     ...s,
     pupils: s.pupils.map((p: Pupil) => (p.id === id ? { ...p, ...data } : p)),
   }));
-}
+};
 ```
 
 ## Multi-Tenancy Considerations
 
 ### Current Implementation (Client-Side Filtering)
+
 - Data is filtered by `currentUser.schoolId` in `MockStoreProvider`
 - School Admins only see data from their school
 - UI components respect these filtered data arrays
 
 ### Planned Implementation (RLS Policies)
+
 From spec Task 3:
+
 - RLS policies will enforce tenant boundaries at database level
 - School Admins will be blocked from editing other schools' data by PostgreSQL
 - This provides security even if client-side checks are bypassed
@@ -142,15 +162,17 @@ From spec Task 3:
 ## Security Notes
 
 ### Current Protection:
+
 ✅ UI filters data by school  
 ✅ School Admins cannot see other schools' data in UI  
-✅ Email/phone uniqueness validation  
+✅ Email/phone uniqueness validation
 
 ### Pending Protection (from spec):
+
 ❌ Backend validation to prevent cross-school edits  
 ❌ RLS policies to enforce database-level isolation  
 ❌ Audit logging for all edit operations  
-❌ Privilege escalation prevention  
+❌ Privilege escalation prevention
 
 ## Next Steps
 
@@ -190,7 +212,8 @@ For School Admin edit permissions:
 
 ## Status Summary
 
-**Current State**: 
+**Current State**:
+
 - ✅ 60% of core editing features implemented
 - ✅ Pupils edit functionality added
 - ✅ Classes edit functionality exists

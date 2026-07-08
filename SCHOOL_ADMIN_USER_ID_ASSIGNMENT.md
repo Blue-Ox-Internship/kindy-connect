@@ -1,8 +1,9 @@
 # School Admin User ID Assignment - Implementation Details
 
 ## User Query
+
 > "for other admins and users, the id should be assigned to them by the superadmins"
-> 
+>
 > **Clarification**: "schooladmins should create accounts and give ids to their only specific schools"
 
 ## Current Implementation Status: ✅ WORKING AS INTENDED
@@ -10,6 +11,7 @@
 ### What School Admins Can Do
 
 School Admins have the ability to:
+
 1. **Create user accounts** for their assigned school only
 2. **Assign custom User IDs** to new users
 3. **Choose user roles**: Admin, Deputy, or Teacher
@@ -19,6 +21,7 @@ School Admins have the ability to:
 ### School Boundary Enforcement
 
 When a School Admin creates a user:
+
 - The `schoolId` is **automatically set** to the School Admin's own school
 - School Admins **cannot select** a different school (no dropdown shown)
 - School Admins **cannot create** Super Admin accounts (role option not visible)
@@ -27,6 +30,7 @@ When a School Admin creates a user:
 ### Super Admin Capabilities
 
 Super Admins have additional privileges:
+
 - Can create users for **any school** (school dropdown available)
 - Can create **other Super Admin accounts** (Super Admin role option visible)
 - Can assign Super Admins to **no school** (`schoolId = null`)
@@ -37,6 +41,7 @@ Super Admins have additional privileges:
 ### Frontend: User Creation Form (`src/routes/app.teachers.tsx`)
 
 **School Context Enforcement** (Lines 82-84):
+
 ```typescript
 const targetSchoolId = isSuperAdmin ? form.schoolId : (currentUser?.schoolId ?? "");
 if (!isSuperAdmin && !targetSchoolId) {
@@ -45,19 +50,21 @@ if (!isSuperAdmin && !targetSchoolId) {
 ```
 
 **User ID Input Field** (Lines 237-241):
+
 ```typescript
 <div>
   <Label htmlFor="create-id">Assigned ID (Login ID)</Label>
-  <Input 
-    id="create-id" 
-    value={form.id} 
-    onChange={(e) => setForm({ ...form, id: e.target.value })} 
-    placeholder="e.g. kst-001" 
+  <Input
+    id="create-id"
+    value={form.id}
+    onChange={(e) => setForm({ ...form, id: e.target.value })}
+    placeholder="e.g. kst-001"
   />
 </div>
 ```
 
 **Role Selection** (Lines 253-262):
+
 ```typescript
 <select id="create-role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })}>
   {isSuperAdmin && <option value="super_admin">Super Admin</option>}
@@ -68,6 +75,7 @@ if (!isSuperAdmin && !targetSchoolId) {
 ```
 
 **School Selection** (Lines 264-278 - Only visible to Super Admins):
+
 ```typescript
 {isSuperAdmin && form.role !== "super_admin" && (
   <div>
@@ -84,20 +92,25 @@ if (!isSuperAdmin && !targetSchoolId) {
 ### Backend: User Registration (`src/lib/db-functions.ts`)
 
 **Register User Function** (Lines 136-191):
+
 ```typescript
 export const registerUser = createServerFn({ method: "POST" })
-  .validator((d: Omit<User, "status" | "registeredAt"> & { 
-    schoolId?: string; 
-    newSchoolName?: string; 
-    status?: "pending" | "verified" | "rejected" 
-  }) => d)
+  .validator(
+    (
+      d: Omit<User, "status" | "registeredAt"> & {
+        schoolId?: string;
+        newSchoolName?: string;
+        status?: "pending" | "verified" | "rejected";
+      },
+    ) => d,
+  )
   .handler(async ({ data }) => {
     // Email uniqueness check (case-insensitive)
     const emailCheck = await sql`SELECT id FROM users WHERE LOWER(email) = LOWER(${data.email})`;
     if (emailCheck.length > 0) {
       throw new Error("Email already used");
     }
-    
+
     // Phone uniqueness check
     if (data.phone) {
       const phoneCheck = await sql`SELECT id FROM users WHERE phone = ${data.phone}`;
@@ -105,7 +118,7 @@ export const registerUser = createServerFn({ method: "POST" })
         throw new Error("Phone number already used");
       }
     }
-    
+
     // Insert user with provided schoolId
     const dbUser = toSnake({
       id: data.id.trim(),
@@ -116,7 +129,7 @@ export const registerUser = createServerFn({ method: "POST" })
       status: data.status || (data.role === "admin" ? "verified" : "pending"),
       registeredAt,
       password: data.password || "admin123",
-      schoolId: data.schoolId || null,  // Super Admin accounts have null schoolId
+      schoolId: data.schoolId || null, // Super Admin accounts have null schoolId
     });
 
     await sql`INSERT INTO users ${sql(dbUser)}`;
@@ -129,6 +142,7 @@ export const registerUser = createServerFn({ method: "POST" })
 ### Current Security Posture
 
 ✅ **Frontend Controls**:
+
 - School Admins cannot see school selector
 - Super Admin role option hidden from School Admins
 - School context automatically set for School Admins
@@ -142,7 +156,7 @@ Add backend validation to `registerUser` function:
 
 ```typescript
 // Add this check in the handler after data validation
-if (actorRole === 'admin' && data.schoolId !== actorSchoolId) {
+if (actorRole === "admin" && data.schoolId !== actorSchoolId) {
   throw new Error("School Admins can only create users for their own school");
 }
 ```
@@ -167,12 +181,14 @@ To verify School Admin user creation:
 ## Summary
 
 **The current implementation DOES allow School Admins to:**
+
 - ✅ Create user accounts for their school
 - ✅ Assign custom User IDs to those accounts
 - ✅ Choose roles (Admin, Deputy, Teacher)
 - ✅ Set initial passwords
 
 **School Admins CANNOT:**
+
 - ❌ Create users for other schools
 - ❌ Create Super Admin accounts
 - ❌ See or modify users from other schools (filtered in `MockStoreProvider`)

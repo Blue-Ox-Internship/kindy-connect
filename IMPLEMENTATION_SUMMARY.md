@@ -7,6 +7,7 @@ Teachers are now restricted to only access subjects they are assigned to teach. 
 ## Changes Made
 
 ### 1. Database Layer (Security Policies)
+
 **File**: `database/rls-policies.sql`
 
 Updated Row Level Security (RLS) policies for the `marks` table to include subject restrictions:
@@ -18,46 +19,57 @@ Updated Row Level Security (RLS) policies for the `marks` table to include subje
 **Key Change**: Added `AND marks.subject = ANY(users.subjects)` condition to all teacher policies.
 
 ### 2. Migration Script
+
 **File**: `database/migrations/add_subject_restrictions.sql`
 
 Created a migration script that:
+
 - Drops existing marks policies
 - Recreates policies with subject restrictions
 - Can be applied to existing databases without data loss
 
 **How to Apply**:
+
 ```bash
 psql -U your_user -d kindy_connect -f database/migrations/add_subject_restrictions.sql
 ```
 
 ### 3. Server-Side Validation
+
 **File**: `src/lib/db-functions.ts`
 
 Enhanced `addMark` and `updateMark` server functions with authorization checks:
 
 **addMark changes**:
+
 - Validates teacher is assigned to the pupil's class
 - Validates teacher is assigned to the subject
 - Returns clear error messages for unauthorized attempts
 
 **updateMark changes**:
+
 - Added optional `actorId` parameter for authorization
 - Validates teacher can update marks for the subject
 - Handles both current subject and updated subject scenarios
 
 ### 4. Frontend Integration
+
 **File**: `src/lib/mock-store.tsx`
 
 Updated the `updateMark` function to pass `actorId`:
+
 - Ensures server-side authorization is properly triggered
 - Maintains audit trail with correct user information
 
 **File**: `src/routes/app.marks.tsx`
+
 - Already had UI-level subject filtering (no changes needed)
 - Teachers only see their assigned subjects in dropdown
 
 ### 5. Documentation
-**Files**: 
+
+**Files**:
+
 - `TEACHER_SUBJECT_RESTRICTIONS.md` - Comprehensive feature documentation
 - `IMPLEMENTATION_SUMMARY.md` - This summary
 - `database/migrations/add_subject_restrictions.sql` - Inline documentation
@@ -81,10 +93,11 @@ The implementation provides **three layers of security**:
 ## Testing Recommendations
 
 ### 1. Test Teacher with Limited Subjects
+
 ```sql
 -- Create test teacher
 INSERT INTO users (id, name, email, role, status, school_id, class_id, subjects, password, registered_at)
-VALUES ('test-t1', 'Math Teacher', 'math-test@school.com', 'teacher', 'verified', 's1', 'c1', 
+VALUES ('test-t1', 'Math Teacher', 'math-test@school.com', 'teacher', 'verified', 's1', 'c1',
         ARRAY['Math', 'Science'], 'admin123', CURRENT_DATE);
 
 -- Login as this teacher and try to:
@@ -95,6 +108,7 @@ VALUES ('test-t1', 'Math Teacher', 'math-test@school.com', 'teacher', 'verified'
 ```
 
 ### 2. Test Admin Access
+
 ```sql
 -- Admins should be able to:
 -- ✓ Add marks for any subject
@@ -103,6 +117,7 @@ VALUES ('test-t1', 'Math Teacher', 'math-test@school.com', 'teacher', 'verified'
 ```
 
 ### 3. Test Edge Cases
+
 - Teacher with empty subjects array (should fail all operations)
 - Teacher with NULL subjects (should fail all operations)
 - Teacher trying to update mark's subject to one they're not assigned to (should fail)
@@ -162,6 +177,7 @@ USING (
 ## Support
 
 For issues or questions:
+
 1. Check `TEACHER_SUBJECT_RESTRICTIONS.md` for detailed documentation
 2. Review error messages in browser console and server logs
 3. Verify teacher's `subjects` array: `SELECT id, name, subjects FROM users WHERE role = 'teacher';`

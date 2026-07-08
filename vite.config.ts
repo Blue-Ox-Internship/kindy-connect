@@ -22,6 +22,32 @@ export default defineConfig({
     react(),
     nitro(),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        // Split large vendor libraries into separate chunks
+        manualChunks: (id) => {
+          // React core libraries
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'vendor-react';
+          }
+          // TanStack libraries
+          if (id.includes('node_modules/@tanstack')) {
+            return 'vendor-tanstack';
+          }
+          // Radix UI components
+          if (id.includes('node_modules/@radix-ui')) {
+            return 'vendor-radix';
+          }
+          // PDF generation libraries (lazy loaded)
+          if (id.includes('jspdf') || id.includes('html2canvas')) {
+            return 'pdf-libs';
+          }
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000, // Increase to avoid warnings for split chunks
+  },
   resolve: {
     alias: {
       "@": "/src",
@@ -40,4 +66,3 @@ export default defineConfig({
     port: 8080,
   },
 });
-

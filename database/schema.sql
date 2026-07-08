@@ -173,11 +173,22 @@ ALTER TABLE marks
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_phone ON users(phone);
 CREATE INDEX idx_users_school ON users(school_id);
+CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_classes_school ON classes(school_id);
 CREATE INDEX idx_pupils_class ON pupils(class_id);
 CREATE INDEX idx_pupils_school ON pupils(school_id);
+CREATE INDEX idx_pupils_active ON pupils(active);
+CREATE INDEX idx_pupils_school_active ON pupils(school_id, active);
 CREATE INDEX idx_parents_school ON parents(school_id);
 CREATE INDEX idx_attendance_pupil_date ON attendance(pupil_id, date);
+CREATE INDEX idx_attendance_date ON attendance(date DESC);
 CREATE INDEX idx_marks_pupil ON marks(pupil_id);
+CREATE INDEX idx_marks_recorded_at ON marks(recorded_at DESC);
 CREATE INDEX idx_notifications_pupil ON notifications(pupil_id);
-CREATE INDEX idx_audit_logs_timestamp ON audit_logs(timestamp);
+CREATE INDEX idx_notifications_timestamp ON notifications(timestamp DESC);
+CREATE INDEX idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
+CREATE INDEX idx_audit_logs_actor ON audit_logs(actor_id);
+
+-- Composite indexes for common query patterns
+CREATE INDEX idx_pupils_school_class ON pupils(school_id, class_id);
+CREATE INDEX idx_attendance_date_pupil ON attendance(date DESC, pupil_id);

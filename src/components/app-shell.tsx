@@ -11,6 +11,7 @@ import {
   BookOpen,
   School,
   Building2,
+  Menu,
 } from "lucide-react";
 import { useStore } from "@/lib/mock-store";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SchoolSelector } from "@/components/school-selector";
 import { useEffect, type ReactNode } from "react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export function AppShell({ children, title }: { children: ReactNode; title: string }) {
   const { currentUser, users, logout, schools } = useStore();
@@ -49,22 +51,22 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         { to: "/app/audit", label: "Audit log", icon: ScrollText },
       ]
     : isStaff
-    ? [
-        { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
-        { to: "/app/pupils", label: "Pupils", icon: Baby },
-        { to: "/app/parents", label: "Parents", icon: Users },
-        { to: "/app/teachers", label: "Teachers", icon: GraduationCap, badge: pendingCount },
-        { to: "/app/classes", label: "Classes", icon: BookOpen },
-        { to: "/app/attendance", label: "Attendance", icon: CalendarCheck },
-        { to: "/app/marks", label: "Marks", icon: BookOpen },
-        { to: "/app/reports", label: "Reports", icon: BarChart3 },
-        { to: "/app/audit", label: "Audit log", icon: ScrollText },
-      ]
-    : [
-        { to: "/app/dashboard", label: "My class", icon: LayoutDashboard },
-        { to: "/app/attendance", label: "Attendance", icon: CalendarCheck },
-        { to: "/app/marks", label: "Marks", icon: BookOpen },
-      ];
+      ? [
+          { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
+          { to: "/app/pupils", label: "Pupils", icon: Baby },
+          { to: "/app/parents", label: "Parents", icon: Users },
+          { to: "/app/teachers", label: "Teachers", icon: GraduationCap, badge: pendingCount },
+          { to: "/app/classes", label: "Classes", icon: BookOpen },
+          { to: "/app/attendance", label: "Attendance", icon: CalendarCheck },
+          { to: "/app/marks", label: "Marks", icon: BookOpen },
+          { to: "/app/reports", label: "Reports", icon: BarChart3 },
+          { to: "/app/audit", label: "Audit log", icon: ScrollText },
+        ]
+      : [
+          { to: "/app/dashboard", label: "My class", icon: LayoutDashboard },
+          { to: "/app/attendance", label: "Attendance", icon: CalendarCheck },
+          { to: "/app/marks", label: "Marks", icon: BookOpen },
+        ];
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden">
@@ -106,24 +108,116 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         <div className="border-t p-3 flex items-center gap-3">
           <Avatar className="h-9 w-9">
             <AvatarFallback className="bg-secondary text-secondary-foreground">
-              {currentUser.name.split(" ").map((p) => p[0]).join("").slice(0, 2)}
+              {currentUser.name
+                .split(" ")
+                .map((p) => p[0])
+                .join("")
+                .slice(0, 2)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium truncate">{currentUser.name}</div>
-            <div className="text-xs text-muted-foreground capitalize">{currentUser.role.replace("_", " ")}</div>
+            <div className="text-xs text-muted-foreground capitalize">
+              {currentUser.role.replace("_", " ")}
+            </div>
           </div>
-          <Button size="icon" variant="ghost" onClick={() => { logout(); navigate({ to: "/" }); }}>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => {
+              logout();
+              navigate({ to: "/" });
+            }}
+          >
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </aside>
 
       <main className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 backdrop-blur px-6 py-4 shrink-0">
-          <h1 className="text-2xl font-semibold">{title}</h1>
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 backdrop-blur px-6 py-4 shrink-0 gap-3">
+          <div className="flex items-center gap-3">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden cursor-pointer">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle Menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="left"
+                className="w-64 p-0 flex flex-col h-full bg-sidebar text-sidebar-foreground border-r"
+              >
+                <div className="flex items-center gap-2 px-5 py-5 border-b">
+                  <div>
+                    <div className="font-semibold leading-tight truncate max-w-[200px]">
+                      {isSuperAdmin ? "System Admin" : currentSchool?.name || "Little Stars"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {isSuperAdmin ? "Management Console" : "Kindergarten Section"}
+                    </div>
+                  </div>
+                </div>
+                <SchoolSelector />
+                <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+                  {items.map((it) => {
+                    const active = path === it.to;
+                    const Icon = it.icon;
+                    return (
+                      <SheetTrigger asChild key={it.to}>
+                        <Link
+                          to={it.to}
+                          className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                            active
+                              ? "bg-primary text-primary-foreground shadow-sm"
+                              : "hover:bg-sidebar-accent text-sidebar-foreground"
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span className="flex-1">{it.label}</span>
+                          {"badge" in it && it.badge ? (
+                            <Badge className="bg-accent text-accent-foreground">{it.badge}</Badge>
+                          ) : null}
+                        </Link>
+                      </SheetTrigger>
+                    );
+                  })}
+                </nav>
+                <div className="border-t p-3 flex items-center gap-3 mt-auto">
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback className="bg-secondary text-secondary-foreground">
+                      {currentUser.name
+                        .split(" ")
+                        .map((p) => p[0])
+                        .join("")
+                        .slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{currentUser.name}</div>
+                    <div className="text-xs text-muted-foreground capitalize">
+                      {currentUser.role.replace("_", " ")}
+                    </div>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => {
+                      logout();
+                      navigate({ to: "/" });
+                    }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+            <h1 className="text-2xl font-semibold">{title}</h1>
+          </div>
           <div className="hidden sm:flex items-center gap-2">
-            <Badge variant="outline" className="capitalize">{currentUser.role.replace("_", " ")}</Badge>
+            <Badge variant="outline" className="capitalize">
+              {currentUser.role.replace("_", " ")}
+            </Badge>
           </div>
         </header>
         <div className="flex-1 overflow-y-auto p-6">{children}</div>

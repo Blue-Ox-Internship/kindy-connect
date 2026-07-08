@@ -7,6 +7,7 @@ Super Admins can create other Super Admin accounts through the User Accounts pag
 ## How It Works
 
 ### 1. Access Control
+
 - **Only Super Admins** can see the "Super Admin" role option in the user creation form
 - School Admins and other roles cannot create Super Admin accounts
 
@@ -15,6 +16,7 @@ Super Admins can create other Super Admin accounts through the User Accounts pag
 **Location**: `/app/teachers` (User Accounts page)
 
 **Steps to Create a Super Admin**:
+
 1. Click the "Create User" button
 2. Fill in the form:
    - **Assigned ID**: Unique login ID (e.g., KC002, KC003)
@@ -32,6 +34,7 @@ Super Admins can create other Super Admin accounts through the User Accounts pag
 **File**: `src/lib/db-functions.ts`
 
 The `registerUser` function:
+
 ```typescript
 await registerUser({
   id: form.id.trim(),
@@ -46,6 +49,7 @@ await registerUser({
 ```
 
 **Key Points**:
+
 - Super Admin accounts have `school_id` set to `NULL` in the database
 - Super Admin accounts are created with status "verified" (immediately active)
 - Email and phone uniqueness is validated before creation
@@ -53,6 +57,7 @@ await registerUser({
 ### 4. Database Schema
 
 **Users Table**:
+
 ```sql
 CREATE TABLE users (
     id VARCHAR(50) PRIMARY KEY,
@@ -73,6 +78,7 @@ CREATE TABLE users (
 ### 5. Current Super Admin Accounts
 
 From the seed data:
+
 - **KC001**: System Administrator (email: superadmin@kinder.app)
 - **KC002**: System Administrator 2 (email: superadmin2@kinder.app)
 
@@ -81,6 +87,7 @@ Both have password: `admin123`
 ### 6. Permissions
 
 **What Super Admins Can Do**:
+
 - Create other Super Admin accounts
 - Create School Admin, Deputy, and Teacher accounts for any school
 - View and manage all schools
@@ -90,17 +97,20 @@ Both have password: `admin123`
 - Approve/reject teacher registrations from any school
 
 **What Super Admins Cannot Do**:
+
 - Be assigned to a specific school (school_id is always NULL)
 - Have their role changed to a school-scoped role without being assigned a school first
 
 ### 7. Security Considerations
 
 ✅ **Implemented**:
+
 - Only Super Admins can create Super Admin accounts (UI restriction)
 - Email and phone uniqueness validation
 - School Admins cannot see or select the Super Admin role option
 
 ❌ **To Be Implemented** (per spec tasks):
+
 - Backend validation to prevent School Admins from creating Super Admin accounts
 - Audit logging for Super Admin creation
 - Privilege escalation prevention (Task 9.1, 9.2, 9.3)
@@ -108,6 +118,7 @@ Both have password: `admin123`
 ### 8. Testing
 
 **To test Super Admin creation**:
+
 1. Login as KC001 or KC002
 2. Navigate to User Accounts (`/app/teachers`)
 3. Click "Create User"
@@ -121,11 +132,13 @@ Both have password: `admin123`
 ### 9. Related Spec Requirements
 
 This feature satisfies:
+
 - **Requirement 1.1**: System shall support a role named "super_admin"
 - **Requirement 1.6**: Super_Admin shall NOT be assigned to any specific school (school_id is null)
 - **Requirement 14.1**: Restrict creation of super_admin users to existing Super Admin accounts only
 
 **Pending implementation** (from spec tasks):
+
 - Task 9.1: Add backend validation to block School Admin from creating super_admin users
 - Task 9.3: Enforce super_admin cannot register with school_id at database level
 

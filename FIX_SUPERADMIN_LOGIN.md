@@ -1,9 +1,11 @@
 # Fix Super Admin Login Issue (KC001, KC002)
 
 ## Problem
+
 KC001 and KC002 cannot login to the system as Super Admins.
 
 ## Root Cause
+
 The Super Admin accounts **haven't been created in your Supabase database yet**. The migration file exists but hasn't been executed.
 
 ## Solution
@@ -67,11 +69,11 @@ Run this simple INSERT statement:
 DELETE FROM users WHERE email IN ('superadmin@kinder.app', 'superadmin2@kinder.app');
 
 -- Insert KC001
-INSERT INTO users (id, name, email, role, status, phone, registered_at, password, school_id) 
+INSERT INTO users (id, name, email, role, status, phone, registered_at, password, school_id)
 VALUES ('KC001', 'System Administrator', 'superadmin@kinder.app', 'super_admin', 'verified', '+254700000000', CURRENT_DATE, 'admin123', NULL);
 
 -- Insert KC002
-INSERT INTO users (id, name, email, role, status, phone, registered_at, password, school_id) 
+INSERT INTO users (id, name, email, role, status, phone, registered_at, password, school_id)
 VALUES ('KC002', 'System Administrator 2', 'superadmin2@kinder.app', 'super_admin', 'verified', '+254700000001', CURRENT_DATE, 'admin123', NULL);
 
 -- Verify
@@ -85,10 +87,12 @@ SELECT id, name, email, role, status, school_id FROM users WHERE id IN ('KC001',
 After running any of the above solutions:
 
 **Super Admin 1:**
+
 - **User ID**: `KC001` (case sensitive)
 - **Password**: `admin123`
 
 **Super Admin 2:**
+
 - **User ID**: `KC002` (case sensitive)
 - **Password**: `admin123`
 
@@ -105,8 +109,8 @@ After running any of the above solutions:
 SELECT id, name, email FROM users WHERE email IN ('superadmin@kinder.app', 'superadmin2@kinder.app');
 
 -- Update their email to something else
-UPDATE users SET email = CONCAT('old_', email) 
-WHERE email IN ('superadmin@kinder.app', 'superadmin2@kinder.app') 
+UPDATE users SET email = CONCAT('old_', email)
+WHERE email IN ('superadmin@kinder.app', 'superadmin2@kinder.app')
 AND id NOT IN ('KC001', 'KC002');
 
 -- Then run the insert again
@@ -118,8 +122,8 @@ AND id NOT IN ('KC001', 'KC002');
 
 ```sql
 -- Update the conflicting user's phone
-UPDATE users SET phone = NULL 
-WHERE phone IN ('+254700000000', '+254700000001') 
+UPDATE users SET phone = NULL
+WHERE phone IN ('+254700000000', '+254700000001')
 AND id NOT IN ('KC001', 'KC002');
 
 -- Then run the insert again
@@ -128,6 +132,7 @@ AND id NOT IN ('KC001', 'KC002');
 ### Issue 3: Still can't login after running SQL
 
 **Possible causes:**
+
 1. **Case sensitivity**: Make sure you're typing `KC001` (not `kc001`)
 2. **Browser cache**: Clear your browser cache and try again
 3. **Check database**: Run this to verify the account exists:
@@ -146,22 +151,23 @@ After running the SQL, verify everything is correct:
 
 ```sql
 -- This should return 2 rows
-SELECT 
-  id, 
-  name, 
-  email, 
-  role, 
-  status, 
+SELECT
+  id,
+  name,
+  email,
+  role,
+  status,
   school_id,
-  CASE 
+  CASE
     WHEN school_id IS NULL AND role = 'super_admin' THEN '✅ OK'
     ELSE '❌ ERROR'
   END as status_check
-FROM users 
+FROM users
 WHERE id IN ('KC001', 'KC002');
 ```
 
 **Expected result:**
+
 - KC001: role = super_admin, status = verified, school_id = NULL, status_check = ✅ OK
 - KC002: role = super_admin, status = verified, school_id = NULL, status_check = ✅ OK
 
@@ -170,6 +176,7 @@ WHERE id IN ('KC001', 'KC002');
 ## What Happens After Login?
 
 Once logged in as KC001 or KC002, you will see:
+
 - ✅ Super Admin Dashboard (not school-scoped)
 - ✅ All schools visible
 - ✅ System-wide statistics
@@ -201,8 +208,8 @@ To prevent this issue in the future:
 Run this check periodically:
 
 ```sql
-SELECT COUNT(*) as superadmin_count 
-FROM users 
+SELECT COUNT(*) as superadmin_count
+FROM users
 WHERE role = 'super_admin' AND status = 'verified';
 ```
 

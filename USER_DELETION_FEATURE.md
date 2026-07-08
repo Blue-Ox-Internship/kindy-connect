@@ -1,6 +1,7 @@
 # User Deletion Feature - Super Admin Capability
 
 ## Overview
+
 Super admins can now delete user accounts (including other admins) from the system. This feature includes proper authorization checks, audit logging, and safety measures.
 
 ## Features
@@ -29,12 +30,12 @@ Super admins can now delete user accounts (including other admins) from the syst
 
 ### Who Can Delete Whom?
 
-| Deleting User Role | Can Delete |
-|-------------------|------------|
-| **Super Admin** | ✅ Super Admins, Admins, Deputies, Teachers |
-| **Admin** | ❌ Cannot delete admin accounts |
-| **Deputy** | ❌ Cannot delete any users |
-| **Teacher** | ❌ Cannot delete any users |
+| Deleting User Role | Can Delete                                  |
+| ------------------ | ------------------------------------------- |
+| **Super Admin**    | ✅ Super Admins, Admins, Deputies, Teachers |
+| **Admin**          | ❌ Cannot delete admin accounts             |
+| **Deputy**         | ❌ Cannot delete any users                  |
+| **Teacher**        | ❌ Cannot delete any users                  |
 
 ### Safety Checks
 
@@ -53,23 +54,27 @@ Super admins can now delete user accounts (including other admins) from the syst
 ## UI Elements
 
 ### Delete Button
+
 - **Location**: "Verified" and "Rejected" tabs in Teachers page
 - **Appearance**: Outline button with trash icon
 - **Color**: Red/destructive theme
 - **Visibility**: Only super admins (except for their own account)
 
 ### Confirmation Dialog
+
 ```
-Are you sure you want to delete [User Name]? 
+Are you sure you want to delete [User Name]?
 This action cannot be undone.
 ```
 
 ### Success Message
+
 ```
 [User Name] has been deleted
 ```
 
 ### Error Messages
+
 - "You cannot delete your own account"
 - "Unauthorized: Only super admins can delete admin accounts"
 - "User not found"
@@ -77,12 +82,14 @@ This action cannot be undone.
 ## Database Changes
 
 No database schema changes required. Uses existing:
+
 - `users` table for deletion
 - `audit_logs` table for logging
 
 ## Audit Trail
 
 Every deletion is logged with:
+
 - **Actor**: Who performed the deletion
 - **Action**: "Deleted user"
 - **Target**: User name and role (e.g., "John Doe (admin)")
@@ -111,12 +118,14 @@ Every deletion is logged with:
 ## Security Considerations
 
 ### ✅ Implemented
+
 - Authorization checks in server function
 - Self-deletion prevention
 - Role-based access control
 - Audit logging
 
 ### ⚠️ Considerations for Production
+
 - **Data Integrity**: Consider soft deletes instead of hard deletes
 - **Foreign Key Constraints**: Ensure proper CASCADE rules in database
 - **Archive Option**: Consider archiving instead of deleting

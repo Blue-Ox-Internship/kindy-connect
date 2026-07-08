@@ -7,16 +7,20 @@ The User ID column in the users table is now **only visible to Super Admins**. S
 ## Implementation
 
 ### Before:
+
 ```
 User ID | Name         | Email              | Phone        | Role    | Password | Registered | Status
 --------|--------------|--------------------|--------------|---------| ---------|------------|--------
 u1      | Amina Okello | admin@kinder.app   | +2547000001  | admin   | admin123 | 2025-01-10 | verified
 u2      | Brian Mwangi | deputy@kinder.app  | +2547000002  | admin   | admin123 | 2025-01-12 | verified
 ```
+
 **Issue:** School Admins could see User IDs (security concern)
 
 ### After:
+
 **Super Admin View:**
+
 ```
 User ID | Name         | Email              | Phone        | School          | Role    | Password | Registered | Status
 --------|--------------|--------------------|--------------|-----------------|---------| ---------|------------|--------
@@ -24,20 +28,24 @@ KC001   | System Admin | superadmin@...     | +2547000000  | System Admin    | s
 u1      | Amina Okello | admin@kinder.app   | +2547000001  | Little Stars    | admin   | admin123 | 2025-01-10 | verified
 u2      | Brian Mwangi | deputy@kinder.app  | +2547000002  | Sunshine Academy| admin   | admin123 | 2025-01-12 | verified
 ```
+
 ✅ User ID column is visible
 
 **School Admin View:**
+
 ```
 Name         | Email              | Phone        | Role    | Password | Registered | Status
 -------------|--------------------|--------------|---------| ---------|------------|--------
 Amina Okello | admin@kinder.app   | +2547000001  | admin   | admin123 | 2025-01-10 | verified
 Peter Otieno | peter@kinder.app   | +2547000004  | teacher | peter123 | 2025-02-03 | verified
 ```
+
 ✅ User ID column is hidden
 
 ## Security Benefits
 
 ### ✅ Improved Security
+
 1. **School Admins cannot see User IDs**
    - Cannot attempt to login as other users
    - Cannot guess Super Admin IDs
@@ -58,6 +66,7 @@ Peter Otieno | peter@kinder.app   | +2547000004  | teacher | peter123 | 2025-02-
 **File:** `src/routes/app.teachers.tsx`
 
 **Table Header:**
+
 ```typescript
 <TableRow>
   {isSuperAdmin && <TableHead>User ID</TableHead>}  // Only show if Super Admin
@@ -68,6 +77,7 @@ Peter Otieno | peter@kinder.app   | +2547000004  | teacher | peter123 | 2025-02-
 ```
 
 **Table Body:**
+
 ```typescript
 <TableRow key={t.id}>
   {isSuperAdmin && <TableCell>{t.id}</TableCell>}  // Only show if Super Admin
@@ -78,6 +88,7 @@ Peter Otieno | peter@kinder.app   | +2547000004  | teacher | peter123 | 2025-02-
 ```
 
 **Empty State:**
+
 ```typescript
 <TableCell
   colSpan={withActions ? (isSuperAdmin ? 10 : 8) : (isSuperAdmin ? 9 : 7)}
@@ -89,7 +100,9 @@ Peter Otieno | peter@kinder.app   | +2547000004  | teacher | peter123 | 2025-02-
 ## What Each Role Can See
 
 ### Super Admin (KC001, KC002)
+
 **Visible Columns:**
+
 1. ✅ User ID
 2. ✅ Name
 3. ✅ Email
@@ -104,7 +117,9 @@ Peter Otieno | peter@kinder.app   | +2547000004  | teacher | peter123 | 2025-02-
 **Total:** 10 columns (with actions) or 9 columns (without actions)
 
 ### School Admin (u1, u2, u3, noble)
+
 **Visible Columns:**
+
 1. ❌ User ID (hidden)
 2. ✅ Name
 3. ✅ Email
@@ -119,10 +134,13 @@ Peter Otieno | peter@kinder.app   | +2547000004  | teacher | peter123 | 2025-02-
 **Total:** 8 columns (with actions) or 7 columns (without actions)
 
 ### Deputy
+
 **Same as School Admin** - Cannot see User IDs
 
 ### Teachers
+
 **Visible Columns:**
+
 1. ❌ User ID (hidden)
 2. ✅ Name
 3. ✅ Email
@@ -139,12 +157,14 @@ Peter Otieno | peter@kinder.app   | +2547000004  | teacher | peter123 | 2025-02-
 ## Testing
 
 ### Test as Super Admin:
+
 1. Login as KC001 or KC002
 2. Go to `/app/teachers`
 3. Verify you see **User ID** column as first column
 4. Verify you see all user IDs (KC001, KC002, u1, u2, u3, etc.)
 
 ### Test as School Admin:
+
 1. Login as u1, u2, or u3
 2. Go to `/app/teachers`
 3. Verify **User ID column is NOT visible**
@@ -152,6 +172,7 @@ Peter Otieno | peter@kinder.app   | +2547000004  | teacher | peter123 | 2025-02-
 5. Verify you can still manage users (approve/reject)
 
 ### Test Column Count:
+
 **Super Admin with actions:** 10 columns
 **Super Admin without actions:** 9 columns
 **School Admin with actions:** 8 columns
@@ -160,35 +181,41 @@ Peter Otieno | peter@kinder.app   | +2547000004  | teacher | peter123 | 2025-02-
 ## Related Security Features
 
 ### Already Implemented:
+
 ✅ School Admins can only see users from their school  
 ✅ Super Admins can see all users across all schools  
 ✅ Email and phone uniqueness validation  
 ✅ Case-sensitive login credentials  
-✅ Password column visible to admins only  
+✅ Password column visible to admins only
 
 ### Newly Implemented:
+
 ✅ **User ID column only visible to Super Admins**
 
 ### Pending (from spec):
+
 ❌ Row Level Security (RLS) policies  
 ❌ Backend validation for cross-school access  
 ❌ Audit logging for all user operations  
-❌ Privilege escalation prevention  
+❌ Privilege escalation prevention
 
 ## Business Impact
 
 ### For Super Admins:
+
 - ✅ Full system visibility maintained
 - ✅ Can troubleshoot login issues
 - ✅ Can manage all accounts efficiently
 
 ### For School Admins:
+
 - ✅ Cleaner, less cluttered interface
 - ✅ Focus on relevant information (names, roles)
 - ✅ Cannot see or misuse User IDs
 - ✅ Reduced security risk
 
 ### For System Security:
+
 - ✅ Reduced information disclosure
 - ✅ Harder for School Admins to attempt unauthorized access
 - ✅ Follows principle of least privilege

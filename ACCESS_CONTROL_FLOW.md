@@ -44,30 +44,30 @@
 ## Unauthorized Attempt Flow
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    TEACHER LOGIN                             │
-│  Teacher: "Math Teacher"                                     │
-│  Assigned Class: "Grade 1"                                   │
-│  Assigned Subjects: ["Math", "Science"]                      │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│         ATTACKER BYPASSES UI (e.g., API call)                │
-│  Direct API call to add mark for:                           │
-│  Pupil: "John Doe" (Grade 1)                                │
-│  Subject: "Reading" ← NOT ASSIGNED                          │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│           APPLICATION LAYER (Server Function)                │
-│  ✓ Check 1: Is pupil in teacher's class? → YES             │
-│  ✗ Check 2: Is Reading in teacher's subjects? → NO         │
-│  → Error: "You are not assigned to teach Reading"           │
-│  → BLOCKED at application layer                              │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-                  ✗ REQUEST REJECTED
 
+┌─────────────────────────────────────────────────────────────┐
+│ TEACHER LOGIN │
+│ Teacher: "Math Teacher" │
+│ Assigned Class: "Grade 1" │
+│ Assigned Subjects: ["Math", "Science"] │
+└─────────────────────────────────────────────────────────────┘
+↓
+┌─────────────────────────────────────────────────────────────┐
+│ ATTACKER BYPASSES UI (e.g., API call) │
+│ Direct API call to add mark for: │
+│ Pupil: "John Doe" (Grade 1) │
+│ Subject: "Reading" ← NOT ASSIGNED │
+└─────────────────────────────────────────────────────────────┘
+↓
+┌─────────────────────────────────────────────────────────────┐
+│ APPLICATION LAYER (Server Function) │
+│ ✓ Check 1: Is pupil in teacher's class? → YES │
+│ ✗ Check 2: Is Reading in teacher's subjects? → NO │
+│ → Error: "You are not assigned to teach Reading" │
+│ → BLOCKED at application layer │
+└─────────────────────────────────────────────────────────────┘
+↓
+✗ REQUEST REJECTED
 
 ## Even if Application Layer is Compromised
 
@@ -93,43 +93,46 @@
 ## Admin Flow (No Restrictions)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      ADMIN LOGIN                             │
-│  Role: "admin"                                               │
-│  School: "Little Stars Kindergarten"                        │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│                   MARKS PAGE (UI LAYER)                      │
-│  ✓ Subject dropdown shows: ALL SUBJECTS                     │
-│  ✓ Can select pupils from ALL CLASSES in their school       │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│           APPLICATION LAYER (Server Function)                │
-│  ✓ Check: Is user admin or deputy? → YES                   │
-│  → Skip subject validation                                   │
-│  → Proceed to database                                       │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│            DATABASE LAYER (RLS Policy)                       │
-│  ✓ Policy Check: Is user admin/deputy? → YES               │
-│  → INSERT allowed for any subject                           │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-                      ✓ SUCCESS!
 
+┌─────────────────────────────────────────────────────────────┐
+│ ADMIN LOGIN │
+│ Role: "admin" │
+│ School: "Little Stars Kindergarten" │
+└─────────────────────────────────────────────────────────────┘
+↓
+┌─────────────────────────────────────────────────────────────┐
+│ MARKS PAGE (UI LAYER) │
+│ ✓ Subject dropdown shows: ALL SUBJECTS │
+│ ✓ Can select pupils from ALL CLASSES in their school │
+└─────────────────────────────────────────────────────────────┘
+↓
+┌─────────────────────────────────────────────────────────────┐
+│ APPLICATION LAYER (Server Function) │
+│ ✓ Check: Is user admin or deputy? → YES │
+│ → Skip subject validation │
+│ → Proceed to database │
+└─────────────────────────────────────────────────────────────┘
+↓
+┌─────────────────────────────────────────────────────────────┐
+│ DATABASE LAYER (RLS Policy) │
+│ ✓ Policy Check: Is user admin/deputy? → YES │
+│ → INSERT allowed for any subject │
+└─────────────────────────────────────────────────────────────┘
+↓
+✓ SUCCESS!
 
 ## Key Points
 
 ### Defense in Depth
+
 The system uses **three independent security layers**:
+
 1. UI prevents accidental violations
 2. Application layer provides clear feedback
 3. Database enforces final authority
 
 ### Role-Based Access
+
 ```
 Super Admin:  Can access ALL schools, classes, subjects
 Admin:        Can access their school's classes and ALL subjects
@@ -140,6 +143,7 @@ Teacher:      Can access ONLY their class and ASSIGNED subjects
 ### Subject Assignment Examples
 
 **Example 1: Specialized Teacher**
+
 ```
 Teacher: Sarah Johnson
 Subjects: ["Math", "Science"]
@@ -148,6 +152,7 @@ Cannot Access: Reading, Writing, Art, Music, PE
 ```
 
 **Example 2: Substitute Teacher**
+
 ```
 Teacher: John Smith
 Subjects: ["Reading", "Math", "Writing", "Art", "Music", "Physical Education", "Science"]
@@ -155,6 +160,7 @@ Can Access: All subject marks
 ```
 
 **Example 3: Reading Specialist**
+
 ```
 Teacher: Emily Brown
 Subjects: ["Reading", "Writing"]
@@ -174,6 +180,7 @@ Cannot Access: Math, Science, Art, Music, PE
 ### Error Handling
 
 **Clear error messages** guide users:
+
 ```
 ❌ "Unauthorized: You are not assigned to teach Reading"
 ❌ "Unauthorized: You can only add marks for pupils in your assigned class"
@@ -183,6 +190,7 @@ Cannot Access: Math, Science, Art, Music, PE
 ### Performance Impact
 
 ⚡ **Minimal overhead**:
+
 - UI filtering: O(n) where n = number of subjects (7 subjects max)
 - Server validation: 2 database queries (user lookup + pupil lookup)
 - RLS policy: Single index lookup with array containment check

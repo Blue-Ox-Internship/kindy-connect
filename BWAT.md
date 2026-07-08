@@ -18,6 +18,7 @@ This file provides guidance to Bwat when working with code in this repository.
 ## Brand Identity
 
 **Colors** (all in oklch format, set in CSS variables on `:root`):
+
 - Background: `oklch(0.987 0.018 95)` — cream (#FFF8E7-ish)
 - Foreground: `oklch(0.28 0.04 60)` — deep warm brown
 - Primary: `oklch(0.81 0.165 78)` — sunny yellow (#FFB627)
@@ -32,11 +33,13 @@ This file provides guidance to Bwat when working with code in this repository.
 - Custom shadow: `--shadow-playful` (yellow-tinted drop shadow)
 
 **Typography**:
+
 - Headings (h1-h6): `"Fredoka", "Nunito", system-ui, sans-serif` + `letter-spacing: -0.01em`
 - Body: `"Nunito", system-ui, sans-serif`
 - Loaded via Fontsource: Fredoka (400-700) and Nunito (400-700)
 
 **Geometry**:
+
 - Base radius: `1rem` (`--radius`) — rounded/playful aesthetic
 - Derived radii: sm=calc(--radius - 4px), md=calc(--radius - 2px), lg=--radius, xl=calc(--radius + 4px), 2xl=calc(--radius + 8px), etc.
 - Spacing: Tailwind default scale

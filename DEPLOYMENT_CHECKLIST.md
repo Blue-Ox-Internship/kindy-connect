@@ -3,32 +3,35 @@
 ## Pre-Deployment
 
 ### 1. Backup Database
+
 ```bash
 # Create a backup before applying changes
 pg_dump -U your_user kindy_connect > backup_before_subject_restrictions_$(date +%Y%m%d).sql
 ```
 
 ### 2. Verify Current State
+
 ```sql
 -- Check if subjects column exists
-SELECT column_name, data_type 
-FROM information_schema.columns 
+SELECT column_name, data_type
+FROM information_schema.columns
 WHERE table_name = 'users' AND column_name = 'subjects';
 
 -- Check current RLS status
-SELECT tablename, rowsecurity 
-FROM pg_tables 
+SELECT tablename, rowsecurity
+FROM pg_tables
 WHERE tablename = 'marks';
 
 -- Count teachers without subjects
 SELECT COUNT(*) as teachers_without_subjects
-FROM users 
+FROM users
 WHERE role = 'teacher' AND (subjects IS NULL OR array_length(subjects, 1) IS NULL);
 ```
 
 ## Deployment Steps
 
 ### Step 1: Apply Database Migration
+
 ```bash
 # Connect to your database and run migration
 psql -U your_user -d kindy_connect -f database/migrations/add_subject_restrictions.sql
@@ -39,6 +42,7 @@ psql -U your_user -d kindy_connect -f database/migrations/add_subject_restrictio
 ```
 
 ### Step 2: Verify Migration Success
+
 ```sql
 -- Check policies were created
 SELECT schemaname, tablename, policyname, cmd, roles
@@ -53,11 +57,12 @@ WHERE tablename = 'marks';
 ```
 
 ### Step 3: Update Existing Teachers
+
 ```sql
 -- OPTION A: Assign all subjects to all teachers (temporary, until admin assigns proper subjects)
-UPDATE users 
+UPDATE users
 SET subjects = ARRAY['Reading', 'Math', 'Writing', 'Art', 'Music', 'Physical Education', 'Science']
-WHERE role = 'teacher' 
+WHERE role = 'teacher'
 AND (subjects IS NULL OR array_length(subjects, 1) IS NULL);
 
 -- OPTION B: Assign subjects based on existing marks (smart assignment)
@@ -70,18 +75,19 @@ WITH teacher_subjects AS (
 UPDATE users u
 SET subjects = COALESCE(ts.taught_subjects, ARRAY['Reading', 'Math', 'Writing', 'Art', 'Music', 'Physical Education', 'Science'])
 FROM teacher_subjects ts
-WHERE u.id = ts.recorded_by 
+WHERE u.id = ts.recorded_by
 AND u.role = 'teacher'
 AND (u.subjects IS NULL OR array_length(u.subjects, 1) IS NULL);
 
 -- Verify teachers now have subjects
-SELECT id, name, role, subjects 
-FROM users 
+SELECT id, name, role, subjects
+FROM users
 WHERE role = 'teacher'
 ORDER BY name;
 ```
 
 ### Step 4: Deploy Application Code
+
 ```bash
 # Build the application with new changes
 npm run build
@@ -95,6 +101,7 @@ systemctl restart kindy-connect  # if using systemd
 ```
 
 ### Step 5: Verify Application Functionality
+
 ```bash
 # Check server logs for any errors
 tail -f /var/log/kindy-connect/error.log
@@ -106,6 +113,7 @@ pm2 logs kindy-connect
 ## Post-Deployment Testing
 
 ### Test 1: Teacher with Limited Subjects ✓
+
 1. **Login** as a teacher with only "Math" and "Science" subjects
 2. **Navigate** to Marks page
 3. **Verify** only Math and Science appear in subject dropdown
@@ -113,6 +121,7 @@ pm2 logs kindy-connect
 5. **Check database** directly for Reading marks → Should not see any
 
 ### Test 2: Teacher Cannot Bypass UI ✗
+
 1. **Open browser console**
 2. **Attempt direct API call** (if you know the endpoint):
    ```javascript
@@ -128,17 +137,20 @@ pm2 logs kindy-connect
 3. **Expected**: Error message about unauthorized subject access
 
 ### Test 3: Admin Has Full Access ✓
+
 1. **Login** as admin
 2. **Navigate** to Marks page
 3. **Verify** all subjects appear in dropdown
 4. **Try to add** marks for any subject → Should succeed
 
 ### Test 4: Check Error Messages ✓
+
 1. **Login** as teacher with limited subjects
 2. **Try to edit** a mark for an unauthorized subject (via any means)
 3. **Expected error**: "Unauthorized: You are not assigned to teach [Subject]"
 
 ### Test 5: Performance Check ⚡
+
 1. **Navigate** to Marks page with many pupils
 2. **Check page load time** (should be similar to before)
 3. **Add/edit marks** (should complete in < 1 second)
@@ -146,6 +158,7 @@ pm2 logs kindy-connect
 ## Rollback Procedure (If Needed)
 
 ### If Issues Arise
+
 ```sql
 -- Restore original policies (without subject restrictions)
 DROP POLICY IF EXISTS "marks_select_policy" ON marks;
@@ -156,9 +169,9 @@ DROP POLICY IF EXISTS "marks_update_policy" ON marks;
 CREATE POLICY "marks_select_policy" ON marks FOR SELECT TO authenticated
 USING (
     EXISTS (
-        SELECT 1 FROM users 
+        SELECT 1 FROM users
         JOIN pupils ON pupils.id = marks.pupil_id
-        WHERE users.id = auth.uid()::text 
+        WHERE users.id = auth.uid()::text
         AND users.status = 'verified'
         AND (
             users.role IN ('admin', 'deputy')
@@ -170,9 +183,9 @@ USING (
 CREATE POLICY "marks_insert_policy" ON marks FOR INSERT TO authenticated
 WITH CHECK (
     EXISTS (
-        SELECT 1 FROM users 
+        SELECT 1 FROM users
         JOIN pupils ON pupils.id = marks.pupil_id
-        WHERE users.id = auth.uid()::text 
+        WHERE users.id = auth.uid()::text
         AND users.status = 'verified'
         AND (
             users.role IN ('admin', 'deputy')
@@ -184,9 +197,9 @@ WITH CHECK (
 CREATE POLICY "marks_update_policy" ON marks FOR UPDATE TO authenticated
 USING (
     EXISTS (
-        SELECT 1 FROM users 
+        SELECT 1 FROM users
         JOIN pupils ON pupils.id = marks.pupil_id
-        WHERE users.id = auth.uid()::text 
+        WHERE users.id = auth.uid()::text
         AND users.status = 'verified'
         AND (
             users.role IN ('admin', 'deputy')
@@ -208,8 +221,8 @@ pm2 restart kindy-connect
 ```sql
 -- Teachers without subjects (should be 0 after deployment)
 SELECT id, name, email, subjects
-FROM users 
-WHERE role = 'teacher' 
+FROM users
+WHERE role = 'teacher'
 AND (subjects IS NULL OR array_length(subjects, 1) IS NULL);
 
 -- Recent marks by subject (to verify access control)
@@ -227,6 +240,7 @@ LIMIT 20;
 ### Application Logs to Watch
 
 Look for these patterns:
+
 - ✅ "Mark added successfully"
 - ✅ "Mark updated successfully"
 - ⚠️ "Unauthorized: You are not assigned to teach"
@@ -248,17 +262,21 @@ Look for these patterns:
 ## Communication
 
 ### Notify Users
+
 After successful deployment, inform:
 
 **School Administrators**:
+
 > "We've enhanced security for teacher accounts. Teachers can now only access subjects they are assigned to teach. Please review teacher subject assignments in the Teachers page."
 
 **Teachers**:
+
 > "You may notice that you only see certain subjects in the Marks page. This is because you are now restricted to subjects you are assigned to teach. If you believe you should have access to additional subjects, please contact your school administrator."
 
 ## Support
 
 If you encounter issues:
+
 1. Check `TEACHER_SUBJECT_RESTRICTIONS.md` for detailed feature documentation
 2. Check `IMPLEMENTATION_SUMMARY.md` for technical details
 3. Check `ACCESS_CONTROL_FLOW.md` for visual flow diagrams
@@ -277,7 +295,7 @@ If you encounter issues:
 - [ ] Users notified
 - [ ] Documentation reviewed
 
-**Deployed by**: _________________  
-**Date**: _________________  
-**Time**: _________________  
-**Notes**: _________________
+**Deployed by**: ********\_********  
+**Date**: ********\_********  
+**Time**: ********\_********  
+**Notes**: ********\_********

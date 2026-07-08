@@ -14,42 +14,42 @@ import {
  */
 export function SchoolSelector() {
   const { currentUser, schools, setSchoolContext } = useStore();
-  
+
   // Only show for super_admin role
-  if (currentUser?.role !== 'super_admin') {
+  if (currentUser?.role !== "super_admin") {
     return null;
   }
-  
+
   // Get the school store state directly for selected school ID
   // Since the store doesn't expose it, we'll use session storage
-  const selectedSchoolId = typeof window !== 'undefined' 
-    ? sessionStorage.getItem('kinder.selectedSchoolId') || 'all'
-    : 'all';
-  
+  const selectedSchoolId =
+    typeof window !== "undefined"
+      ? sessionStorage.getItem("kinder.selectedSchoolId") || "all"
+      : "all";
+
   const handleSchoolChange = (value: string) => {
-    if (value === 'all') {
+    if (value === "all") {
       setSchoolContext(null);
     } else {
       setSchoolContext(value);
     }
   };
-  
+
   // Find the selected school to display its name
-  const selectedSchool = schools.find(s => s.id === selectedSchoolId);
-  const displayValue = selectedSchoolId === 'all' ? 'All Schools' : (selectedSchool?.name || 'All Schools');
-  
+  const selectedSchool = schools.find((s) => s.id === selectedSchoolId);
+  const displayValue =
+    selectedSchoolId === "all" ? "All Schools" : selectedSchool?.name || "All Schools";
+
   return (
     <div className="px-3 py-2">
-      <label className="text-xs font-medium text-muted-foreground mb-1 block">
-        School Context
-      </label>
+      <label className="text-xs font-medium text-muted-foreground mb-1 block">School Context</label>
       <Select value={selectedSchoolId} onValueChange={handleSchoolChange}>
         <SelectTrigger className="w-full">
           <SelectValue placeholder={displayValue}>{displayValue}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Schools</SelectItem>
-          {schools.map(school => (
+          {schools.map((school) => (
             <SelectItem key={school.id} value={school.id}>
               {school.name}
             </SelectItem>

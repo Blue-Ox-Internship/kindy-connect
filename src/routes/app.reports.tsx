@@ -4,9 +4,28 @@ import { useStore } from "@/lib/mock-store";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Download, FileSpreadsheet, FileText, GraduationCap } from "lucide-react";
@@ -27,7 +46,10 @@ function ReportsPage() {
   const todayAtt = attendance.filter((a) => a.date === today);
 
   // Check if user is admin (can generate reports)
-  const isAdmin = currentUser?.role === "admin" || currentUser?.role === "deputy" || currentUser?.role === "super_admin";
+  const isAdmin =
+    currentUser?.role === "admin" ||
+    currentUser?.role === "deputy" ||
+    currentUser?.role === "super_admin";
   const isTeacher = currentUser?.role === "teacher";
 
   // Super Admin School filtering
@@ -45,7 +67,7 @@ function ReportsPage() {
   useEffect(() => {
     if (filteredClasses.length > 0) {
       setSelectedClass((curr) => {
-        if (!curr || !filteredClasses.some(c => c.id === curr)) {
+        if (!curr || !filteredClasses.some((c) => c.id === curr)) {
           return filteredClasses[0]?.id ?? "";
         }
         return curr;
@@ -79,7 +101,7 @@ function ReportsPage() {
 
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    
+
     // Header
     doc.setFontSize(18);
     doc.text("Little Stars Kindergarten", pageWidth / 2, 15, { align: "center" });
@@ -96,7 +118,7 @@ function ReportsPage() {
         p ? `${p.firstName} ${p.lastName}` : "Unknown",
         c?.name || "N/A",
         a.arrival || "-",
-        a.departure || "-"
+        a.departure || "-",
       ];
     });
 
@@ -107,7 +129,7 @@ function ReportsPage() {
       body: tableData,
       theme: "grid",
       headStyles: { fillColor: [41, 128, 185] },
-      styles: { fontSize: 9 }
+      styles: { fontSize: 9 },
     });
 
     // Save
@@ -128,11 +150,11 @@ function ReportsPage() {
       return {
         "Pupil Name": p ? `${p.firstName} ${p.lastName}` : "Unknown",
         "Admission No": p?.admissionNo || "N/A",
-        "Class": c?.name || "N/A",
-        "Arrival": a.arrival || "-",
-        "Departure": a.departure || "-",
+        Class: c?.name || "N/A",
+        Arrival: a.arrival || "-",
+        Departure: a.departure || "-",
         "Arrival Transport": a.arrivalTransport || "-",
-        "Departure Transport": a.departureTransport || "-"
+        "Departure Transport": a.departureTransport || "-",
       };
     });
 
@@ -149,7 +171,7 @@ function ReportsPage() {
       { wch: 10 }, // Arrival
       { wch: 10 }, // Departure
       { wch: 15 }, // Arrival Transport
-      { wch: 15 }  // Departure Transport
+      { wch: 15 }, // Departure Transport
     ];
 
     // Save
@@ -161,21 +183,27 @@ function ReportsPage() {
 
   const getGradeColor = (grade: string) => {
     switch (grade) {
-      case "A": return "bg-green-500";
-      case "B": return "bg-blue-500";
-      case "C": return "bg-yellow-500";
-      case "D": return "bg-orange-500";
-      case "E": return "bg-red-500";
-      default: return "bg-gray-500";
+      case "A":
+        return "bg-green-500";
+      case "B":
+        return "bg-blue-500";
+      case "C":
+        return "bg-yellow-500";
+      case "D":
+        return "bg-orange-500";
+      case "E":
+        return "bg-red-500";
+      default:
+        return "bg-gray-500";
     }
   };
 
   const calculateAverage = (pupilId: string) => {
     const pupilMarks = marks.filter(
-      (m) => m.pupilId === pupilId && m.term === selectedTerm && m.year === selectedYear
+      (m) => m.pupilId === pupilId && m.term === selectedTerm && m.year === selectedYear,
     );
     if (pupilMarks.length === 0) return null;
-    
+
     const totalPercentage = pupilMarks.reduce((sum, m) => sum + (m.score / m.maxScore) * 100, 0);
     return totalPercentage / pupilMarks.length;
   };
@@ -192,9 +220,9 @@ function ReportsPage() {
   const generateReportCard = (pupilId: string) => {
     const pupil = pupils.find((p) => p.id === pupilId);
     if (!pupil) return;
-    
+
     const pupilMarks = marks.filter(
-      (m) => m.pupilId === pupilId && m.term === selectedTerm && m.year === selectedYear
+      (m) => m.pupilId === pupilId && m.term === selectedTerm && m.year === selectedYear,
     );
 
     if (pupilMarks.length === 0) {
@@ -215,7 +243,7 @@ function ReportsPage() {
     const classPupils = pupils.filter((p) => p.classId === selectedClass && p.active);
     const pupilsWithMarks = classPupils.filter((p) => {
       const pupilMarks = marks.filter(
-        (m) => m.pupilId === p.id && m.term === selectedTerm && m.year === selectedYear
+        (m) => m.pupilId === p.id && m.term === selectedTerm && m.year === selectedYear,
       );
       return pupilMarks.length > 0;
     });
@@ -233,35 +261,35 @@ function ReportsPage() {
 
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    
+
     // Header
     doc.setFontSize(20);
     doc.setFont(undefined, "bold");
     doc.text("Little Stars Kindergarten", pageWidth / 2, 20, { align: "center" });
     doc.setFontSize(14);
     doc.text("Academic Report Card", pageWidth / 2, 28, { align: "center" });
-    
+
     // Pupil Info Box
     doc.setFontSize(10);
     doc.setFont(undefined, "normal");
     doc.setFillColor(240, 240, 240);
     doc.rect(15, 35, pageWidth - 30, 35, "F");
-    
+
     doc.setFont(undefined, "bold");
     doc.text("Pupil Name:", 20, 43);
     doc.setFont(undefined, "normal");
     doc.text(`${previewPupil.firstName} ${previewPupil.lastName}`, 60, 43);
-    
+
     doc.setFont(undefined, "bold");
     doc.text("Admission No:", 20, 50);
     doc.setFont(undefined, "normal");
     doc.text(previewPupil.admissionNo, 60, 50);
-    
+
     doc.setFont(undefined, "bold");
     doc.text("Class:", 20, 57);
     doc.setFont(undefined, "normal");
     doc.text(classes.find((c) => c.id === previewPupil.classId)?.name || "N/A", 60, 57);
-    
+
     doc.setFont(undefined, "bold");
     doc.text("Term:", 20, 64);
     doc.setFont(undefined, "normal");
@@ -273,7 +301,7 @@ function ReportsPage() {
       `${mark.score}/${mark.maxScore}`,
       `${((mark.score / mark.maxScore) * 100).toFixed(0)}%`,
       mark.grade || "-",
-      mark.teacherComment || "-"
+      mark.teacherComment || "-",
     ]);
 
     autoTable(doc, {
@@ -284,33 +312,40 @@ function ReportsPage() {
       headStyles: { fillColor: [41, 128, 185], fontStyle: "bold" },
       styles: { fontSize: 9 },
       columnStyles: {
-        4: { cellWidth: 50 }
-      }
+        4: { cellWidth: 50 },
+      },
     });
 
     // Summary Box
     const finalY = (doc as any).lastAutoTable.finalY || 75;
     const average = calculateAverage(previewPupil.id);
     const overallGrade = getOverallGrade(average);
-    
+
     doc.setFillColor(230, 240, 255);
     doc.rect(15, finalY + 10, pageWidth - 30, 20, "F");
-    
+
     doc.setFontSize(12);
     doc.setFont(undefined, "bold");
     doc.text("Overall Average:", 20, finalY + 18);
     doc.text(`${average?.toFixed(1)}%`, 70, finalY + 18);
-    
+
     doc.text("Overall Grade:", 120, finalY + 18);
     doc.text(overallGrade, 160, finalY + 18);
 
     // Footer
     doc.setFontSize(8);
     doc.setFont(undefined, "normal");
-    doc.text(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+    doc.text(
+      `Generated on ${new Date().toLocaleString()}`,
+      pageWidth / 2,
+      doc.internal.pageSize.getHeight() - 10,
+      { align: "center" },
+    );
 
     // Save
-    doc.save(`report-card-${previewPupil.firstName}-${previewPupil.lastName}-${selectedTerm}-${selectedYear}.pdf`);
+    doc.save(
+      `report-card-${previewPupil.firstName}-${previewPupil.lastName}-${selectedTerm}-${selectedYear}.pdf`,
+    );
     toast.success("Report card downloaded as PDF");
     setPreviewDialogOpen(false);
   };
@@ -331,24 +366,45 @@ function ReportsPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Today - {today}</CardTitle>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => exportToPDF("Daily")} disabled={!isAdmin}>
-                  <FileText className="h-4 w-4 mr-1" />PDF
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => exportToPDF("Daily")}
+                  disabled={!isAdmin}
+                >
+                  <FileText className="h-4 w-4 mr-1" />
+                  PDF
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => exportToExcel("Daily")} disabled={!isAdmin}>
-                  <FileSpreadsheet className="h-4 w-4 mr-1" />Excel
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => exportToExcel("Daily")}
+                  disabled={!isAdmin}
+                >
+                  <FileSpreadsheet className="h-4 w-4 mr-1" />
+                  Excel
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
               <Table>
-                <TableHeader><TableRow><TableHead>Pupil</TableHead><TableHead>Class</TableHead><TableHead>Arrival</TableHead><TableHead>Departure</TableHead></TableRow></TableHeader>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Pupil</TableHead>
+                    <TableHead>Class</TableHead>
+                    <TableHead>Arrival</TableHead>
+                    <TableHead>Departure</TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
                   {todayAtt.map((a) => {
                     const p = pupils.find((x) => x.id === a.pupilId);
                     if (!p) return null;
                     return (
                       <TableRow key={a.id}>
-                        <TableCell>{p.firstName} {p.lastName}</TableCell>
+                        <TableCell>
+                          {p.firstName} {p.lastName}
+                        </TableCell>
                         <TableCell>{classes.find((c) => c.id === p.classId)?.name}</TableCell>
                         <TableCell>{a.arrival ?? "-"}</TableCell>
                         <TableCell>{a.departure ?? "-"}</TableCell>
@@ -362,25 +418,56 @@ function ReportsPage() {
         </TabsContent>
 
         <TabsContent value="weekly" className="mt-4">
-          <Card><CardContent className="p-8 text-center text-muted-foreground"><Download className="h-8 w-8 mx-auto mb-3" />Weekly report aggregates this week's attendance per pupil. Export to PDF or Excel.</CardContent></Card>
+          <Card>
+            <CardContent className="p-8 text-center text-muted-foreground">
+              <Download className="h-8 w-8 mx-auto mb-3" />
+              Weekly report aggregates this week's attendance per pupil. Export to PDF or Excel.
+            </CardContent>
+          </Card>
         </TabsContent>
         <TabsContent value="monthly" className="mt-4">
-          <Card><CardContent className="p-8 text-center text-muted-foreground"><Download className="h-8 w-8 mx-auto mb-3" />Monthly report aggregates the month's attendance per pupil and class. Export to PDF or Excel.</CardContent></Card>
+          <Card>
+            <CardContent className="p-8 text-center text-muted-foreground">
+              <Download className="h-8 w-8 mx-auto mb-3" />
+              Monthly report aggregates the month's attendance per pupil and class. Export to PDF or
+              Excel.
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="late" className="mt-4">
           <Card>
-            <CardHeader><CardTitle>Late arrivals (after {lateThreshold})</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Late arrivals (after {lateThreshold})</CardTitle>
+            </CardHeader>
             <CardContent>
               <Table>
-                <TableHeader><TableRow><TableHead>Pupil</TableHead><TableHead>Arrival</TableHead></TableRow></TableHeader>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Pupil</TableHead>
+                    <TableHead>Arrival</TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
                   {late.map((a) => {
                     const p = pupils.find((x) => x.id === a.pupilId);
                     if (!p) return null;
-                    return <TableRow key={a.id}><TableCell>{p.firstName} {p.lastName}</TableCell><TableCell>{a.arrival}</TableCell></TableRow>;
+                    return (
+                      <TableRow key={a.id}>
+                        <TableCell>
+                          {p.firstName} {p.lastName}
+                        </TableCell>
+                        <TableCell>{a.arrival}</TableCell>
+                      </TableRow>
+                    );
                   })}
-                  {late.length === 0 && <TableRow><TableCell colSpan={2} className="text-center py-6 text-muted-foreground">No late arrivals today</TableCell></TableRow>}
+                  {late.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center py-6 text-muted-foreground">
+                        No late arrivals today
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -452,7 +539,8 @@ function ReportsPage() {
 
                 {isTeacher && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
-                    <strong>Note:</strong> Only administrators can generate report cards. You can preview individual report cards below.
+                    <strong>Note:</strong> Only administrators can generate report cards. You can
+                    preview individual report cards below.
                   </div>
                 )}
 
@@ -473,7 +561,10 @@ function ReportsPage() {
                         .filter((p) => p.classId === selectedClass && p.active)
                         .map((p) => {
                           const pupilMarks = marks.filter(
-                            (m) => m.pupilId === p.id && m.term === selectedTerm && m.year === selectedYear
+                            (m) =>
+                              m.pupilId === p.id &&
+                              m.term === selectedTerm &&
+                              m.year === selectedYear,
                           );
                           const average = calculateAverage(p.id);
                           const overallGrade = getOverallGrade(average);
@@ -522,12 +613,12 @@ function ReportsPage() {
 
       {/* Report Card Preview Dialog */}
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Report Card Preview</DialogTitle>
           </DialogHeader>
           {previewPupil && (
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 overflow-y-auto pr-2 max-h-[65vh]">
               {/* Header */}
               <div className="text-center border-b pb-4">
                 <h2 className="text-2xl font-bold">Little Stars Kindergarten</h2>
@@ -577,12 +668,11 @@ function ReportsPage() {
                       <TableRow key={mark.id}>
                         <TableCell className="font-medium">{mark.subject}</TableCell>
                         <TableCell>
-                          {mark.score}/{mark.maxScore} ({((mark.score / mark.maxScore) * 100).toFixed(0)}%)
+                          {mark.score}/{mark.maxScore} (
+                          {((mark.score / mark.maxScore) * 100).toFixed(0)}%)
                         </TableCell>
                         <TableCell>
-                          <Badge className={getGradeColor(mark.grade || "")}>
-                            {mark.grade}
-                          </Badge>
+                          <Badge className={getGradeColor(mark.grade || "")}>{mark.grade}</Badge>
                         </TableCell>
                         <TableCell className="text-sm">{mark.teacherComment || "-"}</TableCell>
                       </TableRow>
@@ -604,7 +694,7 @@ function ReportsPage() {
                     <Label className="text-muted-foreground">Overall Grade</Label>
                     <Badge
                       className={`text-xl px-4 py-2 ${getGradeColor(
-                        getOverallGrade(calculateAverage(previewPupil.id))
+                        getOverallGrade(calculateAverage(previewPupil.id)),
                       )}`}
                     >
                       {getOverallGrade(calculateAverage(previewPupil.id))}

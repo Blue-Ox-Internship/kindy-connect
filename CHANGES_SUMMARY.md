@@ -1,6 +1,7 @@
 # Changes Summary - Teacher Subject Access Control
 
 ## 🎯 Objective
+
 Restrict teachers to only access subjects of the classes they are assigned to teach, ensuring proper authorization and data security.
 
 ## 📝 Files Changed
@@ -8,31 +9,37 @@ Restrict teachers to only access subjects of the classes they are assigned to te
 ### 1. Database Files
 
 #### Modified: `database/rls-policies.sql`
+
 **Changes**:
+
 - Updated `marks_select_policy` to include subject restriction
-- Updated `marks_insert_policy` to include subject restriction  
+- Updated `marks_insert_policy` to include subject restriction
 - Updated `marks_update_policy` to include subject restriction
 
 **Added Condition**: `AND marks.subject = ANY(users.subjects)`
 
 **Before**:
+
 ```sql
 OR (users.role = 'teacher' AND users.class_id = pupils.class_id)
 ```
 
 **After**:
+
 ```sql
 OR (
-    users.role = 'teacher' 
+    users.role = 'teacher'
     AND users.class_id = pupils.class_id
     AND marks.subject = ANY(users.subjects)
 )
 ```
 
 #### Created: `database/migrations/add_subject_restrictions.sql`
+
 **Purpose**: Migration script to apply RLS policy changes to existing databases
 
 **What it does**:
+
 1. Drops existing marks policies
 2. Recreates policies with subject restrictions
 3. Includes verification queries
@@ -42,6 +49,7 @@ OR (
 #### Modified: `src/lib/db-functions.ts`
 
 **addMark function** (lines ~717-770):
+
 - Added authorization check for teacher's class assignment
 - Added authorization check for teacher's subject assignment
 - Added clear error messages:
@@ -52,6 +60,7 @@ OR (
 - Validates subject is in teacher's subjects array
 
 **updateMark function** (lines ~771-846):
+
 - Added optional `actorId` parameter for authorization
 - Added authorization check for teacher's class assignment
 - Added authorization check for teacher's subject assignment (both current and updated subject)
@@ -61,20 +70,24 @@ OR (
 #### Modified: `src/lib/mock-store.tsx`
 
 **updateMark function** (line ~510):
+
 - Added `actorId: currentUser.id` to the server function call
 - Ensures authorization checks are triggered in updateMark server function
 
 **Before**:
+
 ```typescript
 const res = await updateMarkDb({ data: { id, data: markData } });
 ```
 
 **After**:
+
 ```typescript
 const res = await updateMarkDb({ data: { id, data: markData, actorId: currentUser.id } });
 ```
 
 #### No Changes: `src/routes/app.marks.tsx`
+
 - UI-level subject filtering already existed
 - No modifications needed
 
@@ -92,23 +105,25 @@ All documentation files are new additions:
 
 ## 🔧 Code Statistics
 
-| File | Lines Added | Lines Removed | Lines Changed |
-|------|-------------|---------------|---------------|
-| `database/rls-policies.sql` | 9 | 3 | 12 |
-| `database/migrations/add_subject_restrictions.sql` | 79 | 0 | 79 |
-| `src/lib/db-functions.ts` | 41 | 5 | 46 |
-| `src/lib/mock-store.tsx` | 1 | 1 | 2 |
-| Documentation (7 files) | 1,847 | 0 | 1,847 |
-| **Total** | **1,977** | **9** | **1,986** |
+| File                                               | Lines Added | Lines Removed | Lines Changed |
+| -------------------------------------------------- | ----------- | ------------- | ------------- |
+| `database/rls-policies.sql`                        | 9           | 3             | 12            |
+| `database/migrations/add_subject_restrictions.sql` | 79          | 0             | 79            |
+| `src/lib/db-functions.ts`                          | 41          | 5             | 46            |
+| `src/lib/mock-store.tsx`                           | 1           | 1             | 2             |
+| Documentation (7 files)                            | 1,847       | 0             | 1,847         |
+| **Total**                                          | **1,977**   | **9**         | **1,986**     |
 
 ## 🔒 Security Improvements
 
 ### Before
+
 - ✅ Teachers restricted to their assigned class
 - ❌ Teachers could access ALL subjects in their class
 - ❌ No subject-level access control
 
 ### After
+
 - ✅ Teachers restricted to their assigned class
 - ✅ Teachers restricted to their assigned subjects
 - ✅ Three-layer security (UI, Application, Database)
@@ -119,12 +134,14 @@ All documentation files are new additions:
 ### User Impact
 
 **Teachers**:
+
 - ✅ Better focused interface (only see relevant subjects)
 - ✅ Clear error messages if unauthorized
 - ⚠️ Must have subjects assigned to add marks
 - ⚠️ May need admin to update their subjects
 
 **Admins/Deputies/Super Admins**:
+
 - ✅ No functionality changes
 - ✅ Full access maintained
 - ⚠️ Must assign subjects when creating teachers
@@ -133,16 +150,19 @@ All documentation files are new additions:
 ### System Impact
 
 **Performance**:
+
 - ✅ Minimal overhead (~10-20ms per request)
 - ✅ Uses indexed columns for RLS policies
 - ✅ Array containment check is efficient
 
 **Database**:
+
 - ✅ Enhanced security at data level
 - ✅ Policies use existing indexes
 - ✅ No new tables or columns required
 
 **Application**:
+
 - ✅ Additional validation adds safety
 - ✅ Clear error messages improve UX
 - ✅ No breaking changes for admins
@@ -150,6 +170,7 @@ All documentation files are new additions:
 ## 🧪 Testing Requirements
 
 ### Unit Tests (Recommended)
+
 ```typescript
 // Test addMark authorization
 - ✓ Teacher can add mark for assigned subject
@@ -164,6 +185,7 @@ All documentation files are new additions:
 ```
 
 ### Integration Tests (Required)
+
 ```sql
 -- Test RLS policies
 - ✓ Teacher SELECT restricted to assigned subjects
@@ -173,6 +195,7 @@ All documentation files are new additions:
 ```
 
 ### Manual Tests (Required Before Deployment)
+
 - [ ] Create teacher with limited subjects
 - [ ] Verify UI shows only assigned subjects
 - [ ] Attempt to add mark for assigned subject (should work)
@@ -195,6 +218,7 @@ See [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md) for detailed steps.
 ## 🔄 Rollback Plan
 
 If issues arise:
+
 1. **Restore original RLS policies** (remove subject restrictions)
 2. **Redeploy previous application version**
 3. **Monitor** for stability
@@ -204,11 +228,13 @@ See [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md) for complete rollback p
 ## ⚠️ Breaking Changes
 
 ### For Teachers
+
 - **BREAKING**: Teachers without subjects assigned cannot add/view marks
 - **BREAKING**: Teachers can no longer access marks for non-assigned subjects
 - **FIX**: Admin must assign subjects to all teachers
 
 ### For Admins
+
 - **NON-BREAKING**: Admin functionality unchanged
 - **NEW REQUIREMENT**: Must assign subjects when creating teachers
 
@@ -243,27 +269,33 @@ Potential improvements for future iterations:
 ## 📞 Support Information
 
 **For Implementation Questions**:
+
 - Review [IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)
 - Review [TEACHER_SUBJECT_RESTRICTIONS.md](./TEACHER_SUBJECT_RESTRICTIONS.md)
 
 **For Deployment Help**:
+
 - Follow [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)
 
 **For Admin Usage**:
+
 - Read [ADMIN_QUICK_REFERENCE.md](./ADMIN_QUICK_REFERENCE.md)
 
 **For Architecture Understanding**:
+
 - See [ACCESS_CONTROL_FLOW.md](./ACCESS_CONTROL_FLOW.md)
 
 ## 🎓 Key Learnings
 
 **Security Best Practices**:
+
 - ✅ Defense in depth (multiple security layers)
 - ✅ Database-level enforcement (RLS policies)
 - ✅ Clear error messages for users
 - ✅ Cannot be bypassed via UI or API manipulation
 
 **Implementation Best Practices**:
+
 - ✅ Migration scripts for safe deployment
 - ✅ Backward compatibility for existing roles
 - ✅ Comprehensive documentation

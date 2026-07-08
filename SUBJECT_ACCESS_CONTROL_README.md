@@ -7,18 +7,22 @@ This feature restricts teachers to only access subjects they are assigned to tea
 ## 📚 Documentation Index
 
 ### For Everyone
+
 - **[This File]** - Overview and navigation to all documentation
 
 ### For Administrators
+
 - **[ADMIN_QUICK_REFERENCE.md](./ADMIN_QUICK_REFERENCE.md)** - Quick guide for managing teacher subject assignments
 - **[DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)** - Step-by-step deployment and testing guide
 
 ### For Developers
+
 - **[IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)** - Technical changes and implementation details
 - **[TEACHER_SUBJECT_RESTRICTIONS.md](./TEACHER_SUBJECT_RESTRICTIONS.md)** - Complete feature documentation with examples
 - **[ACCESS_CONTROL_FLOW.md](./ACCESS_CONTROL_FLOW.md)** - Visual flow diagrams showing how access control works
 
 ### Database
+
 - **[database/migrations/add_subject_restrictions.sql](./database/migrations/add_subject_restrictions.sql)** - Migration script to apply RLS policy changes
 - **[database/rls-policies.sql](./database/rls-policies.sql)** - Complete RLS policies including subject restrictions
 
@@ -27,15 +31,17 @@ This feature restricts teachers to only access subjects they are assigned to tea
 ### For Administrators
 
 **Creating a new teacher?**
+
 1. Go to Teachers page
 2. Click "Create User"
 3. **Select at least one subject** (required!)
 4. Complete the form
 
 **Need to update teacher subjects?**
+
 ```sql
-UPDATE users 
-SET subjects = ARRAY['Math', 'Science'] 
+UPDATE users
+SET subjects = ARRAY['Math', 'Science']
 WHERE id = 'teacher-id';
 ```
 
@@ -44,6 +50,7 @@ See [ADMIN_QUICK_REFERENCE.md](./ADMIN_QUICK_REFERENCE.md) for more details.
 ### For Developers
 
 **Deploying this feature?**
+
 1. Backup database
 2. Run migration: `psql -U user -d kindy_connect -f database/migrations/add_subject_restrictions.sql`
 3. Assign subjects to existing teachers
@@ -57,16 +64,19 @@ See [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md) for complete steps.
 This feature implements **defense in depth** with three security layers:
 
 ### Layer 1: UI (Frontend)
+
 - Teachers only see their assigned subjects in dropdowns
 - Prevents accidental unauthorized access
 - **File**: `src/routes/app.marks.tsx`
 
 ### Layer 2: Application (Server Functions)
+
 - Validates teacher authorization before database operations
 - Returns clear error messages
 - **Files**: `src/lib/db-functions.ts`, `src/lib/mock-store.tsx`
 
 ### Layer 3: Database (RLS Policies)
+
 - PostgreSQL enforces restrictions at the data level
 - Cannot be bypassed even if application is compromised
 - **File**: `database/rls-policies.sql`
@@ -97,23 +107,25 @@ See [ACCESS_CONTROL_FLOW.md](./ACCESS_CONTROL_FLOW.md) for detailed flow diagram
 
 ## 📝 Key Files Modified
 
-| File | Changes | Purpose |
-|------|---------|---------|
-| `database/rls-policies.sql` | Updated marks policies | Added subject restriction to SELECT, INSERT, UPDATE |
-| `database/migrations/add_subject_restrictions.sql` | New migration script | Safely applies policy changes to existing DBs |
-| `src/lib/db-functions.ts` | Enhanced addMark & updateMark | Added authorization checks and error messages |
-| `src/lib/mock-store.tsx` | Updated updateMark call | Passes actorId for authorization |
-| `src/routes/app.marks.tsx` | Already had filtering | No changes needed (UI filtering already existed) |
+| File                                               | Changes                       | Purpose                                             |
+| -------------------------------------------------- | ----------------------------- | --------------------------------------------------- |
+| `database/rls-policies.sql`                        | Updated marks policies        | Added subject restriction to SELECT, INSERT, UPDATE |
+| `database/migrations/add_subject_restrictions.sql` | New migration script          | Safely applies policy changes to existing DBs       |
+| `src/lib/db-functions.ts`                          | Enhanced addMark & updateMark | Added authorization checks and error messages       |
+| `src/lib/mock-store.tsx`                           | Updated updateMark call       | Passes actorId for authorization                    |
+| `src/routes/app.marks.tsx`                         | Already had filtering         | No changes needed (UI filtering already existed)    |
 
 ## ✅ What Changed for Users
 
 ### Teachers
+
 - ✅ Can only see subjects they're assigned to
 - ✅ Can only add/edit marks for assigned subjects
 - ✅ Clear error messages if unauthorized access attempted
 - ❌ Cannot bypass restrictions
 
 ### Admins/Deputies/Super Admins
+
 - ✅ **No changes** - full access to all subjects maintained
 - ✅ Can still manage all marks across all subjects
 - ✅ Must now assign subjects when creating teachers
@@ -125,7 +137,6 @@ See [ACCESS_CONTROL_FLOW.md](./ACCESS_CONTROL_FLOW.md) for detailed flow diagram
 1. **Teacher with limited subjects**
    - Should only see assigned subjects
    - Should only be able to add/edit marks for those subjects
-   
 2. **Teacher trying to bypass UI**
    - Direct API calls should be blocked
    - Database should enforce restrictions
@@ -139,19 +150,23 @@ See [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md) for detailed test steps
 ## 🆘 Troubleshooting
 
 ### Teacher can't see any subjects
+
 **Problem**: Teacher's subjects array is empty or NULL
-**Fix**: 
+**Fix**:
+
 ```sql
-UPDATE users 
-SET subjects = ARRAY['Reading', 'Math'] 
+UPDATE users
+SET subjects = ARRAY['Reading', 'Math']
 WHERE id = 'teacher-id';
 ```
 
 ### Teacher sees "Unauthorized" error
+
 **Problem**: Teacher trying to access a subject they're not assigned to
 **Fix**: Either assign the subject to the teacher or have an admin add the mark
 
 ### RLS policy violation error
+
 **Problem**: Database-level restriction triggered
 **Fix**: Verify teacher's class_id and subjects array in database
 
@@ -177,6 +192,7 @@ DROP POLICY IF EXISTS "marks_select_policy" ON marks;
 ## 📚 Additional Resources
 
 ### Complete Documentation
+
 1. **[ADMIN_QUICK_REFERENCE.md](./ADMIN_QUICK_REFERENCE.md)** - For school administrators
 2. **[DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)** - For deployment and testing
 3. **[IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)** - Technical implementation details
@@ -184,10 +200,12 @@ DROP POLICY IF EXISTS "marks_select_policy" ON marks;
 5. **[ACCESS_CONTROL_FLOW.md](./ACCESS_CONTROL_FLOW.md)** - Visual flow diagrams
 
 ### Database Files
+
 - **[database/migrations/add_subject_restrictions.sql](./database/migrations/add_subject_restrictions.sql)** - Migration script
 - **[database/rls-policies.sql](./database/rls-policies.sql)** - Complete RLS policies
 
 ### Source Code
+
 - **[src/lib/db-functions.ts](./src/lib/db-functions.ts)** - Server functions with authorization
 - **[src/lib/mock-store.tsx](./src/lib/mock-store.tsx)** - Store implementation
 - **[src/routes/app.marks.tsx](./src/routes/app.marks.tsx)** - Marks page UI
@@ -206,6 +224,7 @@ DROP POLICY IF EXISTS "marks_select_policy" ON marks;
 ## 📞 Support
 
 For questions or issues:
+
 1. Check the relevant documentation file above
 2. Review error messages in browser console and server logs
 3. Verify teacher subjects: `SELECT id, name, subjects FROM users WHERE role = 'teacher';`
@@ -216,6 +235,7 @@ For questions or issues:
 This feature enhances security by restricting teacher access to only their assigned subjects. The implementation uses three layers of security (UI, application, database) to ensure robust protection that cannot be bypassed. Administrators can easily manage teacher subject assignments, and clear error messages guide users when access is denied.
 
 **Key Benefits**:
+
 - ✅ Enhanced data security
 - ✅ Clear accountability
 - ✅ Better access control
