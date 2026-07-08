@@ -33,7 +33,8 @@ function Landing() {
   const [assignedId, setAssignedId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Only redirect if we have a current user and we're not in the middle of logging in
+  // Redirect an already-authenticated user (e.g. returning via a saved session)
+  // straight to the dashboard. Fresh logins navigate directly in doLogin below.
   useEffect(() => {
     if (currentUser && !isLoading) {
       console.log('[Landing] Current user detected, redirecting to dashboard:', currentUser.id);
@@ -52,8 +53,10 @@ function Landing() {
         return;
       }
       toast.success(`Welcome back, ${u.name.split(" ")[0]}!`);
-      // State update will trigger the useEffect above which will navigate
-      setIsLoading(false);
+      // Navigate directly on success instead of waiting for derived state to
+      // propagate through the store. This guarantees the redirect fires.
+      console.log('[Landing] Login succeeded, navigating to dashboard:', u.id);
+      navigate({ to: "/app/dashboard" });
     } catch (error) {
       console.error("Login error:", error);
       toast.error("Failed to sign in. Please try again.");

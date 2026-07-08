@@ -71,6 +71,27 @@ function Dashboard() {
     loadNotifications(30).catch(err => console.error('[Dashboard] Failed to load notifications:', err));
   }, []); // Empty deps - only run once on mount
 
+  // NOTE: All hooks must be declared before any conditional return to comply
+  // with the Rules of Hooks. Previously these were below the early returns,
+  // which crashed the page once currentUser became available.
+  const [arrivalDialogOpen, setArrivalDialogOpen] = useState(false);
+  const [departureDialogOpen, setDepartureDialogOpen] = useState(false);
+  const [selectedPupil, setSelectedPupil] = useState<any>(null);
+  const [arrivalForm, setArrivalForm] = useState({
+    transport: "",
+    vehicleReg: "",
+    personName: "",
+    personRelation: "",
+    phone: "",
+  });
+  const [departureForm, setDepartureForm] = useState({
+    transport: "",
+    vehicleReg: "",
+    personName: "",
+    personRelation: "",
+    phone: "",
+  });
+
   if (!currentUser) {
     console.warn('[Dashboard] No current user');
     // Show loading spinner
@@ -97,24 +118,6 @@ function Dashboard() {
       />
     );
   }
-
-  const [arrivalDialogOpen, setArrivalDialogOpen] = useState(false);
-  const [departureDialogOpen, setDepartureDialogOpen] = useState(false);
-  const [selectedPupil, setSelectedPupil] = useState<any>(null);
-  const [arrivalForm, setArrivalForm] = useState({
-    transport: "",
-    vehicleReg: "",
-    personName: "",
-    personRelation: "",
-    phone: "",
-  });
-  const [departureForm, setDepartureForm] = useState({
-    transport: "",
-    vehicleReg: "",
-    personName: "",
-    personRelation: "",
-    phone: "",
-  });
 
   const transportModes = ["Car", "School Bus", "Motorcycle", "Walking", "Bicycle", "Van", "Taxi"];
   const relations = [
