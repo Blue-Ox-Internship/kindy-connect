@@ -178,11 +178,16 @@ export const getInitialData = createServerFn({ method: "GET" })
         console.log('[getInitialData] Loading data for super admin');
         schoolsPromise = sql`SELECT * FROM schools ORDER BY name ASC`;
         // CRITICAL FIX: Always include current user + 29 other recent users
-        // Use UNION to ensure current user is always included
+        // Using a simpler query that guarantees current user is included
         usersPromise = sql`
-          (SELECT * FROM users WHERE id = ${userId})
-          UNION
-          (SELECT * FROM users WHERE id != ${userId} ORDER BY registered_at DESC LIMIT 29)
+          SELECT * FROM users 
+          WHERE id = ${userId} 
+             OR id IN (
+               SELECT id FROM users 
+               WHERE id != ${userId} 
+               ORDER BY registered_at DESC 
+               LIMIT 29
+             )
         `;
         classesPromise = sql`SELECT * FROM classes ORDER BY name ASC LIMIT 50`;
         parentsPromise = sql`SELECT * FROM parents ORDER BY name ASC LIMIT 50`;
@@ -245,6 +250,17 @@ export const getInitialData = createServerFn({ method: "GET" })
         pupils: pupils.length,
       });
 
+      // CRITICAL: Verify current user is in the loaded users
+      const userIds = users.map((u: any) => u.id);
+      const currentUserFound = userIds.includes(userId);
+      console.log(`[getInitialData] Current user ${userId} found in loaded users:`, currentUserFound);
+      if (!currentUserFound) {
+        console.error(`[getInitialData] CRITICAL ERROR: Current user ${userId} NOT found in loaded users!`, {
+          loadedUserIds: userIds,
+          totalUsers: users.length,
+        });
+      }
+
       return {
         schools: toCamel<School[]>(schools),
         users: toCamel<User[]>(users),
@@ -262,6 +278,11 @@ export const getInitialData = createServerFn({ method: "GET" })
       };
     } catch (error) {
       console.error("Error in getInitialData server function:", error);
+      console.error("Error details:", {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        userId,
+      });
       // Return empty data instead of throwing to allow page to load
       return {
         schools: [],
