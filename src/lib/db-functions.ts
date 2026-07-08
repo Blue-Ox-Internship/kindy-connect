@@ -177,20 +177,11 @@ export const getInitialData = createServerFn({ method: "GET" })
       if (isSuperAdmin) {
         console.log('[getInitialData] Loading data for super admin');
         schoolsPromise = sql`SELECT * FROM schools ORDER BY name ASC`;
-        // CRITICAL FIX: Always include current user + 29 other recent users
-        // Using a simpler query that guarantees current user is included
-        usersPromise = sql`
-          SELECT * FROM users 
-          WHERE id = ${userId} 
-             OR id IN (
-               SELECT id FROM users 
-               WHERE id != ${userId} 
-               ORDER BY registered_at DESC 
-               LIMIT 29
-             )
-        `;
-        classesPromise = sql`SELECT * FROM classes ORDER BY name ASC LIMIT 50`;
-        parentsPromise = sql`SELECT * FROM parents ORDER BY name ASC LIMIT 50`;
+        // TEMPORARY FIX: Load all users to ensure current user is included
+        // TODO: Optimize later with proper pagination
+        usersPromise = sql`SELECT * FROM users ORDER BY registered_at DESC`;
+        classesPromise = sql`SELECT * FROM classes ORDER BY name ASC LIMIT 100`;
+        parentsPromise = sql`SELECT * FROM parents ORDER BY name ASC LIMIT 100`;
         pupilsPromise = sql`
           SELECT p.*, COALESCE(ARRAY_AGG(pp.parent_id) FILTER (WHERE pp.parent_id IS NOT NULL), '{}') as parent_ids
           FROM pupils p
@@ -198,7 +189,7 @@ export const getInitialData = createServerFn({ method: "GET" })
           WHERE p.active = true
           GROUP BY p.id, p.admission_no, p.first_name, p.last_name, p.gender, p.dob, p.class_id, p.photo, p.active, p.school_id
           ORDER BY p.first_name ASC, p.last_name ASC
-          LIMIT 100
+          LIMIT 200
         `;
       } else {
         if (!schoolId) {
@@ -250,20 +241,22 @@ export const getInitialData = createServerFn({ method: "GET" })
         pupils: pupils.length,
       });
 
-      // CRITICAL: Verify current user is in the loaded users
-      const userIds = users.map((u: any) => u.id);
-      const currentUserFound = userIds.includes(userId);
-      console.log(`[getInitialData] Current user ${userId} found in loaded users:`, currentUserFound);
-      if (!currentUserFound) {
-        console.error(`[getInitialData] CRITICAL ERROR: Current user ${userId} NOT found in loaded users!`, {
-          loadedUserIds: userIds,
-          totalUsers: users.length,
-        });
+      // Transform data
+      const transformedUsers = toCamel<User[]>(users);
+      console.log(`[getInitialData] After transform - users count: ${transformedUsers.length}, looking for userId: ${userId}`);
+      
+      // Verify current user exists
+      const currentUserInData = transformedUsers.find(u => u.id === userId);
+      if (currentUserInData) {
+        console.log(`[getInitialData] ✓ Current user ${userId} found:`, currentUserInData.name);
+      } else {
+        console.error(`[getInitialData] ✗ Current user ${userId} NOT FOUND in transformed data!`);
+        console.error('Available user IDs:', transformedUsers.map(u => u.id).slice(0, 10));
       }
 
       return {
         schools: toCamel<School[]>(schools),
-        users: toCamel<User[]>(users),
+        users: transformedUsers,
         classes: toCamel<ClassRoom[]>(classes),
         parents: toCamel<Parent[]>(parents),
         pupils: toCamel<Pupil[]>(pupils).map((p) => ({
