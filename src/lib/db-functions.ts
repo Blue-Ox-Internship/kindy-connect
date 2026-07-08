@@ -222,6 +222,7 @@ export const getInitialData = createServerFn({ method: "GET" })
           ORDER BY p.first_name ASC, p.last_name ASC
         `;
         console.log(`[getInitialData] School admin queries prepared for school: ${schoolId}`);
+      }
 
       // PERFORMANCE: Load only essential data at startup
       // Attendance, notifications, audit logs, and marks are loaded on-demand per page
