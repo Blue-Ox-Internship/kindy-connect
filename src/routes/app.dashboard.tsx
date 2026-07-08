@@ -73,7 +73,15 @@ function Dashboard() {
 
   if (!currentUser) {
     console.warn('[Dashboard] No current user');
-    return null;
+    // Show loading spinner
+    return (
+      <AppShell title="Dashboard">
+        <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4">
+          <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+          <p className="text-sm font-semibold tracking-wide animate-pulse">Loading dashboard...</p>
+        </div>
+      </AppShell>
+    );
   }
 
   console.log('[Dashboard] Rendering dashboard for user:', currentUser.role);

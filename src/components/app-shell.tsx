@@ -33,7 +33,13 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
   }, [currentUser, navigate]);
 
   if (!currentUser) {
-    return null;
+    // Show loading spinner instead of blank page
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground gap-4">
+        <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+        <p className="text-sm font-semibold tracking-wide animate-pulse">Loading your dashboard...</p>
+      </div>
+    );
   }
 
   const isSuperAdmin = currentUser.role === "super_admin";
