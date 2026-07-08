@@ -221,7 +221,7 @@ export const getInitialData = createServerFn({ method: "GET" })
           GROUP BY p.id, p.admission_no, p.first_name, p.last_name, p.gender, p.dob, p.class_id, p.photo, p.active, p.school_id
           ORDER BY p.first_name ASC, p.last_name ASC
         `;
-      }
+        console.log(`[getInitialData] School admin queries prepared for school: ${schoolId}`);
 
       // PERFORMANCE: Load only essential data at startup
       // Attendance, notifications, audit logs, and marks are loaded on-demand per page
