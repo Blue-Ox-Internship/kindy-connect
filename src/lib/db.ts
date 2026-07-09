@@ -11,7 +11,9 @@ if (!connectionString) {
 export const sql = postgres(connectionString || "", {
   max: 10,
   idle_timeout: 20,
-  connect_timeout: 10,
+  connect_timeout: 30, // Increased timeout for Supabase (may be paused)
+  max_lifetime: 60 * 30, // 30 minutes
+  onnotice: () => {}, // Suppress notices
 });
 
 /**
