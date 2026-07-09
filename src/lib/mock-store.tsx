@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef, type ReactNode } from "react";
 import {
   getInitialData,
   loginUser,
@@ -85,9 +85,25 @@ const Ctx = createContext<Store | null>(null);
 const SESSION_KEY = "kinder.currentUserId";
 const SCHOOL_CONTEXT_KEY = "kinder.selectedSchoolId";
 
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function classifyDbError(err: any): { isPaused: boolean; message: string } {
+  const msg: string = err?.message || err?.toString() || "Unknown error";
+  const isPaused =
+    msg.includes("tenant") ||
+    msg.includes("not found") ||
+    msg.includes("ENOTFOUND") ||
+    msg.includes("CONNECT_TIMEOUT") ||
+    msg.includes("timeout") ||
+    msg.includes("ECONNREFUSED");
+  return { isPaused, message: msg };
+}
+
 export function MockStoreProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isPausedError, setIsPausedError] = useState(false);
+  const [retryIn, setRetryIn] = useState(0);       // seconds until next auto-retry
+  const retryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [state, setState] = useState(() => {
     let savedUserId: string | null = null;
     let savedSchoolId: string | null = null;
@@ -112,55 +128,80 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     };
   });
 
-  // Load database tables on mount
-  useEffect(() => {
-    let cancelled = false;
-
-    // Show a helpful error if loading takes more than 25 seconds
-    const timeoutId = setTimeout(() => {
-      if (!cancelled) {
-        setLoadError(
-          "The database is taking a long time to respond. If you're using Supabase's free tier, it may have paused due to inactivity. Please wait a moment and try again — or visit your Supabase dashboard to restore the project."
-        );
-        setLoading(false);
+  // ── Auto-retry countdown timer ───────────────────────────────────────────────
+  const startRetryCountdown = useCallback((seconds: number, onFire: () => void) => {
+    if (retryTimerRef.current) clearInterval(retryTimerRef.current);
+    setRetryIn(seconds);
+    let remaining = seconds;
+    retryTimerRef.current = setInterval(() => {
+      remaining -= 1;
+      setRetryIn(remaining);
+      if (remaining <= 0) {
+        clearInterval(retryTimerRef.current!);
+        retryTimerRef.current = null;
+        onFire();
       }
+    }, 1000);
+  }, []);
+
+  // ── Load database on mount (and on manual retry) ─────────────────────────────
+  const attemptLoad = useCallback(async () => {
+    // Clear any existing countdown
+    if (retryTimerRef.current) { clearInterval(retryTimerRef.current); retryTimerRef.current = null; }
+    setLoading(true);
+    setLoadError(null);
+    setIsPausedError(false);
+    setRetryIn(0);
+
+    // Timeout guard — Supabase free tier can take up to 25s to wake
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      setLoadError("Database is waking up (this can take up to 2 minutes on free tier).");
+      setIsPausedError(true);
+      setLoading(false);
+      startRetryCountdown(15, attemptLoad);
     }, 25000);
 
-    async function loadData() {
-      try {
-        const data = await getInitialData();
-        if (!cancelled) {
-          clearTimeout(timeoutId);
-          setState(s => ({
-            ...s,
-            schools: data.schools || [],
-            users: data.users,
-            pupils: data.pupils,
-            parents: data.parents,
-            classes: data.classes,
-            attendance: data.attendance,
-            notifications: data.notifications,
-            audit: data.audit,
-            marks: data.marks,
-          }));
-          setLoadError(null);
-          setLoading(false);
-        }
-      } catch (err: any) {
-        if (!cancelled) {
-          clearTimeout(timeoutId);
-          console.error("Failed to load live database data:", err);
-          const msg = err?.message?.includes("CONNECT_TIMEOUT") || err?.message?.includes("timeout")
-            ? "Could not connect to the database. Your Supabase project may be paused — visit your Supabase dashboard to restore it, then refresh this page."
-            : `Failed to load data: ${err?.message || "Unknown error"}. Please refresh the page.`;
-          setLoadError(msg);
-          setLoading(false);
-        }
-      }
+    try {
+      const data = await getInitialData();
+      if (timedOut) return; // already shown error, ignore late response
+      clearTimeout(timeoutId);
+      setState(s => ({
+        ...s,
+        schools: data.schools || [],
+        users: data.users,
+        pupils: data.pupils,
+        parents: data.parents,
+        classes: data.classes,
+        attendance: data.attendance,
+        notifications: data.notifications,
+        audit: data.audit,
+        marks: data.marks,
+      }));
+      setLoadError(null);
+      setIsPausedError(false);
+      setLoading(false);
+    } catch (err: any) {
+      if (timedOut) return;
+      clearTimeout(timeoutId);
+      console.error("Failed to load live database data:", err);
+      const { isPaused, message } = classifyDbError(err);
+      setLoadError(message);
+      setIsPausedError(isPaused);
+      setLoading(false);
+      // Auto-retry every 15 seconds for paused-project errors
+      if (isPaused) startRetryCountdown(15, attemptLoad);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startRetryCountdown]);
 
-    loadData();
-    return () => { cancelled = true; clearTimeout(timeoutId); };
+  useEffect(() => {
+    attemptLoad();
+    return () => {
+      if (retryTimerRef.current) clearInterval(retryTimerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Refresh function to reload data from database
@@ -689,33 +730,92 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
   if (loadError) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="max-w-md w-full text-center space-y-6">
-          {/* Icon */}
-          <div className="mx-auto h-16 w-16 rounded-2xl bg-destructive/10 flex items-center justify-center">
-            <svg className="h-8 w-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-            </svg>
+        <div className="max-w-sm w-full text-center space-y-6">
+
+          {/* Animated icon — orange for paused, red for other errors */}
+          <div className="relative mx-auto w-fit">
+            {isPausedError && (
+              <div className="absolute inset-0 rounded-3xl bg-orange-400/20 animate-ping" style={{ animationDuration: "2s" }} />
+            )}
+            <div className={`relative h-20 w-20 rounded-3xl flex items-center justify-center mx-auto ${
+              isPausedError ? "bg-orange-100 dark:bg-orange-900/30" : "bg-destructive/10"
+            }`}>
+              {isPausedError ? (
+                /* Moon / sleep icon for paused */
+                <svg className="h-10 w-10 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+                </svg>
+              ) : (
+                /* Alert icon for generic errors */
+                <svg className="h-10 w-10 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                </svg>
+              )}
+            </div>
           </div>
 
-          {/* Message */}
-          <div>
-            <h2 className="text-xl font-semibold text-foreground mb-2">Connection Problem</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">{loadError}</p>
+          {/* Title + message */}
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold text-foreground">
+              {isPausedError ? "Database is sleeping" : "Connection failed"}
+            </h2>
+            {isPausedError ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Your Supabase free-tier project has <strong>paused due to inactivity</strong>.
+                  Go to your dashboard, click <strong>Restore Project</strong>, then wait ~2 minutes.
+                </p>
+                {/* Step-by-step */}
+                <ol className="text-left text-xs text-muted-foreground space-y-1.5 bg-muted/40 rounded-xl p-4">
+                  <li className="flex items-start gap-2">
+                    <span className="shrink-0 h-5 w-5 rounded-full bg-orange-500/15 text-orange-600 text-[10px] font-bold flex items-center justify-center mt-0.5">1</span>
+                    Open <strong>Supabase Dashboard</strong> below
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="shrink-0 h-5 w-5 rounded-full bg-orange-500/15 text-orange-600 text-[10px] font-bold flex items-center justify-center mt-0.5">2</span>
+                    Select your project → click <strong>Restore Project</strong>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="shrink-0 h-5 w-5 rounded-full bg-orange-500/15 text-orange-600 text-[10px] font-bold flex items-center justify-center mt-0.5">3</span>
+                    Wait ~2 minutes — this page will <strong>retry automatically</strong>
+                  </li>
+                </ol>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Could not reach the database. Check your connection and try again.
+              </p>
+            )}
           </div>
 
-          {/* Actions */}
+          {/* Auto-retry countdown bar */}
+          {isPausedError && retryIn > 0 && (
+            <div className="space-y-2">
+              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-orange-400 rounded-full transition-all duration-1000 ease-linear"
+                  style={{ width: `${(retryIn / 15) * 100}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Auto-retrying in <span className="font-semibold text-orange-500">{retryIn}s</span>…
+              </p>
+            </div>
+          )}
+
+          {/* Action buttons */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
-              onClick={() => window.location.reload()}
+              onClick={attemptLoad}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
               </svg>
-              Retry
+              Retry now
             </button>
             <a
-              href="https://supabase.com/dashboard"
+              href="https://supabase.com/dashboard/project/zgkjvkchapfwbqdsmsdt"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-input bg-background px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
@@ -723,14 +823,12 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
               </svg>
-              Supabase Dashboard
+              Open Dashboard
             </a>
           </div>
 
-          {/* Hint */}
-          <p className="text-xs text-muted-foreground">
-            Free tier databases pause after 7 days of inactivity.{" "}
-            <span className="font-medium">Restore your project</span> in the dashboard, wait ~2 minutes, then retry.
+          <p className="text-[11px] text-muted-foreground/70">
+            Free tier pauses after 7 days of inactivity. Upgrade to Pro to prevent this.
           </p>
         </div>
       </div>

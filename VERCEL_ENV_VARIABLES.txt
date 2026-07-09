@@ -1,0 +1,103 @@
+# ============================================
+# VERCEL ENVIRONMENT VARIABLES
+# Copy these EXACTLY to Vercel Dashboard
+# ============================================
+
+Go to: https://vercel.com/dashboard
+→ Select "kindy-connect" project
+→ Settings → Environment Variables
+→ Add each variable below
+
+# ============================================
+# REQUIRED VARIABLES
+# ============================================
+
+DATABASE_URL
+postgresql://postgres.zgkjvkchapfwbqdsmsdt:z3Oea93uoJ1ZhHtD@aws-0-eu-west-2.pooler.supabase.com:6543/postgres
+
+SUPABASE_URL
+https://zgkjvkchapfwbqdsmsdt.supabase.co
+
+SUPABASE_ANON_KEY
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpna2p2a2NoYXBmd2JxZHNtc2R0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3OTM3MTMsImV4cCI6MjA5ODM2OTcxM30.VrqUDSrCKNque9xWmNEg5tYi_L_4JhVD8GUe5TMHa9A
+
+SUPABASE_SERVICE_ROLE_KEY
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpna2p2a2NoYXBmd2JxZHNtc2R0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4Mjc5MzcxMywiZXhwIjoyMDk4MzY5NzEzfQ.aCxFlAe6JXL6alD43Oa8VVXKePAuAPQs5aGgg8UkrKA
+
+VITE_APP_NAME
+Little Stars
+
+VITE_APP_URL
+https://kindy-connect.vercel.app
+
+NODE_ENV
+production
+
+# ============================================
+# OPTIONAL VARIABLES (for email/sms features)
+# ============================================
+
+VITE_EMAIL_FROM
+nobleahimbisibwe5@gmail.com
+
+VITE_SMS_API_KEY
+(leave empty for now)
+
+VITE_SMS_API_URL
+(leave empty for now)
+
+VITE_EMAIL_API_KEY
+(leave empty for now)
+
+# ============================================
+# STEP-BY-STEP INSTRUCTIONS
+# ============================================
+
+1. Go to Vercel Dashboard: https://vercel.com/dashboard
+
+2. Click on your "kindy-connect" project
+
+3. Click "Settings" tab at the top
+
+4. Click "Environment Variables" in left sidebar
+
+5. For each variable above:
+   - Click "Add New" button
+   - Enter the variable NAME (e.g., DATABASE_URL)
+   - Paste the VALUE exactly as shown
+   - Select environments: Production, Preview, Development (all three)
+   - Click "Save"
+
+6. After adding all variables, go to "Deployments" tab
+
+7. Click on the latest deployment
+
+8. Click "Redeploy" button
+
+9. Wait for deployment to complete (2-3 minutes)
+
+10. Visit: https://kindy-connect.vercel.app
+
+11. Login with:
+    - ID: admin
+    - Password: admin123
+
+# ============================================
+# TROUBLESHOOTING
+# ============================================
+
+If deployment fails:
+- Check that all variables are added correctly
+- Make sure no extra spaces in values
+- Verify all three environments are selected
+- Check Vercel deployment logs for errors
+
+If database connection fails:
+- Check Supabase dashboard - database might be paused
+- Click "Restore" if paused
+- Wait 2-3 minutes and redeploy
+
+If login fails:
+- Run the SQL to create admin user in Supabase
+- File: supabase/migrations/20250109_add_quick_superadmin.sql
+
