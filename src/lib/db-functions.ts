@@ -10,6 +10,10 @@ export interface School {
   registeredAt: string;
 }
 
+// Type aliases used across the app
+export type Role = "super_admin" | "admin" | "deputy" | "teacher";
+export type TeacherStatus = "pending" | "verified" | "rejected";
+
 // Types matching frontend
 export interface User {
   id: string;
@@ -122,24 +126,55 @@ export interface Mark {
 export const getInitialData = createServerFn({ method: "GET" })
   .handler(async () => {
     try {
-      const schools = await sql`SELECT * FROM schools ORDER BY name ASC`;
-      const users = await sql`SELECT * FROM users ORDER BY registered_at DESC`;
-      const classes = await sql`SELECT * FROM classes ORDER BY name ASC`;
-      const parents = await sql`SELECT * FROM parents ORDER BY name ASC`;
-      
-      // Aggregate parentIds in the pupils query
-      const pupils = await sql`
-        SELECT p.*, COALESCE(ARRAY_AGG(pp.parent_id) FILTER (WHERE pp.parent_id IS NOT NULL), '{}') as parent_ids
-        FROM pupils p
-        LEFT JOIN pupil_parents pp ON p.id = pp.pupil_id
-        GROUP BY p.id, p.admission_no, p.first_name, p.last_name, p.gender, p.dob, p.class_id, p.photo, p.active, p.school_id
-        ORDER BY p.first_name ASC, p.last_name ASC
-      `;
-      
-      const attendance = await sql`SELECT * FROM attendance ORDER BY date DESC, arrival DESC`;
-      const notifications = await sql`SELECT * FROM notifications ORDER BY timestamp DESC LIMIT 200`;
-      const audit = await sql`SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 200`;
-      const marks = await sql`SELECT * FROM marks ORDER BY recorded_at DESC`;
+      // ─── Run ALL queries in parallel ────────────────────────────────────────
+      // Previously sequential (8 awaits in a row). Now concurrent: total time =
+      // max(individual query times) instead of sum(individual query times).
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+      const cutoffDate = ninetyDaysAgo.toISOString().slice(0, 10);
+
+      const [
+        schools,
+        users,
+        classes,
+        parents,
+        pupils,
+        attendance,
+        notifications,
+        audit,
+        marks,
+      ] = await Promise.all([
+        sql`SELECT * FROM schools ORDER BY name ASC`,
+
+        sql`SELECT * FROM users ORDER BY registered_at DESC`,
+
+        sql`SELECT * FROM classes ORDER BY name ASC`,
+
+        sql`SELECT * FROM parents ORDER BY name ASC`,
+
+        // Aggregate parentIds in one query to avoid N+1 problems
+        sql`
+          SELECT p.*, COALESCE(ARRAY_AGG(pp.parent_id) FILTER (WHERE pp.parent_id IS NOT NULL), '{}') as parent_ids
+          FROM pupils p
+          LEFT JOIN pupil_parents pp ON p.id = pp.pupil_id
+          GROUP BY p.id, p.admission_no, p.first_name, p.last_name, p.gender, p.dob, p.class_id, p.photo, p.active, p.school_id
+          ORDER BY p.first_name ASC, p.last_name ASC
+        `,
+
+        // Only fetch last 90 days of attendance to keep payload manageable
+        sql`
+          SELECT * FROM attendance
+          WHERE date >= ${cutoffDate}
+          ORDER BY date DESC, arrival DESC
+        `,
+
+        sql`SELECT * FROM notifications ORDER BY timestamp DESC LIMIT 200`,
+
+        sql`SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 200`,
+
+        // Fetch the most recent 2000 marks (sufficient for any school's reporting)
+        sql`SELECT * FROM marks ORDER BY recorded_at DESC LIMIT 2000`,
+      ]);
 
       return {
         schools: toCamel<School[]>(schools),
@@ -160,6 +195,7 @@ export const getInitialData = createServerFn({ method: "GET" })
       throw error;
     }
   });
+
 
 // ----------------------------------------------------
 // 2. Authentication Functions

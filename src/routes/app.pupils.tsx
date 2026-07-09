@@ -122,7 +122,7 @@ function PupilsPage() {
           email: form.parentEmail,
           relationship: form.parentRelationship,
         },
-      } as Omit<Pupil, "id" | "active"> & { parent: { name: string; phone: string; email: string; relationship: string } });
+      } as any);
       toast.success("Pupil registered successfully and saved to database");
       setOpen(false);
       setForm({

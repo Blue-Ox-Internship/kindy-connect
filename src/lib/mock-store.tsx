@@ -87,6 +87,7 @@ const SCHOOL_CONTEXT_KEY = "kinder.selectedSchoolId";
 
 export function MockStoreProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [state, setState] = useState(() => {
     let savedUserId: string | null = null;
     let savedSchoolId: string | null = null;
@@ -113,28 +114,53 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
 
   // Load database tables on mount
   useEffect(() => {
+    let cancelled = false;
+
+    // Show a helpful error if loading takes more than 25 seconds
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        setLoadError(
+          "The database is taking a long time to respond. If you're using Supabase's free tier, it may have paused due to inactivity. Please wait a moment and try again — or visit your Supabase dashboard to restore the project."
+        );
+        setLoading(false);
+      }
+    }, 25000);
+
     async function loadData() {
       try {
         const data = await getInitialData();
-        setState(s => ({
-          ...s,
-          schools: data.schools || [],
-          users: data.users,
-          pupils: data.pupils,
-          parents: data.parents,
-          classes: data.classes,
-          attendance: data.attendance,
-          notifications: data.notifications,
-          audit: data.audit,
-          marks: data.marks,
-        }));
-      } catch (err) {
-        console.error("Failed to load live database data:", err);
-      } finally {
-        setLoading(false);
+        if (!cancelled) {
+          clearTimeout(timeoutId);
+          setState(s => ({
+            ...s,
+            schools: data.schools || [],
+            users: data.users,
+            pupils: data.pupils,
+            parents: data.parents,
+            classes: data.classes,
+            attendance: data.attendance,
+            notifications: data.notifications,
+            audit: data.audit,
+            marks: data.marks,
+          }));
+          setLoadError(null);
+          setLoading(false);
+        }
+      } catch (err: any) {
+        if (!cancelled) {
+          clearTimeout(timeoutId);
+          console.error("Failed to load live database data:", err);
+          const msg = err?.message?.includes("CONNECT_TIMEOUT") || err?.message?.includes("timeout")
+            ? "Could not connect to the database. Your Supabase project may be paused — visit your Supabase dashboard to restore it, then refresh this page."
+            : `Failed to load data: ${err?.message || "Unknown error"}. Please refresh the page.`;
+          setLoadError(msg);
+          setLoading(false);
+        }
       }
     }
+
     loadData();
+    return () => { cancelled = true; clearTimeout(timeoutId); };
   }, []);
 
   // Refresh function to reload data from database
@@ -157,6 +183,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
       console.error("Failed to refresh database data:", err);
     }
   }, []);
+
 
   // Sync user session to local storage
   useEffect(() => {
@@ -420,7 +447,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
             parentIds: createdParent ? [createdParent.id, ...(pupil.parentIds ?? [])] : pupil.parentIds ?? [],
             schoolId,
           },
-          parent: parent ? { ...parent, schoolId } : undefined,
+          parent: (parent ? { ...parent, schoolId } : { name: "", phone: "", email: "", relationship: "" }) as any,
           actorId: currentUser.id,
           actorName: currentUser.name,
         },
@@ -658,10 +685,94 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     refreshData,
   };
 
+  // ── Error State ─────────────────────────────────────────────────────────────
+  if (loadError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md w-full text-center space-y-6">
+          {/* Icon */}
+          <div className="mx-auto h-16 w-16 rounded-2xl bg-destructive/10 flex items-center justify-center">
+            <svg className="h-8 w-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+            </svg>
+          </div>
+
+          {/* Message */}
+          <div>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Connection Problem</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">{loadError}</p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+              Retry
+            </button>
+            <a
+              href="https://supabase.com/dashboard"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-input bg-background px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+              </svg>
+              Supabase Dashboard
+            </a>
+          </div>
+
+          {/* Hint */}
+          <p className="text-xs text-muted-foreground">
+            Free tier databases pause after 7 days of inactivity.{" "}
+            <span className="font-medium">Restore your project</span> in the dashboard, wait ~2 minutes, then retry.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Loading State ────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        {/* Loading silently */}
+        <div className="flex flex-col items-center gap-6">
+          {/* Animated brand mark */}
+          <div className="relative">
+            {/* Outer pulsing ring */}
+            <div className="absolute inset-0 rounded-3xl bg-primary/20 animate-ping" style={{ animationDuration: "1.5s" }} />
+            {/* Middle ring */}
+            <div className="absolute -inset-2 rounded-[28px] bg-primary/10 animate-pulse" />
+            {/* Icon container */}
+            <div className="relative h-16 w-16 rounded-3xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
+              <svg className="h-8 w-8 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Text */}
+          <div className="text-center space-y-1">
+            <p className="text-base font-semibold text-foreground">Little Stars</p>
+            <p className="text-sm text-muted-foreground animate-pulse">Connecting to database…</p>
+          </div>
+
+          {/* Dots loader */}
+          <div className="flex gap-1.5">
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                className="h-2 w-2 rounded-full bg-primary/60 animate-bounce"
+                style={{ animationDelay: `${i * 0.15}s`, animationDuration: "0.8s" }}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

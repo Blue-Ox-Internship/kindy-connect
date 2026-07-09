@@ -26,7 +26,7 @@ function ParentsPage() {
 
   const submit = () => {
     if (!form.name || !form.phone || !form.email) return toast.error("Fill all fields");
-    addParent(form);
+    addParent(form as any);
     toast.success("Parent registered");
     setOpen(false);
     setForm({ name: "", phone: "", email: "", relationship: "Mother" });

@@ -9,11 +9,19 @@ if (!connectionString) {
 }
 
 export const sql = postgres(connectionString || "", {
-  max: 10,
-  idle_timeout: 20,
-  connect_timeout: 8, // Fast timeout - database should respond quickly
-  max_lifetime: 60 * 30, // 30 minutes
-  onnotice: () => {}, // Suppress notices
+  // Keep pool small — Supabase free tier allows limited concurrent connections
+  max: 5,
+  // Close idle connections quickly to free up Supabase pool slots
+  idle_timeout: 30,
+  // Allow 30 seconds for connection — Supabase free tier can take up to 20s to wake
+  connect_timeout: 30,
+  // Recycle connections every 10 minutes
+  max_lifetime: 60 * 10,
+  // REQUIRED for Supabase PgBouncer in transaction mode (default pooler)
+  // Without this, prepared statements fail on pooled connections
+  prepare: false,
+  // Suppress notices
+  onnotice: () => {},
 });
 
 /**
