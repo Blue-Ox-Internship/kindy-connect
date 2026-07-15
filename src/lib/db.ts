@@ -29,7 +29,7 @@ export const sql = postgres(connectionString || "", {
  */
 export function toCamel<T = any>(obj: any): T {
   if (Array.isArray(obj)) {
-    return obj.map(v => toCamel(v)) as any;
+    return obj.map((v) => toCamel(v)) as any;
   } else if (obj !== null && obj !== undefined && obj.constructor === Object) {
     return Object.keys(obj).reduce((result, key) => {
       const camelKey = key.replace(/_([a-z])/g, (_, g) => g.toUpperCase());
@@ -45,10 +45,10 @@ export function toCamel<T = any>(obj: any): T {
  */
 export function toSnake<T = any>(obj: any): T {
   if (Array.isArray(obj)) {
-    return obj.map(v => toSnake(v)) as any;
+    return obj.map((v) => toSnake(v)) as any;
   } else if (obj !== null && obj !== undefined && obj.constructor === Object) {
     return Object.keys(obj).reduce((result, key) => {
-      const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+      const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
       result[snakeKey] = toSnake(obj[key]);
       return result;
     }, {} as any);
@@ -65,20 +65,20 @@ export function toSnake<T = any>(obj: any): T {
 export async function setRLSContext(sql: any, userId: string) {
   // Query user to get role and school_id
   const users = await sql`SELECT role, school_id FROM users WHERE id = ${userId}`;
-  
+
   if (users.length === 0) {
     throw new Error("Unauthorized: User not found");
   }
-  
+
   const user = users[0];
-  
+
   // Set user_id for all users
   await sql`SET LOCAL app.user_id = ${userId}`;
-  
+
   // Set school_id only for school-scoped users (not super_admin)
-  if (user.role !== 'super_admin' && user.school_id) {
+  if (user.role !== "super_admin" && user.school_id) {
     await sql`SET LOCAL app.school_id = ${user.school_id}`;
   }
-  
+
   return { role: user.role, schoolId: user.school_id };
 }

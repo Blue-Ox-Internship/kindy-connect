@@ -4,9 +4,28 @@ import { useStore } from "@/lib/mock-store";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Download, FileSpreadsheet, FileText, GraduationCap } from "lucide-react";
@@ -38,7 +57,7 @@ function ReportsPage() {
   useEffect(() => {
     if (filteredClasses.length > 0) {
       setSelectedClass((curr) => {
-        if (!curr || !filteredClasses.some(c => c.id === curr)) {
+        if (!curr || !filteredClasses.some((c) => c.id === curr)) {
           return filteredClasses[0]?.id ?? "";
         }
         return curr;
@@ -62,21 +81,27 @@ function ReportsPage() {
 
   const getGradeColor = (grade: string) => {
     switch (grade) {
-      case "A": return "bg-green-500";
-      case "B": return "bg-blue-500";
-      case "C": return "bg-yellow-500";
-      case "D": return "bg-orange-500";
-      case "E": return "bg-red-500";
-      default: return "bg-gray-500";
+      case "A":
+        return "bg-green-500";
+      case "B":
+        return "bg-blue-500";
+      case "C":
+        return "bg-yellow-500";
+      case "D":
+        return "bg-orange-500";
+      case "E":
+        return "bg-red-500";
+      default:
+        return "bg-gray-500";
     }
   };
 
   const calculateAverage = (pupilId: string) => {
     const pupilMarks = marks.filter(
-      (m) => m.pupilId === pupilId && m.term === selectedTerm && m.year === selectedYear
+      (m) => m.pupilId === pupilId && m.term === selectedTerm && m.year === selectedYear,
     );
     if (pupilMarks.length === 0) return null;
-    
+
     const totalPercentage = pupilMarks.reduce((sum, m) => sum + (m.score / m.maxScore) * 100, 0);
     return totalPercentage / pupilMarks.length;
   };
@@ -93,9 +118,9 @@ function ReportsPage() {
   const generateReportCard = (pupilId: string) => {
     const pupil = pupils.find((p) => p.id === pupilId);
     if (!pupil) return;
-    
+
     const pupilMarks = marks.filter(
-      (m) => m.pupilId === pupilId && m.term === selectedTerm && m.year === selectedYear
+      (m) => m.pupilId === pupilId && m.term === selectedTerm && m.year === selectedYear,
     );
 
     if (pupilMarks.length === 0) {
@@ -111,7 +136,7 @@ function ReportsPage() {
     const classPupils = pupils.filter((p) => p.classId === selectedClass && p.active);
     const pupilsWithMarks = classPupils.filter((p) => {
       const pupilMarks = marks.filter(
-        (m) => m.pupilId === p.id && m.term === selectedTerm && m.year === selectedYear
+        (m) => m.pupilId === p.id && m.term === selectedTerm && m.year === selectedYear,
       );
       return pupilMarks.length > 0;
     });
@@ -145,20 +170,35 @@ function ReportsPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Today - {today}</CardTitle>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => exportToast("PDF")}><FileText className="h-4 w-4 mr-1" />PDF</Button>
-                <Button size="sm" variant="outline" onClick={() => exportToast("Excel")}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
+                <Button size="sm" variant="outline" onClick={() => exportToast("PDF")}>
+                  <FileText className="h-4 w-4 mr-1" />
+                  PDF
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => exportToast("Excel")}>
+                  <FileSpreadsheet className="h-4 w-4 mr-1" />
+                  Excel
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
               <Table>
-                <TableHeader><TableRow><TableHead>Pupil</TableHead><TableHead>Class</TableHead><TableHead>Arrival</TableHead><TableHead>Departure</TableHead></TableRow></TableHeader>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Pupil</TableHead>
+                    <TableHead>Class</TableHead>
+                    <TableHead>Arrival</TableHead>
+                    <TableHead>Departure</TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
                   {todayAtt.map((a) => {
                     const p = pupils.find((x) => x.id === a.pupilId);
                     if (!p) return null;
                     return (
                       <TableRow key={a.id}>
-                        <TableCell>{p.firstName} {p.lastName}</TableCell>
+                        <TableCell>
+                          {p.firstName} {p.lastName}
+                        </TableCell>
                         <TableCell>{classes.find((c) => c.id === p.classId)?.name}</TableCell>
                         <TableCell>{a.arrival ?? "-"}</TableCell>
                         <TableCell>{a.departure ?? "-"}</TableCell>
@@ -172,25 +212,56 @@ function ReportsPage() {
         </TabsContent>
 
         <TabsContent value="weekly" className="mt-4">
-          <Card><CardContent className="p-8 text-center text-muted-foreground"><Download className="h-8 w-8 mx-auto mb-3" />Weekly report aggregates this week's attendance per pupil. Export to PDF or Excel.</CardContent></Card>
+          <Card>
+            <CardContent className="p-8 text-center text-muted-foreground">
+              <Download className="h-8 w-8 mx-auto mb-3" />
+              Weekly report aggregates this week's attendance per pupil. Export to PDF or Excel.
+            </CardContent>
+          </Card>
         </TabsContent>
         <TabsContent value="monthly" className="mt-4">
-          <Card><CardContent className="p-8 text-center text-muted-foreground"><Download className="h-8 w-8 mx-auto mb-3" />Monthly report aggregates the month's attendance per pupil and class. Export to PDF or Excel.</CardContent></Card>
+          <Card>
+            <CardContent className="p-8 text-center text-muted-foreground">
+              <Download className="h-8 w-8 mx-auto mb-3" />
+              Monthly report aggregates the month's attendance per pupil and class. Export to PDF or
+              Excel.
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="late" className="mt-4">
           <Card>
-            <CardHeader><CardTitle>Late arrivals (after {lateThreshold})</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Late arrivals (after {lateThreshold})</CardTitle>
+            </CardHeader>
             <CardContent>
               <Table>
-                <TableHeader><TableRow><TableHead>Pupil</TableHead><TableHead>Arrival</TableHead></TableRow></TableHeader>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Pupil</TableHead>
+                    <TableHead>Arrival</TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
                   {late.map((a) => {
                     const p = pupils.find((x) => x.id === a.pupilId);
                     if (!p) return null;
-                    return <TableRow key={a.id}><TableCell>{p.firstName} {p.lastName}</TableCell><TableCell>{a.arrival}</TableCell></TableRow>;
+                    return (
+                      <TableRow key={a.id}>
+                        <TableCell>
+                          {p.firstName} {p.lastName}
+                        </TableCell>
+                        <TableCell>{a.arrival}</TableCell>
+                      </TableRow>
+                    );
                   })}
-                  {late.length === 0 && <TableRow><TableCell colSpan={2} className="text-center py-6 text-muted-foreground">No late arrivals today</TableCell></TableRow>}
+                  {late.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center py-6 text-muted-foreground">
+                        No late arrivals today
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -277,7 +348,10 @@ function ReportsPage() {
                         .filter((p) => p.classId === selectedClass && p.active)
                         .map((p) => {
                           const pupilMarks = marks.filter(
-                            (m) => m.pupilId === p.id && m.term === selectedTerm && m.year === selectedYear
+                            (m) =>
+                              m.pupilId === p.id &&
+                              m.term === selectedTerm &&
+                              m.year === selectedYear,
                           );
                           const average = calculateAverage(p.id);
                           const overallGrade = getOverallGrade(average);
@@ -381,12 +455,11 @@ function ReportsPage() {
                       <TableRow key={mark.id}>
                         <TableCell className="font-medium">{mark.subject}</TableCell>
                         <TableCell>
-                          {mark.score}/{mark.maxScore} ({((mark.score / mark.maxScore) * 100).toFixed(0)}%)
+                          {mark.score}/{mark.maxScore} (
+                          {((mark.score / mark.maxScore) * 100).toFixed(0)}%)
                         </TableCell>
                         <TableCell>
-                          <Badge className={getGradeColor(mark.grade || "")}>
-                            {mark.grade}
-                          </Badge>
+                          <Badge className={getGradeColor(mark.grade || "")}>{mark.grade}</Badge>
                         </TableCell>
                         <TableCell className="text-sm">{mark.teacherComment || "-"}</TableCell>
                       </TableRow>
@@ -408,7 +481,7 @@ function ReportsPage() {
                     <Label className="text-muted-foreground">Overall Grade</Label>
                     <Badge
                       className={`text-xl px-4 py-2 ${getGradeColor(
-                        getOverallGrade(calculateAverage(previewPupil.id))
+                        getOverallGrade(calculateAverage(previewPupil.id)),
                       )}`}
                     >
                       {getOverallGrade(calculateAverage(previewPupil.id))}

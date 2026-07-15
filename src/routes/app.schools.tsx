@@ -5,8 +5,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Plus, Search, Edit2, Trash2, Building, Phone, Mail, MapPin } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -43,7 +57,7 @@ function SchoolsPage() {
     return schools.filter(
       (s) =>
         s.name.toLowerCase().includes(q.toLowerCase()) ||
-        (s.address && s.address.toLowerCase().includes(q.toLowerCase()))
+        (s.address && s.address.toLowerCase().includes(q.toLowerCase())),
     );
   }, [schools, q]);
 
@@ -93,7 +107,7 @@ function SchoolsPage() {
   const handleDelete = async (id: string, name: string) => {
     if (
       confirm(
-        `WARNING: Deleting "${name}" will also delete all classes, pupils, and parents belonging to it. Users will be unassigned. Proceed?`
+        `WARNING: Deleting "${name}" will also delete all classes, pupils, and parents belonging to it. Users will be unassigned. Proceed?`,
       )
     ) {
       await deleteSchool(id);
@@ -159,7 +173,9 @@ function SchoolsPage() {
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div>
               <CardTitle>Manage Schools</CardTitle>
-              <CardDescription>View, modify, or add new school sections to the system.</CardDescription>
+              <CardDescription>
+                View, modify, or add new school sections to the system.
+              </CardDescription>
             </div>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
@@ -174,20 +190,41 @@ function SchoolsPage() {
                 <div className="space-y-4 py-2">
                   <div>
                     <Label htmlFor="name">School Name *</Label>
-                    <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Little Stars Kindergarten" />
+                    <Input
+                      id="name"
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      placeholder="e.g. Little Stars Kindergarten"
+                    />
                   </div>
                   <div>
                     <Label htmlFor="address">Address</Label>
-                    <Input id="address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="e.g. 123 Sunshine Blvd, Nairobi" />
+                    <Input
+                      id="address"
+                      value={form.address}
+                      onChange={(e) => setForm({ ...form, address: e.target.value })}
+                      placeholder="e.g. 123 Sunshine Blvd, Nairobi"
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="phone">Phone</Label>
-                      <Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+254..." />
+                      <Input
+                        id="phone"
+                        value={form.phone}
+                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        placeholder="+254..."
+                      />
                     </div>
                     <div>
                       <Label htmlFor="email">Email</Label>
-                      <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="info@school.com" />
+                      <Input
+                        id="email"
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        placeholder="info@school.com"
+                      />
                     </div>
                   </div>
                 </div>
@@ -201,7 +238,12 @@ function SchoolsPage() {
             {/* Search Filter */}
             <div className="relative mb-4 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search schools by name or address..." className="pl-9" />
+              <Input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search schools by name or address..."
+                className="pl-9"
+              />
             </div>
 
             {/* Schools Table */}
@@ -219,7 +261,9 @@ function SchoolsPage() {
               <TableBody>
                 {filtered.map((s) => {
                   const schoolPupils = pupils.filter((p) => p.schoolId === s.id && p.active).length;
-                  const schoolTeachers = users.filter((u) => u.schoolId === s.id && u.role === "teacher" && u.status === "verified").length;
+                  const schoolTeachers = users.filter(
+                    (u) => u.schoolId === s.id && u.role === "teacher" && u.status === "verified",
+                  ).length;
                   return (
                     <TableRow key={s.id}>
                       <TableCell>
@@ -258,7 +302,11 @@ function SchoolsPage() {
                         <Button size="icon" variant="ghost" onClick={() => startEdit(s)}>
                           <Edit2 className="h-4 w-4 text-muted-foreground" />
                         </Button>
-                        <Button size="icon" variant="ghost" onClick={() => handleDelete(s.id, s.name)}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleDelete(s.id, s.name)}
+                        >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </TableCell>
@@ -286,20 +334,37 @@ function SchoolsPage() {
             <div className="space-y-4 py-2">
               <div>
                 <Label htmlFor="edit-name">School Name *</Label>
-                <Input id="edit-name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+                <Input
+                  id="edit-name"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                />
               </div>
               <div>
                 <Label htmlFor="edit-address">Address</Label>
-                <Input id="edit-address" value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} />
+                <Input
+                  id="edit-address"
+                  value={editForm.address}
+                  onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="edit-phone">Phone</Label>
-                  <Input id="edit-phone" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+                  <Input
+                    id="edit-phone"
+                    value={editForm.phone}
+                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="edit-email">Email</Label>
-                  <Input id="edit-email" type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  />
                 </div>
               </div>
             </div>

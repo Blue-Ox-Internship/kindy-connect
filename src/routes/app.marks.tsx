@@ -3,10 +3,30 @@ import { AppShell } from "@/components/app-shell";
 import { useStore } from "@/lib/mock-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +40,8 @@ export const Route = createFileRoute("/app/marks")({
 });
 
 function MarksPage() {
-  const { currentUser, pupils, classes, marks, addMark, updateMark, deleteMark, schools } = useStore();
+  const { currentUser, pupils, classes, marks, addMark, updateMark, deleteMark, schools } =
+    useStore();
   const isTeacher = currentUser?.role === "teacher";
   const isSchoolAdmin = currentUser?.role === "admin";
   const canEditMarks = isTeacher || isSchoolAdmin;
@@ -39,9 +60,11 @@ function MarksPage() {
 
   useEffect(() => {
     if (filteredClasses.length > 0) {
-      const defaultClass = isTeacher ? currentUser?.classId ?? filteredClasses[0]?.id : filteredClasses[0]?.id;
+      const defaultClass = isTeacher
+        ? (currentUser?.classId ?? filteredClasses[0]?.id)
+        : filteredClasses[0]?.id;
       setClassId((curr) => {
-        if (!curr || !filteredClasses.some(c => c.id === curr)) {
+        if (!curr || !filteredClasses.some((c) => c.id === curr)) {
           return defaultClass ?? "";
         }
         return curr;
@@ -66,20 +89,20 @@ function MarksPage() {
 
   const classPupils = pupils.filter((p) => p.classId === classId && p.active);
   const filteredMarks = marks.filter(
-    (m) => m.term === term && m.year === year && m.subject === subject
+    (m) => m.term === term && m.year === year && m.subject === subject,
   );
 
   const subjects = ["Reading", "Math", "Writing", "Art", "Music", "Physical Education", "Science"];
-  
+
   // Filter subjects for teachers - they can only see their assigned subjects
   // School admins can see all subjects
   const availableSubjects = useMemo(() => {
     if (isTeacher && currentUser?.subjects && currentUser.subjects.length > 0) {
-      return subjects.filter(s => currentUser.subjects?.includes(s));
+      return subjects.filter((s) => currentUser.subjects?.includes(s));
     }
     return subjects;
   }, [isTeacher, currentUser]);
-  
+
   const terms = ["Term 1", "Term 2", "Term 3"];
 
   const handleAddMark = () => {
@@ -90,7 +113,11 @@ function MarksPage() {
 
     const pupil = classPupils.find((p) => p.id === selectedPupilId);
     const existingMark = marks.find(
-      (m) => m.pupilId === selectedPupilId && m.subject === subject && m.term === term && m.year === year
+      (m) =>
+        m.pupilId === selectedPupilId &&
+        m.subject === subject &&
+        m.term === term &&
+        m.year === year,
     );
 
     if (existingMark) {
@@ -152,12 +179,18 @@ function MarksPage() {
 
   const getGradeColor = (grade: string) => {
     switch (grade) {
-      case "A": return "bg-green-500";
-      case "B": return "bg-blue-500";
-      case "C": return "bg-yellow-500";
-      case "D": return "bg-orange-500";
-      case "E": return "bg-red-500";
-      default: return "bg-gray-500";
+      case "A":
+        return "bg-green-500";
+      case "B":
+        return "bg-blue-500";
+      case "C":
+        return "bg-yellow-500";
+      case "D":
+        return "bg-orange-500";
+      case "E":
+        return "bg-red-500";
+      default:
+        return "bg-gray-500";
     }
   };
 
@@ -229,7 +262,9 @@ function MarksPage() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
+                  <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
+                    Cancel
+                  </Button>
                   <Button onClick={handleAddMark}>Add Mark</Button>
                 </DialogFooter>
               </DialogContent>
@@ -247,7 +282,9 @@ function MarksPage() {
                   className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring file:border-0 file:bg-transparent file:text-sm file:font-medium md:text-sm"
                 >
                   {schools.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -328,9 +365,7 @@ function MarksPage() {
                       {p.firstName} {p.lastName}
                     </TableCell>
                     <TableCell>{p.admissionNo}</TableCell>
-                    <TableCell>
-                      {mark ? `${mark.score}/${mark.maxScore}` : "-"}
-                    </TableCell>
+                    <TableCell>{mark ? `${mark.score}/${mark.maxScore}` : "-"}</TableCell>
                     <TableCell>
                       {mark ? (
                         <Badge className={getGradeColor(mark.grade || "")}>{mark.grade}</Badge>
@@ -344,11 +379,7 @@ function MarksPage() {
                     <TableCell className="text-right space-x-2">
                       {mark ? (
                         <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openEditDialog(mark)}
-                          >
+                          <Button size="sm" variant="outline" onClick={() => openEditDialog(mark)}>
                             <Pencil className="h-3 w-3" />
                           </Button>
                           <Button
@@ -417,7 +448,9 @@ function MarksPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={handleEditMark}>Update Mark</Button>
           </DialogFooter>
         </DialogContent>

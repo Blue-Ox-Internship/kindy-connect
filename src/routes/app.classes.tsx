@@ -5,8 +5,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Plus, Search, Edit2, Trash2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -17,14 +31,16 @@ export const Route = createFileRoute("/app/classes")({
 });
 
 function ClassesPage() {
-  const { currentUser, classes, users, pupils, schools, addClass, updateClass, deleteClass } = useStore();
+  const { currentUser, classes, users, pupils, schools, addClass, updateClass, deleteClass } =
+    useStore();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassRoom | null>(null);
 
   const isSuperAdmin = currentUser?.role === "super_admin";
-  const isAuthorized = isSuperAdmin || currentUser?.role === "admin" || currentUser?.role === "deputy";
+  const isAuthorized =
+    isSuperAdmin || currentUser?.role === "admin" || currentUser?.role === "deputy";
 
   // Super Admin School filtering
   const [superSchoolId, setSuperSchoolId] = useState<string>(schools[0]?.id ?? "");
@@ -52,8 +68,14 @@ function ClassesPage() {
 
   // List of teachers for the selected school
   const teachers = useMemo(() => {
-    const targetSchoolId = isSuperAdmin ? (open ? form.schoolId : (editingClass?.schoolId ?? "")) : (currentUser?.schoolId ?? "");
-    return users.filter((u) => u.role === "teacher" && u.status === "verified" && u.schoolId === targetSchoolId);
+    const targetSchoolId = isSuperAdmin
+      ? open
+        ? form.schoolId
+        : (editingClass?.schoolId ?? "")
+      : (currentUser?.schoolId ?? "");
+    return users.filter(
+      (u) => u.role === "teacher" && u.status === "verified" && u.schoolId === targetSchoolId,
+    );
   }, [users, isSuperAdmin, open, form.schoolId, editingClass, currentUser]);
 
   const submitCreate = async () => {
@@ -121,9 +143,14 @@ function ClassesPage() {
             <div className="flex flex-1 flex-col sm:flex-row gap-3">
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search classes..." className="pl-9" />
+                <Input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search classes..."
+                  className="pl-9"
+                />
               </div>
-              
+
               {isSuperAdmin && (
                 <div className="flex items-center gap-2">
                   <Label className="shrink-0 text-sm">School Filter:</Label>
@@ -133,7 +160,9 @@ function ClassesPage() {
                     className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
                     {schools.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -157,18 +186,27 @@ function ClassesPage() {
                       <select
                         id="school"
                         value={form.schoolId}
-                        onChange={(e) => setForm({ ...form, schoolId: e.target.value, teacherId: "" })}
+                        onChange={(e) =>
+                          setForm({ ...form, schoolId: e.target.value, teacherId: "" })
+                        }
                         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1"
                       >
                         {schools.map((s) => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
                         ))}
                       </select>
                     </div>
                   )}
                   <div>
                     <Label htmlFor="name">Class Name</Label>
-                    <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Sunflower Class" />
+                    <Input
+                      id="name"
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      placeholder="e.g. Sunflower Class"
+                    />
                   </div>
                   <div>
                     <Label htmlFor="teacher">Class Teacher (Optional)</Label>
@@ -180,7 +218,9 @@ function ClassesPage() {
                     >
                       <option value="">Unassigned</option>
                       {teachers.map((t) => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -207,18 +247,26 @@ function ClassesPage() {
               {classesToDisplay.map((c) => {
                 const schoolName = schools.find((s) => s.id === c.schoolId)?.name || "N/A";
                 const teacherName = users.find((u) => u.id === c.teacherId)?.name || "Unassigned";
-                const classPupilsCount = pupils.filter((p) => p.classId === c.id && p.active).length;
+                const classPupilsCount = pupils.filter(
+                  (p) => p.classId === c.id && p.active,
+                ).length;
                 return (
                   <TableRow key={c.id}>
                     <TableCell className="font-semibold">{c.name}</TableCell>
-                    {isSuperAdmin && <TableCell className="text-muted-foreground text-sm">{schoolName}</TableCell>}
+                    {isSuperAdmin && (
+                      <TableCell className="text-muted-foreground text-sm">{schoolName}</TableCell>
+                    )}
                     <TableCell>{teacherName}</TableCell>
                     <TableCell>{classPupilsCount} pupils</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button size="icon" variant="ghost" onClick={() => startEdit(c)}>
                         <Edit2 className="h-4 w-4 text-muted-foreground" />
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => handleDelete(c.id, c.name)}>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleDelete(c.id, c.name)}
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </TableCell>
@@ -227,7 +275,10 @@ function ClassesPage() {
               })}
               {classesToDisplay.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={isSuperAdmin ? 5 : 4} className="text-center text-muted-foreground py-8">
+                  <TableCell
+                    colSpan={isSuperAdmin ? 5 : 4}
+                    className="text-center text-muted-foreground py-8"
+                  >
                     No classes found.
                   </TableCell>
                 </TableRow>
@@ -244,7 +295,11 @@ function ClassesPage() {
               <div className="space-y-4 py-2">
                 <div>
                   <Label htmlFor="edit-name">Class Name</Label>
-                  <Input id="edit-name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+                  <Input
+                    id="edit-name"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="edit-teacher">Class Teacher</Label>
@@ -256,7 +311,9 @@ function ClassesPage() {
                   >
                     <option value="">Unassigned</option>
                     {teachers.map((t) => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
                     ))}
                   </select>
                 </div>

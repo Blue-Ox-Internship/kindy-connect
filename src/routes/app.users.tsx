@@ -6,9 +6,37 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Eye, EyeOff, Copy, Search, Shield, School, UserCheck, Key, Plus, Trash2, Mail, Phone, Info } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Eye,
+  EyeOff,
+  Copy,
+  Search,
+  Shield,
+  School,
+  UserCheck,
+  Key,
+  Plus,
+  Trash2,
+  Mail,
+  Phone,
+  Info,
+} from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -22,7 +50,7 @@ function UsersPage() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
-  
+
   // Local filters
   const [roleFilter, setRoleFilter] = useState<string>("all");
 
@@ -57,7 +85,7 @@ function UsersPage() {
           u.name.toLowerCase().includes(search) ||
           u.email.toLowerCase().includes(search) ||
           u.id.toLowerCase().includes(search) ||
-          (u.phone && u.phone.toLowerCase().includes(search))
+          (u.phone && u.phone.toLowerCase().includes(search)),
       );
     }
 
@@ -70,7 +98,13 @@ function UsersPage() {
   }, [users, q, roleFilter]);
 
   const submitCreateUser = async () => {
-    if (!form.id.trim() || !form.name.trim() || !form.email.trim() || !form.phone.trim() || !form.password.trim()) {
+    if (
+      !form.id.trim() ||
+      !form.name.trim() ||
+      !form.email.trim() ||
+      !form.phone.trim() ||
+      !form.password.trim()
+    ) {
       return toast.error("Please fill in all fields");
     }
 
@@ -124,7 +158,10 @@ function UsersPage() {
         <div className="text-center py-12 text-muted-foreground flex flex-col items-center justify-center gap-3">
           <Shield className="h-12 w-12 text-destructive animate-pulse" />
           <h2 className="text-xl font-bold">Access Denied</h2>
-          <p>You do not have permission to view the User Directory. This page is reserved for Super Administrators.</p>
+          <p>
+            You do not have permission to view the User Directory. This page is reserved for Super
+            Administrators.
+          </p>
         </div>
       </AppShell>
     );
@@ -193,7 +230,8 @@ function UsersPage() {
             <div>
               <CardTitle>System Accounts</CardTitle>
               <CardDescription>
-                View all registered users, their login IDs, passwords, roles, and school assignments.
+                View all registered users, their login IDs, passwords, roles, and school
+                assignments.
               </CardDescription>
             </div>
             <Dialog open={open} onOpenChange={setOpen}>
@@ -341,19 +379,26 @@ function UsersPage() {
                 <TableBody>
                   {filteredUsersList.map((u) => {
                     const associatedSchool = schools.find((s) => s.id === u.schoolId);
-                    const schoolName = u.role === "super_admin" ? "System Wide" : (associatedSchool?.name || "Unassigned");
+                    const schoolName =
+                      u.role === "super_admin"
+                        ? "System Wide"
+                        : associatedSchool?.name || "Unassigned";
                     const isSelf = u.id === currentUser?.id;
 
                     // Role Badge styling
                     let roleBadgeClass = "";
                     if (u.role === "super_admin") {
-                      roleBadgeClass = "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-850";
+                      roleBadgeClass =
+                        "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-850";
                     } else if (u.role === "admin") {
-                      roleBadgeClass = "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-850";
+                      roleBadgeClass =
+                        "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-850";
                     } else if (u.role === "deputy") {
-                      roleBadgeClass = "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-850";
+                      roleBadgeClass =
+                        "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-850";
                     } else {
-                      roleBadgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-850";
+                      roleBadgeClass =
+                        "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-850";
                     }
 
                     return (
@@ -383,7 +428,10 @@ function UsersPage() {
                             <div className="font-semibold text-sm flex items-center gap-2">
                               {u.name}
                               {isSelf && (
-                                <Badge variant="outline" className="text-[10px] font-normal py-0 px-1 border-primary/45 text-primary">
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] font-normal py-0 px-1 border-primary/45 text-primary"
+                                >
                                   You
                                 </Badge>
                               )}
@@ -439,7 +487,10 @@ function UsersPage() {
 
                         {/* Role Column */}
                         <TableCell>
-                          <Badge variant="outline" className={`capitalize font-medium ${roleBadgeClass}`}>
+                          <Badge
+                            variant="outline"
+                            className={`capitalize font-medium ${roleBadgeClass}`}
+                          >
                             {u.role.replace("_", " ")}
                           </Badge>
                         </TableCell>
@@ -448,7 +499,13 @@ function UsersPage() {
                         <TableCell>
                           <div className="flex items-center gap-1.5 text-sm">
                             <School className="h-4 w-4 text-muted-foreground shrink-0" />
-                            <span className={u.role === "super_admin" ? "text-indigo-600 dark:text-indigo-400 font-medium" : "text-foreground"}>
+                            <span
+                              className={
+                                u.role === "super_admin"
+                                  ? "text-indigo-600 dark:text-indigo-400 font-medium"
+                                  : "text-foreground"
+                              }
+                            >
                               {schoolName}
                             </span>
                           </div>
@@ -484,7 +541,8 @@ function UsersPage() {
             <div className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
               <Info className="h-3.5 w-3.5" />
               <span>
-                To switch the active school scope or view users across all schools, use the <strong>School Context</strong> dropdown selector in the side navigation panel.
+                To switch the active school scope or view users across all schools, use the{" "}
+                <strong>School Context</strong> dropdown selector in the side navigation panel.
               </span>
             </div>
           </CardContent>

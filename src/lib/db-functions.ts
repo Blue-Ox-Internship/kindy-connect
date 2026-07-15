@@ -123,27 +123,17 @@ export interface Mark {
 // ----------------------------------------------------
 // 1. Get Initial Data
 // ----------------------------------------------------
-export const getInitialData = createServerFn({ method: "GET" })
-  .handler(async () => {
-    try {
-      // ─── Run ALL queries in parallel ────────────────────────────────────────
-      // Previously sequential (8 awaits in a row). Now concurrent: total time =
-      // max(individual query times) instead of sum(individual query times).
-      const ninetyDaysAgo = new Date();
-      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-      const cutoffDate = ninetyDaysAgo.toISOString().slice(0, 10);
+export const getInitialData = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    // ─── Run ALL queries in parallel ────────────────────────────────────────
+    // Previously sequential (8 awaits in a row). Now concurrent: total time =
+    // max(individual query times) instead of sum(individual query times).
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const cutoffDate = ninetyDaysAgo.toISOString().slice(0, 10);
 
-      const [
-        schools,
-        users,
-        classes,
-        parents,
-        pupils,
-        attendance,
-        notifications,
-        audit,
-        marks,
-      ] = await Promise.all([
+    const [schools, users, classes, parents, pupils, attendance, notifications, audit, marks] =
+      await Promise.all([
         sql`SELECT * FROM schools ORDER BY name ASC`,
 
         sql`SELECT * FROM users ORDER BY registered_at DESC`,
@@ -176,26 +166,25 @@ export const getInitialData = createServerFn({ method: "GET" })
         sql`SELECT * FROM marks ORDER BY recorded_at DESC LIMIT 2000`,
       ]);
 
-      return {
-        schools: toCamel<School[]>(schools),
-        users: toCamel<User[]>(users),
-        classes: toCamel<ClassRoom[]>(classes),
-        parents: toCamel<Parent[]>(parents),
-        pupils: toCamel<Pupil[]>(pupils).map(p => ({
-          ...p,
-          parentIds: p.parentIds || [],
-        })),
-        attendance: toCamel<Attendance[]>(attendance),
-        notifications: toCamel<Notification[]>(notifications),
-        audit: toCamel<AuditLog[]>(audit),
-        marks: toCamel<Mark[]>(marks),
-      };
-    } catch (error) {
-      console.error("Error in getInitialData server function:", error);
-      throw error;
-    }
-  });
-
+    return {
+      schools: toCamel<School[]>(schools),
+      users: toCamel<User[]>(users),
+      classes: toCamel<ClassRoom[]>(classes),
+      parents: toCamel<Parent[]>(parents),
+      pupils: toCamel<Pupil[]>(pupils).map((p) => ({
+        ...p,
+        parentIds: p.parentIds || [],
+      })),
+      attendance: toCamel<Attendance[]>(attendance),
+      notifications: toCamel<Notification[]>(notifications),
+      audit: toCamel<AuditLog[]>(audit),
+      marks: toCamel<Mark[]>(marks),
+    };
+  } catch (error) {
+    console.error("Error in getInitialData server function:", error);
+    throw error;
+  }
+});
 
 // ----------------------------------------------------
 // 2. Authentication Functions
@@ -220,19 +209,29 @@ export const loginUser = createServerFn({ method: "POST" })
   });
 
 export const registerUser = createServerFn({ method: "POST" })
-  .validator((d: Omit<User, "status" | "registeredAt"> & { schoolId?: string; newSchoolName?: string; status?: "pending" | "verified" | "rejected"; subjects?: string[]; photo?: string }) => d)
+  .validator(
+    (
+      d: Omit<User, "status" | "registeredAt"> & {
+        schoolId?: string;
+        newSchoolName?: string;
+        status?: "pending" | "verified" | "rejected";
+        subjects?: string[];
+        photo?: string;
+      },
+    ) => d,
+  )
   .handler(async ({ data }) => {
     const id = data.id.trim();
     const status = data.status || (data.role === "admin" ? "verified" : "pending");
     const registeredAt = new Date().toISOString().slice(0, 10);
-    
+
     try {
       // Check for existing email
       const emailCheck = await sql`SELECT id FROM users WHERE LOWER(email) = LOWER(${data.email})`;
       if (emailCheck.length > 0) {
         throw new Error("Email already used");
       }
-      
+
       // Check for existing phone if provided
       if (data.phone) {
         const phoneCheck = await sql`SELECT id FROM users WHERE phone = ${data.phone}`;
@@ -240,7 +239,7 @@ export const registerUser = createServerFn({ method: "POST" })
           throw new Error("Phone number already used");
         }
       }
-      
+
       const result = await sql.begin(async (sql) => {
         let finalSchoolId = data.schoolId;
         let newSchool: any = null;
@@ -285,11 +284,11 @@ export const registerUser = createServerFn({ method: "POST" })
         throw error;
       }
       // Check for PostgreSQL unique constraint violations
-      if (error.code === '23505') {
-        if (error.constraint === 'users_email_key' || error.message?.includes('email')) {
+      if (error.code === "23505") {
+        if (error.constraint === "users_email_key" || error.message?.includes("email")) {
           throw new Error("Email already used");
         }
-        if (error.constraint === 'users_phone_key' || error.message?.includes('phone')) {
+        if (error.constraint === "users_phone_key" || error.message?.includes("phone")) {
           throw new Error("Phone number already used");
         }
       }
@@ -302,7 +301,7 @@ export const approveTeacher = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { id, actorId, actorName } = data;
     const logId = Math.random().toString(36).slice(2, 10);
-    
+
     try {
       await sql.begin(async (sql) => {
         const users = await sql`
@@ -328,7 +327,7 @@ export const rejectTeacher = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { id, actorId, actorName } = data;
     const logId = Math.random().toString(36).slice(2, 10);
-    
+
     try {
       await sql.begin(async (sql) => {
         const users = await sql`
@@ -353,7 +352,14 @@ export const rejectTeacher = createServerFn({ method: "POST" })
 // 3. Pupil CRUD Functions
 // ----------------------------------------------------
 export const addPupil = createServerFn({ method: "POST" })
-  .validator((d: { pupil: Omit<Pupil, "id" | "active">; parent: ParentInput; actorId: string; actorName: string }) => d)
+  .validator(
+    (d: {
+      pupil: Omit<Pupil, "id" | "active">;
+      parent: ParentInput;
+      actorId: string;
+      actorName: string;
+    }) => d,
+  )
   .handler(async ({ data }) => {
     const { pupil, parent, actorId, actorName } = data;
 
@@ -388,7 +394,7 @@ export const addPupil = createServerFn({ method: "POST" })
         await sql`INSERT INTO pupil_parents ${sql([{ pupil_id: id, parent_id: parentId }], "pupil_id", "parent_id")}`;
 
         if (pupil.parentIds && pupil.parentIds.length > 0) {
-          const rows = pupil.parentIds.map(pid => ({
+          const rows = pupil.parentIds.map((pid) => ({
             pupil_id: id,
             parent_id: pid,
           }));
@@ -418,11 +424,11 @@ export const updatePupil = createServerFn({ method: "POST" })
   .validator((d: { id: string; data: Partial<Pupil> }) => d)
   .handler(async ({ data }) => {
     const { id, data: pupilData } = data;
-    
+
     // Separate parentIds since it's junction table, other fields are in pupils table
     const { parentIds, ...directFields } = pupilData;
     const dbFields = toSnake(directFields);
-    
+
     try {
       await sql.begin(async (sql) => {
         if (Object.keys(dbFields).length > 0) {
@@ -430,11 +436,11 @@ export const updatePupil = createServerFn({ method: "POST" })
             UPDATE pupils SET ${sql(dbFields)} WHERE id = ${id}
           `;
         }
-        
+
         if (parentIds !== undefined) {
           await sql`DELETE FROM pupil_parents WHERE pupil_id = ${id}`;
           if (parentIds.length > 0) {
-            const rows = parentIds.map(parentId => ({
+            const rows = parentIds.map((parentId) => ({
               pupil_id: id,
               parent_id: parentId,
             }));
@@ -472,12 +478,12 @@ export const addParent = createServerFn({ method: "POST" })
     const { parent, actorId, actorName } = data;
     const id = Math.random().toString(36).slice(2, 10);
     const logId = Math.random().toString(36).slice(2, 10);
-    
+
     const dbParent = toSnake({
       id,
       ...parent,
     });
-    
+
     try {
       await sql.begin(async (sql) => {
         await sql`INSERT INTO parents ${sql(dbParent)}`;
@@ -486,7 +492,7 @@ export const addParent = createServerFn({ method: "POST" })
           VALUES (${logId}, ${actorId}, ${actorName}, 'Registered parent', ${parent.name}, CURRENT_TIMESTAMP)
         `;
       });
-      
+
       return { id, ...parent };
     } catch (error) {
       console.error("Error in addParent:", error);
@@ -498,36 +504,39 @@ export const addParent = createServerFn({ method: "POST" })
 // 5. Attendance & Notifications Functions
 // ----------------------------------------------------
 export const markArrival = createServerFn({ method: "POST" })
-  .validator((d: { 
-    pupilId: string; 
-    transportDetails: { 
-      transport: string; 
-      vehicleReg?: string; 
-      personName: string; 
-      personRelation: string; 
-      phone?: string; 
-    }; 
-    actorId: string; 
-    actorName: string; 
-  }) => d)
+  .validator(
+    (d: {
+      pupilId: string;
+      transportDetails: {
+        transport: string;
+        vehicleReg?: string;
+        personName: string;
+        personRelation: string;
+        phone?: string;
+      };
+      actorId: string;
+      actorName: string;
+    }) => d,
+  )
   .handler(async ({ data }) => {
     const { pupilId, transportDetails, actorId, actorName } = data;
     const date = new Date().toISOString().slice(0, 10);
     const time = new Date().toTimeString().slice(0, 5);
     const attendanceId = Math.random().toString(36).slice(2, 10);
     const logId = Math.random().toString(36).slice(2, 10);
-    
+
     try {
       const result = await sql.begin(async (sql) => {
         // Fetch pupil details
         const pupils = await sql`SELECT first_name, last_name FROM pupils WHERE id = ${pupilId}`;
         if (pupils.length === 0) throw new Error("Pupil not found");
         const pupil = pupils[0];
-        
+
         // Check if attendance already exists for today
-        const existing = await sql`SELECT id FROM attendance WHERE pupil_id = ${pupilId} AND date = ${date}`;
+        const existing =
+          await sql`SELECT id FROM attendance WHERE pupil_id = ${pupilId} AND date = ${date}`;
         let updatedAtt: any;
-        
+
         if (existing.length > 0) {
           // Update existing
           const rows = await sql`
@@ -556,46 +565,66 @@ export const markArrival = createServerFn({ method: "POST" })
           `;
           updatedAtt = rows[0];
         }
-        
+
         // Fetch mapped parents to send notifications
         const parents = await sql`
           SELECT p.* FROM parents p
           JOIN pupil_parents pp ON p.id = pp.parent_id
           WHERE pp.pupil_id = ${pupilId}
         `;
-        
+
         const addedNotifications: any[] = [];
-        
+
         for (const parent of parents) {
           const msg = `Dear ${parent.name}, your child ${pupil.first_name} ${pupil.last_name} has arrived safely at school today at ${time}.`;
           const smsId = Math.random().toString(36).slice(2, 10);
           const emailId = Math.random().toString(36).slice(2, 10);
-          
+
           // Insert SMS notification record
           await sql`
             INSERT INTO notifications (id, pupil_id, parent_id, channel, type, status, message, timestamp, phone_number)
             VALUES (${smsId}, ${pupilId}, ${parent.id}, 'sms', 'arrival', 'sent', ${msg}, CURRENT_TIMESTAMP, ${parent.phone})
           `;
-          
+
           // Insert Email notification record
           await sql`
             INSERT INTO notifications (id, pupil_id, parent_id, channel, type, status, message, timestamp, phone_number)
             VALUES (${emailId}, ${pupilId}, ${parent.id}, 'email', 'arrival', 'sent', ${msg}, CURRENT_TIMESTAMP, ${parent.phone})
           `;
-          
+
           addedNotifications.push(
-            { id: smsId, pupilId, parentId: parent.id, channel: "sms", type: "arrival", status: "sent", message: msg, timestamp: new Date().toISOString(), phoneNumber: parent.phone },
-            { id: emailId, pupilId, parentId: parent.id, channel: "email", type: "arrival", status: "sent", message: msg, timestamp: new Date().toISOString(), phoneNumber: parent.phone }
+            {
+              id: smsId,
+              pupilId,
+              parentId: parent.id,
+              channel: "sms",
+              type: "arrival",
+              status: "sent",
+              message: msg,
+              timestamp: new Date().toISOString(),
+              phoneNumber: parent.phone,
+            },
+            {
+              id: emailId,
+              pupilId,
+              parentId: parent.id,
+              channel: "email",
+              type: "arrival",
+              status: "sent",
+              message: msg,
+              timestamp: new Date().toISOString(),
+              phoneNumber: parent.phone,
+            },
           );
         }
-        
+
         // Log action
         const targetDesc = `${pupil.first_name} ${pupil.last_name}`;
         await sql`
           INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp)
           VALUES (${logId}, ${actorId}, ${actorName}, 'Marked arrival', ${targetDesc}, CURRENT_TIMESTAMP)
         `;
-        
+
         const addedAudit = {
           id: logId,
           actorId,
@@ -604,14 +633,14 @@ export const markArrival = createServerFn({ method: "POST" })
           target: targetDesc,
           timestamp: new Date().toISOString(),
         };
-        
+
         return {
           attendance: toCamel<Attendance>(updatedAtt),
           notifications: addedNotifications,
           audit: addedAudit,
         };
       });
-      
+
       return result;
     } catch (error) {
       console.error("Error in markArrival:", error);
@@ -620,36 +649,39 @@ export const markArrival = createServerFn({ method: "POST" })
   });
 
 export const markDeparture = createServerFn({ method: "POST" })
-  .validator((d: { 
-    pupilId: string; 
-    transportDetails: { 
-      transport: string; 
-      vehicleReg?: string; 
-      personName: string; 
-      personRelation: string; 
-      phone?: string; 
-    }; 
-    actorId: string; 
-    actorName: string; 
-  }) => d)
+  .validator(
+    (d: {
+      pupilId: string;
+      transportDetails: {
+        transport: string;
+        vehicleReg?: string;
+        personName: string;
+        personRelation: string;
+        phone?: string;
+      };
+      actorId: string;
+      actorName: string;
+    }) => d,
+  )
   .handler(async ({ data }) => {
     const { pupilId, transportDetails, actorId, actorName } = data;
     const date = new Date().toISOString().slice(0, 10);
     const time = new Date().toTimeString().slice(0, 5);
     const attendanceId = Math.random().toString(36).slice(2, 10);
     const logId = Math.random().toString(36).slice(2, 10);
-    
+
     try {
       const result = await sql.begin(async (sql) => {
         // Fetch pupil details
         const pupils = await sql`SELECT first_name, last_name FROM pupils WHERE id = ${pupilId}`;
         if (pupils.length === 0) throw new Error("Pupil not found");
         const pupil = pupils[0];
-        
+
         // Check if attendance already exists for today
-        const existing = await sql`SELECT id FROM attendance WHERE pupil_id = ${pupilId} AND date = ${date}`;
+        const existing =
+          await sql`SELECT id FROM attendance WHERE pupil_id = ${pupilId} AND date = ${date}`;
         let updatedAtt: any;
-        
+
         if (existing.length > 0) {
           // Update existing
           const rows = await sql`
@@ -678,46 +710,66 @@ export const markDeparture = createServerFn({ method: "POST" })
           `;
           updatedAtt = rows[0];
         }
-        
+
         // Fetch mapped parents to send notifications
         const parents = await sql`
           SELECT p.* FROM parents p
           JOIN pupil_parents pp ON p.id = pp.parent_id
           WHERE pp.pupil_id = ${pupilId}
         `;
-        
+
         const addedNotifications: any[] = [];
-        
+
         for (const parent of parents) {
           const msg = `Dear ${parent.name}, your child ${pupil.first_name} ${pupil.last_name} has left school today at ${time}.`;
           const smsId = Math.random().toString(36).slice(2, 10);
           const emailId = Math.random().toString(36).slice(2, 10);
-          
+
           // Insert SMS notification record
           await sql`
             INSERT INTO notifications (id, pupil_id, parent_id, channel, type, status, message, timestamp, phone_number)
             VALUES (${smsId}, ${pupilId}, ${parent.id}, 'sms', 'departure', 'sent', ${msg}, CURRENT_TIMESTAMP, ${parent.phone})
           `;
-          
+
           // Insert Email notification record
           await sql`
             INSERT INTO notifications (id, pupil_id, parent_id, channel, type, status, message, timestamp, phone_number)
             VALUES (${emailId}, ${pupilId}, ${parent.id}, 'email', 'departure', 'sent', ${msg}, CURRENT_TIMESTAMP, ${parent.phone})
           `;
-          
+
           addedNotifications.push(
-            { id: smsId, pupilId, parentId: parent.id, channel: "sms", type: "departure", status: "sent", message: msg, timestamp: new Date().toISOString(), phoneNumber: parent.phone },
-            { id: emailId, pupilId, parentId: parent.id, channel: "email", type: "departure", status: "sent", message: msg, timestamp: new Date().toISOString(), phoneNumber: parent.phone }
+            {
+              id: smsId,
+              pupilId,
+              parentId: parent.id,
+              channel: "sms",
+              type: "departure",
+              status: "sent",
+              message: msg,
+              timestamp: new Date().toISOString(),
+              phoneNumber: parent.phone,
+            },
+            {
+              id: emailId,
+              pupilId,
+              parentId: parent.id,
+              channel: "email",
+              type: "departure",
+              status: "sent",
+              message: msg,
+              timestamp: new Date().toISOString(),
+              phoneNumber: parent.phone,
+            },
           );
         }
-        
+
         // Log action
         const targetDesc = `${pupil.first_name} ${pupil.last_name}`;
         await sql`
           INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp)
           VALUES (${logId}, ${actorId}, ${actorName}, 'Marked departure', ${targetDesc}, CURRENT_TIMESTAMP)
         `;
-        
+
         const addedAudit = {
           id: logId,
           actorId,
@@ -726,14 +778,14 @@ export const markDeparture = createServerFn({ method: "POST" })
           target: targetDesc,
           timestamp: new Date().toISOString(),
         };
-        
+
         return {
           attendance: toCamel<Attendance>(updatedAtt),
           notifications: addedNotifications,
           audit: addedAudit,
         };
       });
-      
+
       return result;
     } catch (error) {
       console.error("Error in markDeparture:", error);
@@ -750,15 +802,15 @@ export const addMark = createServerFn({ method: "POST" })
     const { mark, actorId } = data;
     const id = Math.random().toString(36).slice(2, 10);
     const recordedAt = new Date().toISOString();
-    
+
     // Authorization check: Verify teacher can add marks for this subject
     const actor = await sql`SELECT role, class_id, subjects FROM users WHERE id = ${actorId}`;
     if (actor.length === 0) {
       throw new Error("Unauthorized: User not found");
     }
-    
+
     const user = toCamel<User>(actor[0]);
-    
+
     // If user is a teacher, verify they're authorized for this subject
     if (user.role === "teacher") {
       // Check if teacher is assigned to the pupil's class
@@ -766,18 +818,18 @@ export const addMark = createServerFn({ method: "POST" })
       if (pupilCheck.length === 0) {
         throw new Error("Pupil not found");
       }
-      
+
       const pupilClassId = pupilCheck[0].class_id;
       if (user.classId !== pupilClassId) {
         throw new Error("Unauthorized: You can only add marks for pupils in your assigned class");
       }
-      
+
       // Check if teacher is assigned to this subject
       if (!user.subjects || !user.subjects.includes(mark.subject)) {
         throw new Error(`Unauthorized: You are not assigned to teach ${mark.subject}`);
       }
     }
-    
+
     // Calculate grade based on score percentage
     const percentage = (mark.score / mark.maxScore) * 100;
     let grade = "E";
@@ -785,7 +837,7 @@ export const addMark = createServerFn({ method: "POST" })
     else if (percentage >= 80) grade = "B";
     else if (percentage >= 70) grade = "C";
     else if (percentage >= 60) grade = "D";
-    
+
     const dbMark = toSnake({
       id,
       ...mark,
@@ -793,7 +845,7 @@ export const addMark = createServerFn({ method: "POST" })
       recordedBy: actorId,
       recordedAt,
     });
-    
+
     try {
       await sql`
         INSERT INTO marks ${sql(dbMark)}
@@ -806,19 +858,25 @@ export const addMark = createServerFn({ method: "POST" })
   });
 
 export const updateMark = createServerFn({ method: "POST" })
-  .validator((d: { id: string; data: Partial<Omit<Mark, "id" | "recordedBy" | "recordedAt">>; actorId?: string }) => d)
+  .validator(
+    (d: {
+      id: string;
+      data: Partial<Omit<Mark, "id" | "recordedBy" | "recordedAt">>;
+      actorId?: string;
+    }) => d,
+  )
   .handler(async ({ data }) => {
     const { id, data: markData, actorId } = data;
-    
+
     // Authorization check if actorId is provided
     if (actorId) {
       const actor = await sql`SELECT role, class_id, subjects FROM users WHERE id = ${actorId}`;
       if (actor.length === 0) {
         throw new Error("Unauthorized: User not found");
       }
-      
+
       const user = toCamel<User>(actor[0]);
-      
+
       // If user is a teacher, verify they're authorized for this mark's subject
       if (user.role === "teacher") {
         // Get the mark's current subject and pupil
@@ -828,20 +886,22 @@ export const updateMark = createServerFn({ method: "POST" })
           JOIN pupils p ON p.id = m.pupil_id
           WHERE m.id = ${id}
         `;
-        
+
         if (existingMark.length === 0) {
           throw new Error("Mark not found");
         }
-        
+
         const mark = existingMark[0];
         const pupilClassId = mark.class_id;
         const markSubject = mark.subject;
-        
+
         // Check class assignment
         if (user.classId !== pupilClassId) {
-          throw new Error("Unauthorized: You can only update marks for pupils in your assigned class");
+          throw new Error(
+            "Unauthorized: You can only update marks for pupils in your assigned class",
+          );
         }
-        
+
         // Check subject assignment - verify against current subject or new subject if being updated
         const subjectToCheck = markData.subject || markSubject;
         if (!user.subjects || !user.subjects.includes(subjectToCheck)) {
@@ -849,7 +909,7 @@ export const updateMark = createServerFn({ method: "POST" })
         }
       }
     }
-    
+
     // If score or maxScore changed, recalculate grade
     let grade: string | undefined = undefined;
     if (markData.score !== undefined || markData.maxScore !== undefined) {
@@ -857,7 +917,8 @@ export const updateMark = createServerFn({ method: "POST" })
       const existing = await sql`SELECT score, max_score FROM marks WHERE id = ${id}`;
       if (existing.length > 0) {
         const score = markData.score !== undefined ? markData.score : Number(existing[0].score);
-        const maxScore = markData.maxScore !== undefined ? markData.maxScore : Number(existing[0].max_score);
+        const maxScore =
+          markData.maxScore !== undefined ? markData.maxScore : Number(existing[0].max_score);
         const percentage = (score / maxScore) * 100;
         grade = "E";
         if (percentage >= 90) grade = "A";
@@ -866,12 +927,12 @@ export const updateMark = createServerFn({ method: "POST" })
         else if (percentage >= 60) grade = "D";
       }
     }
-    
+
     const dbFields = toSnake({
       ...markData,
       ...(grade !== undefined ? { grade } : {}),
     });
-    
+
     try {
       await sql`
         UPDATE marks SET ${sql(dbFields)} WHERE id = ${id}
@@ -1020,43 +1081,43 @@ export const deleteUser = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { id, actorId, actorName } = data;
     const logId = Math.random().toString(36).slice(2, 10);
-    
+
     try {
       await sql.begin(async (sql) => {
         // Get user details before deletion for audit log
         const users = await sql`
           SELECT name, role FROM users WHERE id = ${id}
         `;
-        
+
         if (users.length === 0) {
           throw new Error("User not found");
         }
-        
+
         const deletedUser = users[0];
-        
+
         // Prevent super admins from deleting themselves
         if (id === actorId) {
           throw new Error("You cannot delete your own account");
         }
-        
+
         // Only super_admin can delete other admins
         const actor = await sql`SELECT role FROM users WHERE id = ${actorId}`;
-        if (actor.length === 0 || actor[0].role !== 'super_admin') {
-          if (deletedUser.role === 'super_admin' || deletedUser.role === 'admin') {
+        if (actor.length === 0 || actor[0].role !== "super_admin") {
+          if (deletedUser.role === "super_admin" || deletedUser.role === "admin") {
             throw new Error("Unauthorized: Only super admins can delete admin accounts");
           }
         }
-        
+
         // Delete user
         await sql`DELETE FROM users WHERE id = ${id}`;
-        
+
         // Log the deletion
         await sql`
           INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp)
-          VALUES (${logId}, ${actorId}, ${actorName}, 'Deleted user', ${deletedUser.name + ' (' + deletedUser.role + ')'}, CURRENT_TIMESTAMP)
+          VALUES (${logId}, ${actorId}, ${actorName}, 'Deleted user', ${deletedUser.name + " (" + deletedUser.role + ")"}, CURRENT_TIMESTAMP)
         `;
       });
-      
+
       return { id };
     } catch (error) {
       console.error("Error in deleteUser:", error);

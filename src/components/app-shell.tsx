@@ -49,22 +49,22 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         { to: "/app/audit", label: "Audit log", icon: ScrollText },
       ]
     : isStaff
-    ? [
-        { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
-        { to: "/app/pupils", label: "Pupils", icon: Baby },
-        { to: "/app/parents", label: "Parents", icon: Users },
-        { to: "/app/teachers", label: "Teachers", icon: GraduationCap, badge: pendingCount },
-        { to: "/app/classes", label: "Classes", icon: BookOpen },
-        { to: "/app/attendance", label: "Attendance", icon: CalendarCheck },
-        { to: "/app/marks", label: "Marks", icon: BookOpen },
-        { to: "/app/reports", label: "Reports", icon: BarChart3 },
-        { to: "/app/audit", label: "Audit log", icon: ScrollText },
-      ]
-    : [
-        { to: "/app/dashboard", label: "My class", icon: LayoutDashboard },
-        { to: "/app/attendance", label: "Attendance", icon: CalendarCheck },
-        { to: "/app/marks", label: "Marks", icon: BookOpen },
-      ];
+      ? [
+          { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
+          { to: "/app/pupils", label: "Pupils", icon: Baby },
+          { to: "/app/parents", label: "Parents", icon: Users },
+          { to: "/app/teachers", label: "Teachers", icon: GraduationCap, badge: pendingCount },
+          { to: "/app/classes", label: "Classes", icon: BookOpen },
+          { to: "/app/attendance", label: "Attendance", icon: CalendarCheck },
+          { to: "/app/marks", label: "Marks", icon: BookOpen },
+          { to: "/app/reports", label: "Reports", icon: BarChart3 },
+          { to: "/app/audit", label: "Audit log", icon: ScrollText },
+        ]
+      : [
+          { to: "/app/dashboard", label: "My class", icon: LayoutDashboard },
+          { to: "/app/attendance", label: "Attendance", icon: CalendarCheck },
+          { to: "/app/marks", label: "Marks", icon: BookOpen },
+        ];
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -106,14 +106,27 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         <div className="border-t p-3 flex items-center gap-3">
           <Avatar className="h-9 w-9">
             <AvatarFallback className="bg-secondary text-secondary-foreground">
-              {currentUser.name.split(" ").map((p) => p[0]).join("").slice(0, 2)}
+              {currentUser.name
+                .split(" ")
+                .map((p) => p[0])
+                .join("")
+                .slice(0, 2)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium truncate">{currentUser.name}</div>
-            <div className="text-xs text-muted-foreground capitalize">{currentUser.role.replace("_", " ")}</div>
+            <div className="text-xs text-muted-foreground capitalize">
+              {currentUser.role.replace("_", " ")}
+            </div>
           </div>
-          <Button size="icon" variant="ghost" onClick={() => { logout(); navigate({ to: "/" }); }}>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => {
+              logout();
+              navigate({ to: "/" });
+            }}
+          >
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
@@ -123,7 +136,9 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 backdrop-blur px-6 py-4">
           <h1 className="text-2xl font-semibold">{title}</h1>
           <div className="hidden sm:flex items-center gap-2">
-            <Badge variant="outline" className="capitalize">{currentUser.role.replace("_", " ")}</Badge>
+            <Badge variant="outline" className="capitalize">
+              {currentUser.role.replace("_", " ")}
+            </Badge>
           </div>
         </header>
         <div className="p-6">{children}</div>

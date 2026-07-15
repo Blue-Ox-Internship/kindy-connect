@@ -22,21 +22,21 @@ The implementation follows a layered architecture approach, building from utilit
     - Add proper TypeScript types and JSDoc documentation
     - _Requirements: 4.2, 4.4_
 
-  - [ ]* 2.2 Write property test for password hash format validation
+  - [ ]\* 2.2 Write property test for password hash format validation
     - **Property 7: Password Hash Format Validation**
     - **Validates: Requirements 4.2**
     - Generate arbitrary plaintext passwords (length 8-72)
     - Assert output matches bcrypt hash format regex: `/^\$2[aby]\$\d{2}\$.{53}$/`
     - Verify hash starts with $2a$ or $2b$
 
-  - [ ]* 2.3 Write property test for password comparison round-trip
+  - [ ]\* 2.3 Write property test for password comparison round-trip
     - **Property 12: Password Comparison Round-Trip**
     - **Validates: Requirements 1.1, 2.1, 4.4**
     - Generate random password P and hash it to produce H
     - Assert comparePasswords(P, H) returns true
     - Generate different password P' and assert comparePasswords(P', H) returns false
 
-  - [ ]* 2.4 Write unit tests for password utilities edge cases
+  - [ ]\* 2.4 Write unit tests for password utilities edge cases
     - Test empty password handling
     - Test passwords with special characters and unicode
     - Test password length at bcrypt limit (72 characters)
@@ -50,7 +50,7 @@ The implementation follows a layered architecture approach, building from utilit
     - Add TypeScript types for configuration interface
     - _Requirements: 4.1, 4.3, 6.2_
 
-  - [ ]* 3.2 Write unit tests for configuration module
+  - [ ]\* 3.2 Write unit tests for configuration module
     - Test getSharedPasswordHash with valid environment variable
     - Test error thrown when SHARED_PASSWORD_HASH is missing
     - Test getSessionExpirationMs returns correct default value
@@ -89,7 +89,7 @@ The implementation follows a layered architecture approach, building from utilit
     - Calculate expiration as issuedAt + 8 hours
     - _Requirements: 1.3, 2.3, 6.1, 6.2, 6.3_
 
-  - [ ]* 5.5 Write property test for superadmin individual password validation
+  - [ ]\* 5.5 Write property test for superadmin individual password validation
     - **Property 1: Superadmin Individual Password Validation**
     - **Validates: Requirements 1.1**
     - Generate arbitrary superadmin user and password
@@ -97,7 +97,7 @@ The implementation follows a layered architecture approach, building from utilit
     - Call authenticate and assert success
     - Verify system validated against individual hash (not shared password)
 
-  - [ ]* 5.6 Write property test for incorrect password rejection
+  - [ ]\* 5.6 Write property test for incorrect password rejection
     - **Property 2: Incorrect Password Rejection**
     - **Validates: Requirements 1.2, 2.2**
     - Generate user with correct password
@@ -105,7 +105,7 @@ The implementation follows a layered architecture approach, building from utilit
     - Call authenticate with incorrect password
     - Assert authentication fails with generic error message
 
-  - [ ]* 5.7 Write property test for non-superadmin shared password validation
+  - [ ]\* 5.7 Write property test for non-superadmin shared password validation
     - **Property 3: Non-Superadmin Shared Password Validation**
     - **Validates: Requirements 2.1**
     - Generate non-superadmin user (admin/deputy/teacher role)
@@ -114,7 +114,7 @@ The implementation follows a layered architecture approach, building from utilit
     - Assert authentication succeeds
     - Verify system used shared password, not individual password field
 
-  - [ ]* 5.8 Write property test for unique user identification with shared password
+  - [ ]\* 5.8 Write property test for unique user identification with shared password
     - **Property 4: Unique User Identification with Shared Password**
     - **Validates: Requirements 2.4**
     - Generate two distinct non-superadmin users
@@ -122,7 +122,7 @@ The implementation follows a layered architecture approach, building from utilit
     - Assert both authentications succeed
     - Assert session tokens contain different user IDs
 
-  - [ ]* 5.9 Write property test for role-based authentication routing
+  - [ ]\* 5.9 Write property test for role-based authentication routing
     - **Property 5: Role-Based Authentication Routing**
     - **Validates: Requirements 3.1, 3.3, 3.4**
     - Generate user with random role (super_admin/admin/deputy/teacher)
@@ -130,21 +130,21 @@ The implementation follows a layered architecture approach, building from utilit
     - Assert system retrieved user role from database
     - Assert correct validation path was used based on role
 
-  - [ ]* 5.10 Write property test for invalid user rejection
+  - [ ]\* 5.10 Write property test for invalid user rejection
     - **Property 6: Invalid User Rejection**
     - **Validates: Requirements 3.2**
     - Generate non-existent user ID
     - Call authenticate with random password
     - Assert authentication fails with generic error message
 
-  - [ ]* 5.11 Write property test for generic error messages
+  - [ ]\* 5.11 Write property test for generic error messages
     - **Property 8: Generic Error Messages**
     - **Validates: Requirements 5.1, 5.2, 5.4**
     - Generate various failure scenarios (non-existent user, incorrect password)
     - Assert all failures return same error message: "Authentication failed"
     - Verify no user-specific or role information in error messages
 
-  - [ ]* 5.12 Write property test for session token content
+  - [ ]\* 5.12 Write property test for session token content
     - **Property 10: Session Token Content**
     - **Validates: Requirements 1.3, 2.3, 6.1, 6.3**
     - Generate user with any role and authenticate successfully
@@ -152,13 +152,13 @@ The implementation follows a layered architecture approach, building from utilit
     - Assert token contains userId matching authenticated user
     - Assert token contains userRole matching user's role
 
-  - [ ]* 5.13 Write property test for session expiration calculation
+  - [ ]\* 5.13 Write property test for session expiration calculation
     - **Property 11: Session Expiration Calculation**
     - **Validates: Requirements 6.2**
     - Create session token at arbitrary time T
     - Decode token and verify expiresAt equals issuedAt + 8 hours (28,800,000ms)
 
-  - [ ]* 5.14 Write unit tests for authentication service
+  - [ ]\* 5.14 Write unit tests for authentication service
     - Test typical superadmin login (happy path)
     - Test typical non-superadmin login (happy path)
     - Test database connection failure handling
@@ -176,7 +176,7 @@ The implementation follows a layered architecture approach, building from utilit
     - Log to appropriate destination (console, file, or audit_logs table)
     - _Requirements: 5.3_
 
-  - [ ]* 7.2 Write property test for authentication failure audit logging
+  - [ ]\* 7.2 Write property test for authentication failure audit logging
     - **Property 9: Authentication Failure Audit Logging**
     - **Validates: Requirements 5.3**
     - Generate authentication failure scenario
@@ -194,14 +194,14 @@ The implementation follows a layered architecture approach, building from utilit
     - Add proper error handling and logging
     - _Requirements: 1.1, 1.2, 2.1, 2.2, 3.1, 3.3, 3.4, 7.2_
 
-  - [ ]* 8.2 Write integration tests for loginUser handler
+  - [ ]\* 8.2 Write integration tests for loginUser handler
     - Test loginUser with valid superadmin credentials
     - Test loginUser with valid non-superadmin credentials using shared password
     - Test loginUser with invalid credentials
     - Test loginUser with non-existent user ID
     - Test teacher status verification still works
 
-  - [ ]* 8.3 Write property test for backward compatibility
+  - [ ]\* 8.3 Write property test for backward compatibility
     - **Property 13: Backward Compatibility for Existing Superadmins**
     - **Validates: Requirements 7.2, 7.3**
     - Create superadmin user with pre-existing bcrypt password hash
@@ -276,7 +276,10 @@ The implementation follows a layered architecture approach, building from utilit
     { "id": 2, "tasks": ["2.2", "2.3", "2.4", "3.2"] },
     { "id": 3, "tasks": ["5.1"] },
     { "id": 4, "tasks": ["5.2", "5.3", "5.4"] },
-    { "id": 5, "tasks": ["5.5", "5.6", "5.7", "5.8", "5.9", "5.10", "5.11", "5.12", "5.13", "5.14", "7.1"] },
+    {
+      "id": 5,
+      "tasks": ["5.5", "5.6", "5.7", "5.8", "5.9", "5.10", "5.11", "5.12", "5.13", "5.14", "7.1"]
+    },
     { "id": 6, "tasks": ["7.2", "8.1"] },
     { "id": 7, "tasks": ["8.2", "8.3", "9.1", "9.2", "10.1"] },
     { "id": 8, "tasks": ["11.1"] },

@@ -7,6 +7,7 @@ This feature extends the existing Kindy Connect authentication system to support
 ### Current System State
 
 The existing system has:
+
 - A `users` table with fields: `id`, `name`, `email`, `role`, `status`, `phone`, `class_id`, `registered_at`, `password`, `school_id`, `subjects`
 - Role types: `super_admin`, `admin`, `deputy`, `teacher`
 - A `loginUser` function that validates user ID but does not implement password verification
@@ -22,23 +23,26 @@ The existing system has:
 ### Key Design Decisions
 
 **Decision 1: Password Hashing Algorithm**
+
 - **Choice**: bcrypt with work factor 12
 - **Rationale**: bcrypt is widely adopted, well-supported in Node.js ecosystem, and recommended by OWASP for password storage. While Argon2id is the current OWASP first choice, bcrypt with appropriate work factor provides sufficient security and has broader ecosystem support. Work factor 12 balances security against computational cost.
 - **Source**: [OWASP Password Storage Cheat Sheet](https://shattered.io/bcrypt-password-hashing-nodejs/)
 
 **Decision 2: Timing Attack Protection**
+
 - **Choice**: Use Node.js native `crypto.timingSafeEqual()` for password hash comparison
 - **Rationale**: Prevents timing attacks where attackers measure response times to deduce password information character-by-character
 - **Source**: [Node.js Crypto Documentation](https://github.com/simonw/til/blob/main/node/constant-time-compare-strings.md)
 
 **Decision 3: Shared Password Storage**
+
 - **Choice**: Store shared password hash in environment variable (`SHARED_PASSWORD_HASH`)
 - **Rationale**: Allows runtime updates without database migration, keeps sensitive config separate from code, supports environment-specific passwords
 
 **Decision 4: Database Schema**
+
 - **Choice**: Use existing `password` column, no migration needed
 - **Rationale**: Current schema already supports password storage per user; superadmins use their individual password, non-superadmins' password field will be ignored in favor of shared password
-
 
 ## Architecture
 
@@ -73,28 +77,28 @@ graph TB
     subgraph "Handler Layer"
         A[loginUser Function]
     end
-    
+
     subgraph "Service Layer"
         B[AuthenticationService]
         C[authenticateSuperadmin]
         D[authenticateNonSuperadmin]
     end
-    
+
     subgraph "Utility Layer"
         E[hashPassword]
         F[comparePasswords]
     end
-    
+
     subgraph "Configuration"
         G[Environment Variables]
         H[SHARED_PASSWORD_HASH]
     end
-    
+
     subgraph "Data Layer"
         I[PostgreSQL Database]
         J[users table]
     end
-    
+
     A --> B
     B --> C
     B --> D
@@ -105,7 +109,6 @@ graph TB
     B --> I
     I --> J
 ```
-
 
 ## Components and Interfaces
 
@@ -121,7 +124,7 @@ graph TB
  * @param password - Plaintext password to hash
  * @returns Promise resolving to hashed password string
  */
-export async function hashPassword(password: string): Promise<string>
+export async function hashPassword(password: string): Promise<string>;
 
 /**
  * Compare a plaintext password against a hash using timing-safe comparison
@@ -129,18 +132,17 @@ export async function hashPassword(password: string): Promise<string>
  * @param hash - Stored bcrypt hash
  * @returns Promise resolving to true if passwords match, false otherwise
  */
-export async function comparePasswords(
-  password: string, 
-  hash: string
-): Promise<boolean>
+export async function comparePasswords(password: string, hash: string): Promise<boolean>;
 ```
 
 **Implementation Notes**:
+
 - Uses `bcrypt` library for hashing with cost factor 12
 - `comparePasswords` internally uses `bcrypt.compare()` which handles timing-safe comparison
 - Handles edge cases: empty strings, null/undefined values return false
 
 **Dependencies**:
+
 - `bcrypt` npm package (v5.x or later)
 
 ---
@@ -165,10 +167,7 @@ export interface AuthenticationResult {
  * @param password - Plaintext password
  * @returns Authentication result with user data or error
  */
-export async function authenticate(
-  userId: string,
-  password: string
-): Promise<AuthenticationResult>
+export async function authenticate(userId: string, password: string): Promise<AuthenticationResult>;
 ```
 
 **Internal Functions**:
@@ -177,25 +176,18 @@ export async function authenticate(
 /**
  * Authenticate superadmin using individual password
  */
-async function authenticateSuperadmin(
-  user: User,
-  password: string
-): Promise<boolean>
+async function authenticateSuperadmin(user: User, password: string): Promise<boolean>;
 
 /**
  * Authenticate non-superadmin using shared password
  */
-async function authenticateNonSuperadmin(
-  user: User,
-  password: string
-): Promise<boolean>
+async function authenticateNonSuperadmin(user: User, password: string): Promise<boolean>;
 
 /**
  * Create session token for authenticated user
  */
-function createSessionToken(user: User): string
+function createSessionToken(user: User): string;
 ```
-
 
 **Authentication Flow Logic**:
 
@@ -207,7 +199,7 @@ async function authenticate(userId: string, password: string) {
   if (!user) {
     return { success: false, error: "Authentication failed" };
   }
-  
+
   // 2. Route based on role
   let isValid: boolean;
   if (user.role === "super_admin") {
@@ -215,12 +207,12 @@ async function authenticate(userId: string, password: string) {
   } else {
     isValid = await authenticateNonSuperadmin(user, password);
   }
-  
+
   // 3. Return result
   if (!isValid) {
     return { success: false, error: "Authentication failed" };
   }
-  
+
   // 4. Create session
   const sessionToken = createSessionToken(user);
   return { success: true, user, sessionToken };
@@ -240,15 +232,16 @@ async function authenticate(userId: string, password: string) {
  * Get the shared password hash from environment
  * @throws Error if SHARED_PASSWORD_HASH is not set
  */
-export function getSharedPasswordHash(): string
+export function getSharedPasswordHash(): string;
 
 /**
  * Get session expiration time in milliseconds (8 hours)
  */
-export function getSessionExpirationMs(): number
+export function getSessionExpirationMs(): number;
 ```
 
 **Environment Variables**:
+
 - `SHARED_PASSWORD_HASH`: bcrypt hash of the shared password (required)
 - `SESSION_EXPIRATION_HOURS`: Session duration (default: 8)
 
@@ -257,6 +250,7 @@ export function getSessionExpirationMs(): number
 ### 4. Modified loginUser Handler (`src/lib/db-functions.ts`)
 
 **Current Implementation**:
+
 ```typescript
 export const loginUser = createServerFn({ method: "POST" })
   .validator((d: { id: string }) => d)
@@ -271,28 +265,28 @@ export const loginUser = createServerFn({ method: "POST" })
 ```
 
 **New Implementation**:
+
 ```typescript
 export const loginUser = createServerFn({ method: "POST" })
   .validator((d: { id: string; password: string }) => d)
   .handler(async ({ data }) => {
     const { id, password } = data;
-    
+
     // Delegate to authentication service
     const result = await authenticate(id, password);
-    
+
     if (!result.success) {
       return null; // Maintain current error handling pattern
     }
-    
+
     // Additional verification for teachers
     if (result.user.role === "teacher" && result.user.status !== "verified") {
       return null;
     }
-    
+
     return result.user;
   });
 ```
-
 
 ## Data Models
 
@@ -308,13 +302,14 @@ export interface User {
   phone?: string;
   classId?: string;
   registeredAt: string;
-  password?: string;  // Used for superadmins, ignored for others
+  password?: string; // Used for superadmins, ignored for others
   schoolId?: string;
   subjects?: string[];
 }
 ```
 
 **Database Schema** (Existing - No Migration Required):
+
 ```sql
 CREATE TABLE users (
     id VARCHAR(50) PRIMARY KEY,
@@ -332,6 +327,7 @@ CREATE TABLE users (
 ```
 
 **Usage Notes**:
+
 - For `super_admin` role: `password` field contains individual bcrypt hash
 - For `admin`, `deputy`, `teacher` roles: `password` field is ignored (can be set to any value or empty string)
 - User identification always uses `id` field regardless of role
@@ -361,6 +357,7 @@ export interface AuthenticationResult {
 ```
 
 **Field Descriptions**:
+
 - `success`: Boolean indicating authentication outcome
 - `user`: Full user object if authentication succeeds
 - `sessionToken`: JWT or session identifier for authenticated session
@@ -374,21 +371,20 @@ export interface AuthenticationResult {
 export interface SessionToken {
   userId: string;
   userRole: string;
-  issuedAt: number;  // Unix timestamp
+  issuedAt: number; // Unix timestamp
   expiresAt: number; // Unix timestamp (issuedAt + 8 hours)
 }
 ```
 
 **Implementation**: JWT signed with `VITE_AUTH_SECRET` environment variable
 
-
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 ### Property 1: Superadmin Individual Password Validation
 
-*For any* superadmin user with a stored individual password hash, when that user submits an authentication request, the system SHALL validate the provided password against that user's individual password hash stored in the database.
+_For any_ superadmin user with a stored individual password hash, when that user submits an authentication request, the system SHALL validate the provided password against that user's individual password hash stored in the database.
 
 **Validates: Requirements 1.1**
 
@@ -396,7 +392,7 @@ export interface SessionToken {
 
 ### Property 2: Incorrect Password Rejection
 
-*For any* user of any role, when that user submits an authentication request with a password that does not match their expected password (individual for superadmin, shared for others), the system SHALL reject the authentication request and return an authentication failure.
+_For any_ user of any role, when that user submits an authentication request with a password that does not match their expected password (individual for superadmin, shared for others), the system SHALL reject the authentication request and return an authentication failure.
 
 **Validates: Requirements 1.2, 2.2**
 
@@ -404,7 +400,7 @@ export interface SessionToken {
 
 ### Property 3: Non-Superadmin Shared Password Validation
 
-*For any* user with role admin, deputy, or teacher, when that user submits an authentication request, the system SHALL validate the provided password against the shared password hash (from environment configuration), not against the password field stored in their user record.
+_For any_ user with role admin, deputy, or teacher, when that user submits an authentication request, the system SHALL validate the provided password against the shared password hash (from environment configuration), not against the password field stored in their user record.
 
 **Validates: Requirements 2.1**
 
@@ -412,7 +408,7 @@ export interface SessionToken {
 
 ### Property 4: Unique User Identification with Shared Password
 
-*For any* two distinct non-superadmin users who both authenticate successfully using the shared password, their resulting session tokens SHALL contain their respective unique user IDs, maintaining individual user identification despite shared password usage.
+_For any_ two distinct non-superadmin users who both authenticate successfully using the shared password, their resulting session tokens SHALL contain their respective unique user IDs, maintaining individual user identification despite shared password usage.
 
 **Validates: Requirements 2.4**
 
@@ -420,7 +416,7 @@ export interface SessionToken {
 
 ### Property 5: Role-Based Authentication Routing
 
-*For any* authentication request, the system SHALL retrieve the user's role from the database and route the authentication through the correct validation path: individual password validation for super_admin role, shared password validation for admin, deputy, or teacher roles.
+_For any_ authentication request, the system SHALL retrieve the user's role from the database and route the authentication through the correct validation path: individual password validation for super_admin role, shared password validation for admin, deputy, or teacher roles.
 
 **Validates: Requirements 3.1, 3.3, 3.4**
 
@@ -428,7 +424,7 @@ export interface SessionToken {
 
 ### Property 6: Invalid User Rejection
 
-*For any* user ID that does not exist in the database, when an authentication request is submitted with that ID, the system SHALL reject the request and return an authentication failure.
+_For any_ user ID that does not exist in the database, when an authentication request is submitted with that ID, the system SHALL reject the request and return an authentication failure.
 
 **Validates: Requirements 3.2**
 
@@ -436,14 +432,13 @@ export interface SessionToken {
 
 ### Property 7: Password Hash Format Validation
 
-*For any* plaintext password processed by the hashPassword function, the output SHALL be a valid bcrypt hash string with the correct format (starting with $2a$ or $2b$ and containing the expected structure of cost factor, salt, and hash).
+_For any_ plaintext password processed by the hashPassword function, the output SHALL be a valid bcrypt hash string with the correct format (starting with $2a$ or $2b$ and containing the expected structure of cost factor, salt, and hash).
 
 **Validates: Requirements 4.2**
 
-
 ### Property 8: Generic Error Messages
 
-*For any* authentication failure scenario (incorrect password, non-existent user, wrong role, or any other failure condition), the system SHALL return the same generic "Authentication failed" error message without revealing whether the user ID exists, whether the password was incorrect, or what the user's role is.
+_For any_ authentication failure scenario (incorrect password, non-existent user, wrong role, or any other failure condition), the system SHALL return the same generic "Authentication failed" error message without revealing whether the user ID exists, whether the password was incorrect, or what the user's role is.
 
 **Validates: Requirements 5.1, 5.2, 5.4**
 
@@ -451,7 +446,7 @@ export interface SessionToken {
 
 ### Property 9: Authentication Failure Audit Logging
 
-*For any* authentication failure, the system SHALL log an audit entry containing the attempted user ID, timestamp of the attempt, and the specific error type (for internal tracking), while returning only generic error messages to the client.
+_For any_ authentication failure, the system SHALL log an audit entry containing the attempted user ID, timestamp of the attempt, and the specific error type (for internal tracking), while returning only generic error messages to the client.
 
 **Validates: Requirements 5.3**
 
@@ -459,7 +454,7 @@ export interface SessionToken {
 
 ### Property 10: Session Token Content
 
-*For any* successful authentication (regardless of user role), the system SHALL create and return a session token that contains the authenticated user's ID and role.
+_For any_ successful authentication (regardless of user role), the system SHALL create and return a session token that contains the authenticated user's ID and role.
 
 **Validates: Requirements 1.3, 2.3, 6.1, 6.3**
 
@@ -467,7 +462,7 @@ export interface SessionToken {
 
 ### Property 11: Session Expiration Calculation
 
-*For any* session token created at time T, the session expiration time SHALL be exactly T + 8 hours (28,800,000 milliseconds), ensuring consistent session duration across all users.
+_For any_ session token created at time T, the session expiration time SHALL be exactly T + 8 hours (28,800,000 milliseconds), ensuring consistent session duration across all users.
 
 **Validates: Requirements 6.2**
 
@@ -475,7 +470,7 @@ export interface SessionToken {
 
 ### Property 12: Password Comparison Round-Trip
 
-*For any* plaintext password P, when hashed to produce hash H, comparing P against H SHALL return true, and comparing any different password P' against H SHALL return false (assuming P' is not identical to P).
+_For any_ plaintext password P, when hashed to produce hash H, comparing P against H SHALL return true, and comparing any different password P' against H SHALL return false (assuming P' is not identical to P).
 
 **Validates: Requirements 1.1, 2.1, 4.4** (implicit - validates hash/compare cycle works correctly)
 
@@ -483,10 +478,9 @@ export interface SessionToken {
 
 ### Property 13: Backward Compatibility for Existing Superadmins
 
-*For any* superadmin user that existed before this feature deployment with an existing password hash, authentication with their original password SHALL succeed without requiring password reset or modification.
+_For any_ superadmin user that existed before this feature deployment with an existing password hash, authentication with their original password SHALL succeed without requiring password reset or modification.
 
 **Validates: Requirements 7.2, 7.3**
-
 
 ## Error Handling
 
@@ -534,11 +528,13 @@ While client responses are generic, internal logs capture specific details:
 ### Configuration Error Handling
 
 **Missing SHARED_PASSWORD_HASH**:
+
 - System fails fast at startup
 - Throws error: "SHARED_PASSWORD_HASH environment variable is required"
 - Prevents application from starting in misconfigured state
 
 **Invalid Hash Format**:
+
 - Detected when first authentication attempt is made
 - Logged as critical error
 - Returns generic authentication failure to client
@@ -546,11 +542,13 @@ While client responses are generic, internal logs capture specific details:
 ### Database Error Handling
 
 **Connection Failures**:
+
 - Retry logic: 3 attempts with exponential backoff
 - If all retries fail, return generic authentication error
 - Log detailed connection error for operations team
 
 **Query Errors**:
+
 - Catch and log SQL errors
 - Return generic authentication failure
 - Alert on repeated query failures (possible SQL injection attempts)
@@ -558,6 +556,7 @@ While client responses are generic, internal logs capture specific details:
 ### Timing Attack Prevention
 
 **Constant-Time Operations**:
+
 - Use `bcrypt.compare()` for all password comparisons (built-in timing safety)
 - Ensure failed authentication path takes similar time as successful path
 - Add small random delay (10-50ms) to both success and failure responses to prevent timing-based user enumeration
@@ -565,6 +564,7 @@ While client responses are generic, internal logs capture specific details:
 ### Password Hashing Error Handling
 
 **Hashing Failures**:
+
 ```typescript
 try {
   const hash = await hashPassword(password);
@@ -576,6 +576,7 @@ try {
 ```
 
 **Invalid Hash Detection**:
+
 ```typescript
 try {
   const isValid = await comparePasswords(password, hash);
@@ -587,35 +588,38 @@ try {
 }
 ```
 
-
 ### Session Error Handling
 
 **Token Generation Failures**:
+
 - Log error with user context
 - Return authentication success but with warning flag
 - Client can retry session creation
 
 **Session Storage Failures**:
+
 - Depends on session storage mechanism (JWT requires no storage)
 - For server-side sessions: retry storage, fall back to in-memory
 
 ### Error Recovery Patterns
 
 **Transient Errors** (database connection issues):
+
 - Implement retry with exponential backoff
 - Maximum 3 retry attempts
 - If all retries fail, return error and alert operations
 
 **Permanent Errors** (configuration issues):
+
 - Fail fast at application startup
 - Prevent system from serving requests in misconfigured state
 - Require manual intervention to resolve
 
 **Graceful Degradation**:
+
 - If audit logging fails, authentication should still proceed
 - Log error to stdout/stderr as fallback
 - Alert operations team about logging system failure
-
 
 ## Testing Strategy
 
@@ -628,6 +632,7 @@ This feature employs a dual testing approach combining property-based testing (P
 **Framework**: fast-check (JavaScript/TypeScript property-based testing library)
 
 **Test Configuration**:
+
 - Minimum 100 iterations per property test
 - Each test references its corresponding design property
 - Tag format: `Feature: shared-password-authentication, Property N: [property text]`
@@ -635,6 +640,7 @@ This feature employs a dual testing approach combining property-based testing (P
 **Property Test Specifications**:
 
 #### Property 1: Superadmin Individual Password Validation
+
 ```typescript
 // Feature: shared-password-authentication, Property 1: Superadmin Individual Password Validation
 // For any superadmin user with stored individual password hash, validate against that hash
@@ -652,6 +658,7 @@ Test:
 ```
 
 #### Property 2: Incorrect Password Rejection
+
 ```typescript
 // Feature: shared-password-authentication, Property 2: Incorrect Password Rejection
 
@@ -669,6 +676,7 @@ Test:
 ```
 
 #### Property 3: Non-Superadmin Shared Password Validation
+
 ```typescript
 // Feature: shared-password-authentication, Property 3: Non-Superadmin Shared Password Validation
 
@@ -686,6 +694,7 @@ Test:
 ```
 
 #### Property 4: Unique User Identification with Shared Password
+
 ```typescript
 // Feature: shared-password-authentication, Property 4: Unique User Identification
 
@@ -702,6 +711,7 @@ Test:
 ```
 
 #### Property 5: Role-Based Authentication Routing
+
 ```typescript
 // Feature: shared-password-authentication, Property 5: Role-Based Authentication Routing
 
@@ -717,8 +727,8 @@ Test:
    - others -> shared password validation
 ```
 
-
 #### Property 6: Invalid User Rejection
+
 ```typescript
 // Feature: shared-password-authentication, Property 6: Invalid User Rejection
 
@@ -734,6 +744,7 @@ Test:
 ```
 
 #### Property 7: Password Hash Format Validation
+
 ```typescript
 // Feature: shared-password-authentication, Property 7: Password Hash Format
 
@@ -749,6 +760,7 @@ Test:
 ```
 
 #### Property 8: Generic Error Messages
+
 ```typescript
 // Feature: shared-password-authentication, Property 8: Generic Error Messages
 
@@ -767,6 +779,7 @@ Test:
 ```
 
 #### Property 9: Authentication Failure Audit Logging
+
 ```typescript
 // Feature: shared-password-authentication, Property 9: Audit Logging
 
@@ -783,6 +796,7 @@ Test (with mock logger):
 ```
 
 #### Property 10: Session Token Content
+
 ```typescript
 // Feature: shared-password-authentication, Property 10: Session Token Content
 
@@ -800,6 +814,7 @@ Test:
 ```
 
 #### Property 11: Session Expiration Calculation
+
 ```typescript
 // Feature: shared-password-authentication, Property 11: Session Expiration
 
@@ -815,6 +830,7 @@ Test:
 ```
 
 #### Property 12: Password Comparison Round-Trip
+
 ```typescript
 // Feature: shared-password-authentication, Property 12: Round-Trip Validation
 
@@ -831,6 +847,7 @@ Test:
 ```
 
 #### Property 13: Backward Compatibility
+
 ```typescript
 // Feature: shared-password-authentication, Property 13: Backward Compatibility
 
@@ -844,7 +861,6 @@ Test:
 4. Assert: no password reset required
 5. Assert: user's password hash unchanged after authentication
 ```
-
 
 ### Unit Testing
 
@@ -927,6 +943,7 @@ Test:
 ### Test Environment Setup
 
 **Dependencies**:
+
 - `fast-check`: Property-based testing framework
 - `bcrypt`: Password hashing (v5.x or later)
 - `jsonwebtoken`: JWT session tokens
@@ -934,12 +951,13 @@ Test:
 - Mock database for isolated testing
 
 **Configuration**:
+
 ```typescript
 // test-config.ts
 export const TEST_CONFIG = {
   sharedPasswordHash: await hashPassword("test-shared-password"),
   sessionExpirationMs: 8 * 60 * 60 * 1000,
-  bcryptRounds: 12
+  bcryptRounds: 12,
 };
 ```
 
@@ -957,18 +975,19 @@ export const TEST_CONFIG = {
 - Run integration tests before deployment
 - Performance tests to monitor authentication latency
 
-
 ## Security Considerations
 
 ### Password Storage
 
 **Individual Passwords (Superadmins)**:
+
 - Stored as bcrypt hashes in database `users.password` field
 - Cost factor: 12 (balances security and performance)
 - Each password has unique salt (handled automatically by bcrypt)
 - Never store plaintext passwords in logs or database
 
 **Shared Password (Non-Superadmins)**:
+
 - Stored as bcrypt hash in `SHARED_PASSWORD_HASH` environment variable
 - Same cost factor: 12
 - Environment variable should be set via secure configuration management
@@ -977,16 +996,19 @@ export const TEST_CONFIG = {
 ### Information Leakage Prevention
 
 **Generic Error Messages**:
+
 - All authentication failures return identical error message
 - Prevents user enumeration attacks
 - Prevents role disclosure through error messages
 
 **Timing Attack Prevention**:
+
 - Use `bcrypt.compare()` which provides constant-time comparison
 - Add small random delay (10-50ms) to both success and failure responses
 - Prevents attackers from timing responses to guess valid userIds
 
 **Audit Logging Security**:
+
 - Log authentication failures for security monitoring
 - Ensure logs are protected and access-controlled
 - Include rate-limiting data to detect brute-force attempts
@@ -995,6 +1017,7 @@ export const TEST_CONFIG = {
 ### Rate Limiting
 
 **Recommendation**: Implement rate limiting to prevent brute-force attacks:
+
 - Limit: 5 failed attempts per user ID per 15 minutes
 - Action: Temporarily block authentication attempts for that user ID
 - Alert: Notify security team after 10+ failed attempts from same IP
@@ -1003,12 +1026,14 @@ export const TEST_CONFIG = {
 ### Session Security
 
 **JWT Tokens**:
+
 - Sign with strong secret (`VITE_AUTH_SECRET` environment variable)
 - Use HS256 algorithm minimum (or RS256 for better security)
 - Include expiration claim (8 hours)
 - Consider adding issued-at claim and token ID for revocation support
 
 **Session Management**:
+
 - Tokens should be stored securely on client (httpOnly cookies recommended)
 - Implement token refresh mechanism for long-lived sessions
 - Consider token revocation list for logged-out sessions
@@ -1016,11 +1041,13 @@ export const TEST_CONFIG = {
 ### Password Complexity Requirements
 
 **Superadmin Passwords**:
+
 - Minimum length: 12 characters
 - Require: uppercase, lowercase, numbers, special characters
 - Enforce at user creation and password change
 
 **Shared Password**:
+
 - Minimum length: 16 characters (more users = higher risk)
 - Same complexity requirements as superadmin
 - Document password rotation schedule
@@ -1028,6 +1055,7 @@ export const TEST_CONFIG = {
 ### Secure Configuration Management
 
 **Environment Variables**:
+
 - Never commit `.env` files to version control
 - Use secrets management system in production (e.g., AWS Secrets Manager, Azure Key Vault)
 - Restrict access to environment configuration
@@ -1036,6 +1064,7 @@ export const TEST_CONFIG = {
 ### Encryption in Transit
 
 **HTTPS Requirement**:
+
 - All authentication requests must be over HTTPS
 - Prevents password interception during transmission
 - Enforce in production with HSTS headers
@@ -1043,13 +1072,15 @@ export const TEST_CONFIG = {
 ### SQL Injection Prevention
 
 **Parameterized Queries**:
-- Current code uses template literals correctly: `sql\`SELECT * FROM users WHERE id = ${id}\``
+
+- Current code uses template literals correctly: `sql\`SELECT \* FROM users WHERE id = ${id}\``
 - Continue using parameterized queries for all database operations
 - Never concatenate user input into SQL strings
 
 ### Defense in Depth
 
 **Multiple Security Layers**:
+
 1. HTTPS for encryption in transit
 2. bcrypt for secure password storage
 3. Timing-safe comparison to prevent timing attacks
@@ -1058,12 +1089,12 @@ export const TEST_CONFIG = {
 6. Audit logging for security monitoring
 7. Session expiration for limited exposure window
 
-
 ## Implementation Considerations
 
 ### Dependencies
 
 **New Dependencies to Install**:
+
 ```json
 {
   "dependencies": {
@@ -1098,6 +1129,7 @@ src/lib/auth/
 **No Migration Required**: The existing `users` table already has a `password` column that can accommodate this feature.
 
 **Existing Schema Utilization**:
+
 - `super_admin` users: `password` field contains individual bcrypt hash
 - `admin`, `deputy`, `teacher` users: `password` field can remain as-is (will be ignored)
 
@@ -1106,6 +1138,7 @@ src/lib/auth/
 ### Environment Configuration
 
 **Required Environment Variables**:
+
 ```bash
 # Shared password hash (bcrypt hash of the shared password)
 SHARED_PASSWORD_HASH=$2b$12$abcdefghijklmnopqrstuvwxyz1234567890ABCDEFG
@@ -1118,9 +1151,10 @@ SESSION_EXPIRATION_HOURS=8
 ```
 
 **Generating Shared Password Hash**:
+
 ```typescript
 // One-time script to generate hash
-import bcrypt from 'bcrypt';
+import bcrypt from "bcrypt";
 
 const sharedPassword = "YourSharedPasswordHere";
 const hash = await bcrypt.hash(sharedPassword, 12);
@@ -1154,22 +1188,26 @@ console.log("SHARED_PASSWORD_HASH=" + hash);
 ### Performance Considerations
 
 **bcrypt Cost Factor**:
+
 - Cost factor 12 takes ~300ms per hash/compare operation
 - Acceptable for authentication (happens once per login)
 - Can be tuned down to 10 if performance is critical (reduces security margin)
 
 **Caching**:
+
 - Do NOT cache authentication results
 - Each authentication attempt must validate password
 - Session tokens provide performance optimization for subsequent requests
 
 **Database Query Optimization**:
+
 - Ensure index on `users.id` for fast user lookup (likely already exists as primary key)
 - Consider adding index on `users.email` if email-based login is added later
 
 ### Monitoring and Observability
 
 **Metrics to Track**:
+
 - Authentication success rate
 - Authentication failure rate
 - Average authentication latency
@@ -1177,19 +1215,21 @@ console.log("SHARED_PASSWORD_HASH=" + hash);
 - Rate of password comparison errors
 
 **Alerts to Configure**:
+
 - High rate of authentication failures (possible brute-force attack)
 - bcrypt comparison errors (possible hash corruption)
 - Missing environment variables at startup
 - Database connection failures during authentication
 
 **Logging Best Practices**:
+
 ```typescript
 // Good: Structured logging with context
 logger.info("Authentication attempt", {
   userId: user.id,
   role: user.role,
   success: true,
-  duration: 250
+  duration: 250,
 });
 
 // Bad: Logging sensitive information
@@ -1199,17 +1239,19 @@ logger.info("Password: " + password); // NEVER DO THIS
 ### Frontend Integration
 
 **Updated Login Request**:
+
 ```typescript
 // Before: only userId
 const user = await loginUser({ data: { id: userId } });
 
 // After: userId + password
-const user = await loginUser({ 
-  data: { id: userId, password: password } 
+const user = await loginUser({
+  data: { id: userId, password: password },
 });
 ```
 
 **Error Handling**:
+
 ```typescript
 const result = await loginUser({ data: { id, password } });
 
@@ -1225,18 +1267,21 @@ if (!result) {
 ### Backward Compatibility Notes
 
 **Existing Superadmin Accounts**:
+
 - If existing superadmin passwords are already bcrypt-hashed: No action needed
 - If existing passwords are plaintext (unlikely): Need one-time migration to hash them
 - Current code shows `password: "admin123"` in `registerUser`, suggesting plaintext storage currently exists
 
 **Migration Script** (if needed):
+
 ```typescript
 // One-time script to hash existing plaintext passwords
 async function migratePasswordsToHashed() {
   const users = await sql`SELECT id, password FROM users WHERE role = 'super_admin'`;
-  
+
   for (const user of users) {
-    if (!user.password.startsWith('$2')) { // Not already hashed
+    if (!user.password.startsWith("$2")) {
+      // Not already hashed
       const hashedPassword = await bcrypt.hash(user.password, 12);
       await sql`UPDATE users SET password = ${hashedPassword} WHERE id = ${user.id}`;
       console.log(`Migrated password for user ${user.id}`);
@@ -1248,6 +1293,7 @@ async function migratePasswordsToHashed() {
 ### Testing in Development
 
 **Local Development Setup**:
+
 ```bash
 # .env.local
 SHARED_PASSWORD_HASH=$2b$12$YourTestHashHere
@@ -1255,21 +1301,23 @@ VITE_AUTH_SECRET=test-secret-key-for-local-dev
 ```
 
 **Test Credentials**:
+
 - Superadmin: Use individual password set in database
 - Teachers/Admins: Use the shared password configured in SHARED_PASSWORD_HASH
-
 
 ## Migration and Rollout Strategy
 
 ### Phase 1: Development and Testing (Week 1-2)
 
 **Goals**:
+
 - Implement authentication modules
 - Write and run property-based tests
 - Write unit and integration tests
 - Test locally with sample data
 
 **Tasks**:
+
 1. Install dependencies (bcrypt, jsonwebtoken, fast-check)
 2. Implement `password-utils.ts`, `auth-service.ts`, `config.ts`, `session.ts`
 3. Update `loginUser` handler to accept password parameter
@@ -1281,12 +1329,14 @@ VITE_AUTH_SECRET=test-secret-key-for-local-dev
 ### Phase 2: Staging Deployment (Week 3)
 
 **Goals**:
+
 - Deploy to staging environment
 - Verify with realistic data
 - Performance testing
 - Security testing
 
 **Tasks**:
+
 1. Set up staging environment variables (SHARED_PASSWORD_HASH, VITE_AUTH_SECRET)
 2. Deploy authentication feature to staging
 3. Run integration tests against staging database
@@ -1299,11 +1349,13 @@ VITE_AUTH_SECRET=test-secret-key-for-local-dev
 ### Phase 3: Production Deployment (Week 4)
 
 **Goals**:
+
 - Safe production rollout
 - Monitor and verify
 - Communicate changes to users
 
 **Pre-Deployment Checklist**:
+
 - [ ] All tests passing (property tests, unit tests, integration tests)
 - [ ] Staging tests successful for 1 week
 - [ ] Environment variables configured in production
@@ -1313,6 +1365,7 @@ VITE_AUTH_SECRET=test-secret-key-for-local-dev
 - [ ] Database backup taken
 
 **Deployment Steps**:
+
 1. Deploy during low-traffic window
 2. Enable authentication feature
 3. Monitor authentication success rate (expect ~100% for valid credentials)
@@ -1322,6 +1375,7 @@ VITE_AUTH_SECRET=test-secret-key-for-local-dev
 7. Monitor for 24 hours with heightened alertness
 
 **Success Criteria**:
+
 - Zero authentication errors for valid credentials
 - All existing superadmins can login with current passwords
 - Non-superadmin users can login with shared password
@@ -1331,11 +1385,13 @@ VITE_AUTH_SECRET=test-secret-key-for-local-dev
 ### Phase 4: Monitoring and Optimization (Ongoing)
 
 **Goals**:
+
 - Continuous monitoring
 - Address any issues
 - Optimize based on real usage
 
 **Monitoring Metrics**:
+
 - Daily authentication volume by user type
 - Authentication success/failure rates
 - Average authentication latency
@@ -1343,6 +1399,7 @@ VITE_AUTH_SECRET=test-secret-key-for-local-dev
 - Rate limiting triggers
 
 **Optimization Opportunities**:
+
 - Adjust bcrypt cost factor if latency is high
 - Add caching for user lookup if database becomes bottleneck
 - Implement connection pooling for database if needed
@@ -1353,6 +1410,7 @@ VITE_AUTH_SECRET=test-secret-key-for-local-dev
 **If Critical Issues Arise**:
 
 1. **Immediate Rollback** (< 5 minutes):
+
    ```bash
    # Revert to previous deployment
    git revert <commit-hash>
@@ -1360,12 +1418,14 @@ VITE_AUTH_SECRET=test-secret-key-for-local-dev
    ```
 
 2. **Disable Feature Flag** (if using feature flags):
+
    ```typescript
    // Set feature flag to disable new authentication
-   ENABLE_PASSWORD_AUTH=false
+   ENABLE_PASSWORD_AUTH = false;
    ```
 
 3. **Database Rollback** (if passwords were migrated):
+
    ```sql
    -- Restore from backup taken in pre-deployment
    -- (Should not be needed as no migration changes schema)
@@ -1377,6 +1437,7 @@ VITE_AUTH_SECRET=test-secret-key-for-local-dev
    - Communicate timeline for resolution
 
 **Post-Rollback**:
+
 - Investigate root cause in development environment
 - Fix issues and re-test thoroughly
 - Plan for re-deployment when ready
@@ -1384,10 +1445,12 @@ VITE_AUTH_SECRET=test-secret-key-for-local-dev
 ### User Communication Plan
 
 **For Superadmins**:
+
 - No change to login flow (still use individual passwords)
 - No action required
 
 **For Non-Superadmin Users**:
+
 - If transitioning from individual to shared passwords:
   - Email: "Your login process is being simplified"
   - Provide shared password through secure channel
@@ -1400,12 +1463,14 @@ VITE_AUTH_SECRET=test-secret-key-for-local-dev
 ### Success Metrics
 
 **Technical Metrics**:
+
 - 99.9% authentication success rate for valid credentials
 - < 500ms average authentication latency
 - Zero security incidents related to authentication
 - Zero data breaches due to authentication vulnerabilities
 
 **Business Metrics**:
+
 - User satisfaction with login experience (survey)
 - Reduction in password reset requests (if applicable)
 - Reduced support tickets related to authentication
@@ -1413,18 +1478,21 @@ VITE_AUTH_SECRET=test-secret-key-for-local-dev
 ### Documentation Updates
 
 **Developer Documentation**:
+
 - Update authentication flow diagrams
 - Document new environment variables
 - Add troubleshooting guide for authentication issues
 - Document property-based testing approach
 
 **Operations Documentation**:
+
 - Update deployment runbook
 - Document monitoring and alerting setup
 - Add authentication troubleshooting guide
 - Document password rotation procedures
 
 **User Documentation**:
+
 - Update login instructions (if needed)
 - Create FAQ for common authentication issues
 - Document password requirements
@@ -1436,9 +1504,9 @@ VITE_AUTH_SECRET=test-secret-key-for-local-dev
 This design provides a comprehensive, security-first approach to implementing shared password authentication while maintaining individual passwords for superadmins. The dual-testing strategy with property-based testing ensures correctness across all input variations, while the defense-in-depth security approach protects against common authentication vulnerabilities.
 
 Key strengths of this design:
+
 - **Minimal disruption**: No database migration required
 - **Security-first**: Industry-standard password hashing and timing-attack prevention
 - **Testable**: 13 correctness properties validated through property-based testing
 - **Maintainable**: Clear separation of concerns and modular architecture
 - **Backward compatible**: Existing superadmin accounts continue working without modification
-

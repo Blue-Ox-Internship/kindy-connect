@@ -7,6 +7,7 @@ The Superadmin Users View feature provides a comprehensive, centralized interfac
 ### Context
 
 The current system has role-based user management where:
+
 - School admins and deputies can view and manage users within their assigned school
 - Teachers have limited visibility
 - Superadmins currently lack a dedicated view for system-wide user management
@@ -53,23 +54,23 @@ graph TD
     B --> C[users array from store]
     B --> D[schools array from store]
     B --> E[Store Actions]
-    
+
     C --> F[Client-side Filtering]
     F --> G[Search Filter]
     F --> H[School Filter]
     F --> I[Role Filter]
     F --> J[Status Filter]
-    
+
     G --> K[Filtered User List]
     H --> K
     I --> K
     J --> K
-    
+
     K --> L[Tab Grouping]
     L --> M[Pending Users]
     L --> N[Verified Users]
     L --> O[Rejected Users]
-    
+
     E --> P[approveTeacher]
     E --> Q[rejectTeacher]
     E --> R[deleteUser]
@@ -83,12 +84,14 @@ graph TD
 **File**: `src/routes/app.users.tsx`
 
 **Responsibilities**:
+
 - Define the route using TanStack Router's `createFileRoute`
 - Set page metadata (title)
 - Render the UsersPage component
 - Handle route-level permissions
 
 **Interface**:
+
 ```typescript
 export const Route = createFileRoute("/app/users")({
   head: () => ({ meta: [{ title: "Users - Kindy Connect Admin" }] }),
@@ -99,6 +102,7 @@ export const Route = createFileRoute("/app/users")({
 ### UsersPage Component
 
 **Responsibilities**:
+
 - Access control: verify superadmin role
 - Manage local state for search query and filters
 - Compose UI using child components
@@ -106,14 +110,15 @@ export const Route = createFileRoute("/app/users")({
 - Display loading and error states
 
 **State Management**:
+
 ```typescript
 interface UsersPageState {
-  searchQuery: string;              // Search text for ID, name, email
-  schoolFilter: string;             // "all" | school.id
-  roleFilter: string;               // "all" | "super_admin" | "admin" | "deputy" | "teacher"
-  statusFilter: string;             // "all" | "pending" | "verified" | "rejected"
-  createDialogOpen: boolean;        // Dialog visibility
-  createForm: CreateUserForm;       // Form state for new user
+  searchQuery: string; // Search text for ID, name, email
+  schoolFilter: string; // "all" | school.id
+  roleFilter: string; // "all" | "super_admin" | "admin" | "deputy" | "teacher"
+  statusFilter: string; // "all" | "pending" | "verified" | "rejected"
+  createDialogOpen: boolean; // Dialog visibility
+  createForm: CreateUserForm; // Form state for new user
 }
 
 interface CreateUserForm {
@@ -131,19 +136,21 @@ interface CreateUserForm {
 ### UserTable Component
 
 **Responsibilities**:
+
 - Render user data in tabular format
 - Display user properties: ID, name, email, phone, role badge, school name, registration date, subjects
 - Render action buttons based on user status and current user permissions
 - Handle responsive column visibility
 
 **Props**:
+
 ```typescript
 interface UserTableProps {
   users: User[];
   schools: School[];
   currentUser: User;
-  showApprovalActions: boolean;      // Show Approve/Reject buttons
-  showDeleteAction: boolean;         // Show Delete button
+  showApprovalActions: boolean; // Show Approve/Reject buttons
+  showDeleteAction: boolean; // Show Delete button
   onApprove: (userId: string) => void;
   onReject: (userId: string) => void;
   onDelete: (userId: string) => void;
@@ -153,6 +160,7 @@ interface UserTableProps {
 ### CreateUserDialog Component
 
 **Responsibilities**:
+
 - Collect new user information via form inputs
 - Validate form data
 - Handle conditional fields (school for non-super_admin roles, subjects for teachers)
@@ -160,6 +168,7 @@ interface UserTableProps {
 - Display validation errors
 
 **Props**:
+
 ```typescript
 interface CreateUserDialogProps {
   open: boolean;
@@ -191,17 +200,17 @@ interface CreateUserDialogProps {
 
 ```typescript
 interface User {
-  id: string;                        // Unique user identifier (e.g., "KC001")
-  name: string;                      // Full name
-  email: string;                     // Email address
-  phone?: string;                    // Phone number
-  role: Role;                        // User role
-  status: TeacherStatus;             // Verification status
-  registeredAt: string;              // ISO date string
-  password?: string;                 // Plain text password (for admin viewing)
-  schoolId?: string;                 // Associated school (undefined for super_admin)
-  subjects?: string[];               // Assigned subjects (for teachers only)
-  classId?: string;                  // Assigned class (for teachers)
+  id: string; // Unique user identifier (e.g., "KC001")
+  name: string; // Full name
+  email: string; // Email address
+  phone?: string; // Phone number
+  role: Role; // User role
+  status: TeacherStatus; // Verification status
+  registeredAt: string; // ISO date string
+  password?: string; // Plain text password (for admin viewing)
+  schoolId?: string; // Associated school (undefined for super_admin)
+  subjects?: string[]; // Assigned subjects (for teachers only)
+  classId?: string; // Assigned class (for teachers)
 }
 
 type Role = "super_admin" | "admin" | "deputy" | "teacher";
@@ -212,26 +221,26 @@ type TeacherStatus = "pending" | "verified" | "rejected";
 
 ```typescript
 interface School {
-  id: string;                        // Unique school identifier
-  name: string;                      // School name
-  address?: string;                  // Physical address
-  phone?: string;                    // Contact phone
-  email?: string;                    // Contact email
-  registeredAt: string;              // ISO date string
+  id: string; // Unique school identifier
+  name: string; // School name
+  address?: string; // Physical address
+  phone?: string; // Contact phone
+  email?: string; // Contact email
+  registeredAt: string; // ISO date string
 }
 ```
 
 ### Filter State Types
 
 ```typescript
-type SchoolFilterValue = "all" | string;  // "all" or school.id
+type SchoolFilterValue = "all" | string; // "all" or school.id
 type RoleFilterValue = "all" | Role;
 type StatusFilterValue = "all" | TeacherStatus;
 ```
 
 ## Correctness Properties
 
-*Property-based testing is not appropriate for this feature. The Superadmin Users View is primarily a UI rendering and CRUD interface with the following characteristics:*
+_Property-based testing is not appropriate for this feature. The Superadmin Users View is primarily a UI rendering and CRUD interface with the following characteristics:_
 
 1. **UI Rendering**: The feature displays user data in tables, tabs, and forms - visual components that are best tested with snapshot tests and integration tests
 2. **CRUD Operations**: User creation, approval, rejection, and deletion are database operations with side effects that should be tested with example-based unit tests and integration tests
@@ -245,16 +254,19 @@ type StatusFilterValue = "all" | TeacherStatus;
 ### Client-Side Error Handling
 
 **Access Control Errors**:
+
 - **Condition**: User without `super_admin` role attempts to access `/app/users`
 - **Handling**: Render "Unauthorized" view with message
 - **User Feedback**: Display clear message explaining permission requirements
 
 **Form Validation Errors**:
+
 - **Condition**: Required fields empty, invalid email format, duplicate email
 - **Handling**: Prevent form submission, highlight invalid fields
 - **User Feedback**: Display toast notification with specific validation error
 
 **Network Errors**:
+
 - **Condition**: API call fails (approve, reject, delete, create operations)
 - **Handling**: Display error toast with error message
 - **User Feedback**: "Failed to [action] user: [error details]"
@@ -262,16 +274,19 @@ type StatusFilterValue = "all" | TeacherStatus;
 ### Server-Side Error Handling
 
 **Database Constraint Violations**:
+
 - **Condition**: Duplicate email, invalid foreign key (schoolId)
 - **Handling**: Return error response from server function
 - **User Feedback**: Toast notification with specific error
 
 **Authorization Failures**:
+
 - **Condition**: Non-superadmin attempts server action
 - **Handling**: Server function returns 403 error
 - **User Feedback**: Toast notification: "You do not have permission to perform this action"
 
 **Self-Deletion Prevention**:
+
 - **Condition**: Superadmin attempts to delete their own account
 - **Handling**: Client-side check disables delete button, server-side check rejects request
 - **User Feedback**: Toast notification: "Cannot delete your own account"
@@ -450,6 +465,7 @@ src/
 ### Dependencies
 
 **Existing Dependencies** (no new packages required):
+
 - `@tanstack/react-router` - Routing
 - `@radix-ui/react-*` - UI primitives
 - `lucide-react` - Icons
@@ -480,6 +496,7 @@ src/
 ### State Management Approach
 
 **Local State** (useState):
+
 - Search query
 - School filter
 - Role filter
@@ -487,12 +504,14 @@ src/
 - Create form data
 
 **Derived State** (useMemo):
+
 - Filtered user list
 - Pending users
 - Verified users
 - Rejected users
 
 **Global State** (useStore):
+
 - User data
 - School data
 - Current user
@@ -506,16 +525,17 @@ All user management actions must log to the `audit_logs` table:
 
 ```typescript
 interface AuditLogEntry {
-  id: string;                    // Generated UUID
-  actorId: string;               // Current user ID
-  actorName: string;             // Current user name
-  action: string;                // e.g., "Approved user", "Rejected user", "Deleted user", "Created user"
-  target: string;                // User name and role being acted upon
-  timestamp: string;             // ISO date string
+  id: string; // Generated UUID
+  actorId: string; // Current user ID
+  actorName: string; // Current user name
+  action: string; // e.g., "Approved user", "Rejected user", "Deleted user", "Created user"
+  target: string; // User name and role being acted upon
+  timestamp: string; // ISO date string
 }
 ```
 
 **Actions to Log**:
+
 - User approval: "Approved user" → "John Doe (teacher)"
 - User rejection: "Rejected user" → "Jane Smith (deputy)"
 - User deletion: "Deleted user" → "Bob Johnson (admin)"
@@ -558,6 +578,7 @@ interface AuditLogEntry {
 ### Rollback Plan
 
 If issues arise post-deployment:
+
 1. Remove navigation link from `app-shell.tsx` (makes feature inaccessible)
 2. Delete route file `app.users.tsx` if necessary
 3. No database migrations required (uses existing schema)
@@ -566,6 +587,7 @@ If issues arise post-deployment:
 ### Monitoring
 
 **Metrics to Track**:
+
 - Page load time for `/app/users`
 - Search/filter response time
 - User action success/failure rates (approve, reject, delete, create)
@@ -573,6 +595,7 @@ If issues arise post-deployment:
 - Usage statistics: number of superadmin visits to users view
 
 **Logging**:
+
 - All user management actions logged to `audit_logs` table
 - Client-side errors logged to console
 - Server-side errors logged with error capture utility

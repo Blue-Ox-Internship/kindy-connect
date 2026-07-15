@@ -3,10 +3,29 @@ import { AppShell } from "@/components/app-shell";
 import { useStore } from "@/lib/mock-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useMemo, useEffect } from "react";
@@ -20,7 +39,8 @@ export const Route = createFileRoute("/app/attendance")({
 });
 
 function AttendancePage() {
-  const { currentUser, pupils, classes, attendance, markArrival, markDeparture, schools } = useStore();
+  const { currentUser, pupils, classes, attendance, markArrival, markDeparture, schools } =
+    useStore();
   const today = new Date().toISOString().slice(0, 10);
   const isTeacher = currentUser?.role === "teacher";
 
@@ -38,10 +58,12 @@ function AttendancePage() {
 
   useEffect(() => {
     if (filteredClasses.length > 0) {
-      const defaultClass = isTeacher ? currentUser?.classId ?? filteredClasses[0]?.id : filteredClasses[0]?.id;
+      const defaultClass = isTeacher
+        ? (currentUser?.classId ?? filteredClasses[0]?.id)
+        : filteredClasses[0]?.id;
       setClassId((curr) => {
         // If current class isn't in new list, reset to default
-        if (!curr || !filteredClasses.some(c => c.id === curr)) {
+        if (!curr || !filteredClasses.some((c) => c.id === curr)) {
           return defaultClass ?? "";
         }
         return curr;
@@ -73,10 +95,25 @@ function AttendancePage() {
   const dayAtt = attendance.filter((a) => a.date === date);
 
   const transportModes = ["Car", "School Bus", "Motorcycle", "Walking", "Bicycle", "Van", "Taxi"];
-  const relations = ["Mother", "Father", "Guardian", "Driver", "Uncle", "Aunt", "Grandparent", "Sibling"];
+  const relations = [
+    "Mother",
+    "Father",
+    "Guardian",
+    "Driver",
+    "Uncle",
+    "Aunt",
+    "Grandparent",
+    "Sibling",
+  ];
 
   const handleArrival = () => {
-    if (!selectedPupil || !arrivalForm.transport || !arrivalForm.personName || !arrivalForm.personRelation || !arrivalForm.phone) {
+    if (
+      !selectedPupil ||
+      !arrivalForm.transport ||
+      !arrivalForm.personName ||
+      !arrivalForm.personRelation ||
+      !arrivalForm.phone
+    ) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -92,11 +129,23 @@ function AttendancePage() {
     toast.success(`Arrival logged - parents notified`);
     setArrivalDialogOpen(false);
     setSelectedPupil(null);
-    setArrivalForm({ transport: "", vehicleReg: "", personName: "", personRelation: "", phone: "" });
+    setArrivalForm({
+      transport: "",
+      vehicleReg: "",
+      personName: "",
+      personRelation: "",
+      phone: "",
+    });
   };
 
   const handleDeparture = () => {
-    if (!selectedPupil || !departureForm.transport || !departureForm.personName || !departureForm.personRelation || !departureForm.phone) {
+    if (
+      !selectedPupil ||
+      !departureForm.transport ||
+      !departureForm.personName ||
+      !departureForm.personRelation ||
+      !departureForm.phone
+    ) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -112,7 +161,13 @@ function AttendancePage() {
     toast.success(`Departure logged - parents notified`);
     setDepartureDialogOpen(false);
     setSelectedPupil(null);
-    setDepartureForm({ transport: "", vehicleReg: "", personName: "", personRelation: "", phone: "" });
+    setDepartureForm({
+      transport: "",
+      vehicleReg: "",
+      personName: "",
+      personRelation: "",
+      phone: "",
+    });
   };
 
   const openArrivalDialog = (pupil: any) => {
@@ -127,137 +182,223 @@ function AttendancePage() {
 
   return (
     <AppShell title="Attendance">
-      <Card className="border-0 shadow-sm"><CardContent className="p-5">
-        <div className="flex flex-wrap gap-3 mb-4 items-center">
-          {currentUser?.role === "super_admin" && (
-            <select
-              value={superSchoolId}
-              onChange={(e) => setSuperSchoolId(e.target.value)}
-              className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring file:border-0 file:bg-transparent file:text-sm file:font-medium md:text-sm"
-            >
-              {schools.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          )}
-          <Select value={classId} onValueChange={setClassId} disabled={isTeacher}>
-            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-            <SelectContent>{filteredClasses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-          </Select>
-          <div className="flex items-center gap-2">
-            <label htmlFor="date-search" className="text-sm font-medium">Search Date:</label>
-            <input 
-              id="date-search"
-              type="date" 
-              value={date} 
-              onChange={(e) => setDate(e.target.value)} 
-              className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            {date !== today && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setDate(today);
-                  toast.success("Reset to today's date");
-                }}
-                className="flex items-center gap-2"
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-5">
+          <div className="flex flex-wrap gap-3 mb-4 items-center">
+            {currentUser?.role === "super_admin" && (
+              <select
+                value={superSchoolId}
+                onChange={(e) => setSuperSchoolId(e.target.value)}
+                className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring file:border-0 file:bg-transparent file:text-sm file:font-medium md:text-sm"
               >
-                <Calendar className="h-4 w-4" />
-                Reset to Today
-              </Button>
+                {schools.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
             )}
+            <Select value={classId} onValueChange={setClassId} disabled={isTeacher}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredClasses.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex items-center gap-2">
+              <label htmlFor="date-search" className="text-sm font-medium">
+                Search Date:
+              </label>
+              <input
+                id="date-search"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              {date !== today && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setDate(today);
+                    toast.success("Reset to today's date");
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Reset to Today
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
 
-        <Table>
-          <TableHeader><TableRow><TableHead>Pupil</TableHead><TableHead>Arrival</TableHead><TableHead>Transport In</TableHead><TableHead>Departure</TableHead><TableHead>Transport Out</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-          <TableBody>
-            {classPupils.map((p) => {
-              const att = dayAtt.find((a) => a.pupilId === p.id);
-              const isToday = date === today;
-              return (
-                <TableRow key={p.id}>
-                  <TableCell className="font-medium">{p.firstName} {p.lastName}</TableCell>
-                  <TableCell>{att?.arrival ?? "-"}</TableCell>
-                  <TableCell>
-                    {att?.arrivalTransport ? (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex items-center gap-1 cursor-help">
-                              <Car className="h-3 w-3" />
-                              <span className="text-sm">{att.arrivalTransport}</span>
-                              <Info className="h-3 w-3 text-muted-foreground" />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <div className="space-y-1 text-sm">
-                              <p><strong>Transport:</strong> {att.arrivalTransport}</p>
-                              {att.arrivalVehicleReg && <p><strong>Vehicle:</strong> {att.arrivalVehicleReg}</p>}
-                              <p><strong>Brought by:</strong> {att.arrivalPersonName} ({att.arrivalPersonRelation})</p>
-                              {att.arrivalPhone && <p><strong>Phone:</strong> {att.arrivalPhone}</p>}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    ) : "-"}
-                  </TableCell>
-                  <TableCell>{att?.departure ?? "-"}</TableCell>
-                  <TableCell>
-                    {att?.departureTransport ? (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex items-center gap-1 cursor-help">
-                              <Car className="h-3 w-3" />
-                              <span className="text-sm">{att.departureTransport}</span>
-                              <Info className="h-3 w-3 text-muted-foreground" />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <div className="space-y-1 text-sm">
-                              <p><strong>Transport:</strong> {att.departureTransport}</p>
-                              {att.departureVehicleReg && <p><strong>Vehicle:</strong> {att.departureVehicleReg}</p>}
-                              <p><strong>Picked by:</strong> {att.departurePersonName} ({att.departurePersonRelation})</p>
-                              {att.departurePhone && <p><strong>Phone:</strong> {att.departurePhone}</p>}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    ) : "-"}
-                  </TableCell>
-                  <TableCell>
-                    {att?.arrival ? <Badge>Present</Badge> : <Badge variant="secondary">Absent</Badge>}
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button size="sm" disabled={!isToday || !!att?.arrival} onClick={() => openArrivalDialog(p)}>Arrival</Button>
-                    <Button size="sm" variant="secondary" disabled={!isToday || !att?.arrival || !!att?.departure} onClick={() => openDepartureDialog(p)}>Departure</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Pupil</TableHead>
+                <TableHead>Arrival</TableHead>
+                <TableHead>Transport In</TableHead>
+                <TableHead>Departure</TableHead>
+                <TableHead>Transport Out</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {classPupils.map((p) => {
+                const att = dayAtt.find((a) => a.pupilId === p.id);
+                const isToday = date === today;
+                return (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-medium">
+                      {p.firstName} {p.lastName}
+                    </TableCell>
+                    <TableCell>{att?.arrival ?? "-"}</TableCell>
+                    <TableCell>
+                      {att?.arrivalTransport ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1 cursor-help">
+                                <Car className="h-3 w-3" />
+                                <span className="text-sm">{att.arrivalTransport}</span>
+                                <Info className="h-3 w-3 text-muted-foreground" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <div className="space-y-1 text-sm">
+                                <p>
+                                  <strong>Transport:</strong> {att.arrivalTransport}
+                                </p>
+                                {att.arrivalVehicleReg && (
+                                  <p>
+                                    <strong>Vehicle:</strong> {att.arrivalVehicleReg}
+                                  </p>
+                                )}
+                                <p>
+                                  <strong>Brought by:</strong> {att.arrivalPersonName} (
+                                  {att.arrivalPersonRelation})
+                                </p>
+                                {att.arrivalPhone && (
+                                  <p>
+                                    <strong>Phone:</strong> {att.arrivalPhone}
+                                  </p>
+                                )}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
+                    <TableCell>{att?.departure ?? "-"}</TableCell>
+                    <TableCell>
+                      {att?.departureTransport ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1 cursor-help">
+                                <Car className="h-3 w-3" />
+                                <span className="text-sm">{att.departureTransport}</span>
+                                <Info className="h-3 w-3 text-muted-foreground" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <div className="space-y-1 text-sm">
+                                <p>
+                                  <strong>Transport:</strong> {att.departureTransport}
+                                </p>
+                                {att.departureVehicleReg && (
+                                  <p>
+                                    <strong>Vehicle:</strong> {att.departureVehicleReg}
+                                  </p>
+                                )}
+                                <p>
+                                  <strong>Picked by:</strong> {att.departurePersonName} (
+                                  {att.departurePersonRelation})
+                                </p>
+                                {att.departurePhone && (
+                                  <p>
+                                    <strong>Phone:</strong> {att.departurePhone}
+                                  </p>
+                                )}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {att?.arrival ? (
+                        <Badge>Present</Badge>
+                      ) : (
+                        <Badge variant="secondary">Absent</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Button
+                        size="sm"
+                        disabled={!isToday || !!att?.arrival}
+                        onClick={() => openArrivalDialog(p)}
+                      >
+                        Arrival
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={!isToday || !att?.arrival || !!att?.departure}
+                        onClick={() => openDepartureDialog(p)}
+                      >
+                        Departure
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {classPupils.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    No pupils in this class.
                   </TableCell>
                 </TableRow>
-              );
-            })}
-            {classPupils.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No pupils in this class.</TableCell></TableRow>}
-          </TableBody>
-        </Table>
-      </CardContent></Card>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {/* Arrival Dialog */}
       <Dialog open={arrivalDialogOpen} onOpenChange={setArrivalDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Mark Arrival - {selectedPupil?.firstName} {selectedPupil?.lastName}</DialogTitle>
+            <DialogTitle>
+              Mark Arrival - {selectedPupil?.firstName} {selectedPupil?.lastName}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="arrival-transport">Mode of Transport *</Label>
-              <Select value={arrivalForm.transport} onValueChange={(v) => setArrivalForm({ ...arrivalForm, transport: v })}>
+              <Select
+                value={arrivalForm.transport}
+                onValueChange={(v) => setArrivalForm({ ...arrivalForm, transport: v })}
+              >
                 <SelectTrigger id="arrival-transport">
                   <SelectValue placeholder="Select transport mode" />
                 </SelectTrigger>
                 <SelectContent>
                   {transportModes.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -276,12 +417,19 @@ function AttendancePage() {
                 <Button
                   type="button"
                   variant={arrivalForm.vehicleReg === "N/A" ? "default" : "outline"}
-                  onClick={() => setArrivalForm({ ...arrivalForm, vehicleReg: arrivalForm.vehicleReg === "N/A" ? "" : "N/A" })}
+                  onClick={() =>
+                    setArrivalForm({
+                      ...arrivalForm,
+                      vehicleReg: arrivalForm.vehicleReg === "N/A" ? "" : "N/A",
+                    })
+                  }
                 >
                   N/A
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">Click N/A if no vehicle (e.g., walking)</p>
+              <p className="text-xs text-muted-foreground">
+                Click N/A if no vehicle (e.g., walking)
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="arrival-person">Operator Name / Person Bringing *</Label>
@@ -303,20 +451,27 @@ function AttendancePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="arrival-relation">Relationship *</Label>
-              <Select value={arrivalForm.personRelation} onValueChange={(v) => setArrivalForm({ ...arrivalForm, personRelation: v })}>
+              <Select
+                value={arrivalForm.personRelation}
+                onValueChange={(v) => setArrivalForm({ ...arrivalForm, personRelation: v })}
+              >
                 <SelectTrigger id="arrival-relation">
                   <SelectValue placeholder="Select relationship" />
                 </SelectTrigger>
                 <SelectContent>
                   {relations.map((r) => (
-                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                    <SelectItem key={r} value={r}>
+                      {r}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setArrivalDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setArrivalDialogOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={handleArrival}>Record Arrival</Button>
           </DialogFooter>
         </DialogContent>
@@ -326,18 +481,25 @@ function AttendancePage() {
       <Dialog open={departureDialogOpen} onOpenChange={setDepartureDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Mark Departure - {selectedPupil?.firstName} {selectedPupil?.lastName}</DialogTitle>
+            <DialogTitle>
+              Mark Departure - {selectedPupil?.firstName} {selectedPupil?.lastName}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="departure-transport">Mode of Transport *</Label>
-              <Select value={departureForm.transport} onValueChange={(v) => setDepartureForm({ ...departureForm, transport: v })}>
+              <Select
+                value={departureForm.transport}
+                onValueChange={(v) => setDepartureForm({ ...departureForm, transport: v })}
+              >
                 <SelectTrigger id="departure-transport">
                   <SelectValue placeholder="Select transport mode" />
                 </SelectTrigger>
                 <SelectContent>
                   {transportModes.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -348,7 +510,9 @@ function AttendancePage() {
                 <Input
                   id="departure-vehicle"
                   value={departureForm.vehicleReg}
-                  onChange={(e) => setDepartureForm({ ...departureForm, vehicleReg: e.target.value })}
+                  onChange={(e) =>
+                    setDepartureForm({ ...departureForm, vehicleReg: e.target.value })
+                  }
                   placeholder="e.g., KBZ 456C"
                   disabled={departureForm.vehicleReg === "N/A"}
                   className="flex-1"
@@ -356,12 +520,19 @@ function AttendancePage() {
                 <Button
                   type="button"
                   variant={departureForm.vehicleReg === "N/A" ? "default" : "outline"}
-                  onClick={() => setDepartureForm({ ...departureForm, vehicleReg: departureForm.vehicleReg === "N/A" ? "" : "N/A" })}
+                  onClick={() =>
+                    setDepartureForm({
+                      ...departureForm,
+                      vehicleReg: departureForm.vehicleReg === "N/A" ? "" : "N/A",
+                    })
+                  }
                 >
                   N/A
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">Click N/A if no vehicle (e.g., walking)</p>
+              <p className="text-xs text-muted-foreground">
+                Click N/A if no vehicle (e.g., walking)
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="departure-person">Operator Name / Person Picking Up *</Label>
@@ -383,20 +554,27 @@ function AttendancePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="departure-relation">Relationship *</Label>
-              <Select value={departureForm.personRelation} onValueChange={(v) => setDepartureForm({ ...departureForm, personRelation: v })}>
+              <Select
+                value={departureForm.personRelation}
+                onValueChange={(v) => setDepartureForm({ ...departureForm, personRelation: v })}
+              >
                 <SelectTrigger id="departure-relation">
                   <SelectValue placeholder="Select relationship" />
                 </SelectTrigger>
                 <SelectContent>
                   {relations.map((r) => (
-                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                    <SelectItem key={r} value={r}>
+                      {r}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDepartureDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDepartureDialogOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={handleDeparture}>Record Departure</Button>
           </DialogFooter>
         </DialogContent>
