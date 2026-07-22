@@ -1,11 +1,14 @@
 import postgres from "postgres";
 
 // Initialize PostgreSQL client.
-// In TanStack Start (running on Nitro), process.env is populated from the .env file.
+// In TanStack Start (running on Nitro), process.env is populated from environment variables.
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-  console.warn("WARNING: DATABASE_URL is not set in environment variables!");
+  console.error(
+    "CRITICAL ERROR: DATABASE_URL is not defined in environment variables! " +
+      "Please set DATABASE_URL in your Vercel Project Settings -> Environment Variables.",
+  );
 }
 
 export const sql = postgres(connectionString || "", {
@@ -20,6 +23,8 @@ export const sql = postgres(connectionString || "", {
   // REQUIRED for Supabase PgBouncer in transaction mode (default pooler)
   // Without this, prepared statements fail on pooled connections
   prepare: false,
+  // Enable SSL for cloud deployments (such as Vercel connecting to Supabase)
+  ssl: process.env.NODE_ENV === "production" || process.env.VERCEL === "1" ? "require" : false,
   // Suppress notices
   onnotice: () => {},
 });

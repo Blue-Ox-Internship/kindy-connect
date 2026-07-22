@@ -20,7 +20,9 @@ export default defineConfig({
     }),
     tailwindcss(),
     react(),
-    nitro(),
+    nitro({
+      preset: "vercel",
+    }),
     {
       name: "mock-vercel-turborepo-summary",
       configureServer(server) {
