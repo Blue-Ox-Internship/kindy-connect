@@ -1,10 +1,17 @@
 -- Seed Data: Add 10 Pupils to Nicreen Infant School
 -- Date: 2026-07-06
 
--- First, let's get the school_id and a class_id for Nicreen Infant School
--- Assuming the school exists with name 'Nicreen Infant School'
+-- 1. Ensure Nicreen Infant School exists
+INSERT INTO schools (id, name, address, phone, email, registered_at) VALUES
+('s-nicreen', 'Nicreen Infant School', '123 Sunshine Blvd, Nairobi', '+254700000999', 'nicreen@kinder.app', CURRENT_DATE)
+ON CONFLICT (id) DO NOTHING;
 
--- Insert Parents
+-- 2. Ensure at least one Class exists for Nicreen Infant School
+INSERT INTO classes (id, name, teacher_id, school_id) VALUES
+('c-nicreen-1', 'PP1', NULL, (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1))
+ON CONFLICT (id) DO NOTHING;
+
+-- 3. Insert Parents
 INSERT INTO parents (id, name, phone, email, relationship, school_id) VALUES
 ('p-nic-001', 'Mary Johnson', '+254701234001', 'mary.johnson@email.com', 'Mother', (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1)),
 ('p-nic-002', 'James Smith', '+254701234002', 'james.smith@email.com', 'Father', (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1)),
@@ -15,9 +22,10 @@ INSERT INTO parents (id, name, phone, email, relationship, school_id) VALUES
 ('p-nic-007', 'Grace Taylor', '+254701234007', 'grace.taylor@email.com', 'Mother', (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1)),
 ('p-nic-008', 'Peter Anderson', '+254701234008', 'peter.anderson@email.com', 'Father', (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1)),
 ('p-nic-009', 'Linda Martinez', '+254701234009', 'linda.martinez@email.com', 'Mother', (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1)),
-('p-nic-010', 'Robert Garcia', '+254701234010', 'robert.garcia@email.com', 'Father', (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1));
+('p-nic-010', 'Robert Garcia', '+254701234010', 'robert.garcia@email.com', 'Father', (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1))
+ON CONFLICT (id) DO NOTHING;
 
--- Insert Pupils
+-- 4. Insert Pupils
 INSERT INTO pupils (id, admission_no, first_name, last_name, gender, dob, class_id, active, school_id) VALUES
 ('pupil-nic-001', 'NIS-001', 'Emma', 'Johnson', 'F', '2021-03-15', (SELECT id FROM classes WHERE school_id = (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1) LIMIT 1), TRUE, (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1)),
 ('pupil-nic-002', 'NIS-002', 'Oliver', 'Smith', 'M', '2021-05-20', (SELECT id FROM classes WHERE school_id = (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1) LIMIT 1), TRUE, (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1)),
@@ -28,9 +36,10 @@ INSERT INTO pupils (id, admission_no, first_name, last_name, gender, dob, class_
 ('pupil-nic-007', 'NIS-007', 'Isabella', 'Taylor', 'F', '2021-08-22', (SELECT id FROM classes WHERE school_id = (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1) LIMIT 1), TRUE, (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1)),
 ('pupil-nic-008', 'NIS-008', 'Ethan', 'Anderson', 'M', '2021-01-30', (SELECT id FROM classes WHERE school_id = (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1) LIMIT 1), TRUE, (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1)),
 ('pupil-nic-009', 'NIS-009', 'Mia', 'Martinez', 'F', '2021-09-05', (SELECT id FROM classes WHERE school_id = (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1) LIMIT 1), TRUE, (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1)),
-('pupil-nic-010', 'NIS-010', 'Lucas', 'Garcia', 'M', '2021-11-14', (SELECT id FROM classes WHERE school_id = (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1) LIMIT 1), TRUE, (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1));
+('pupil-nic-010', 'NIS-010', 'Lucas', 'Garcia', 'M', '2021-11-14', (SELECT id FROM classes WHERE school_id = (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1) LIMIT 1), TRUE, (SELECT id FROM schools WHERE name LIKE '%Nicreen%' LIMIT 1))
+ON CONFLICT (id) DO NOTHING;
 
--- Link Pupils to Parents
+-- 5. Link Pupils to Parents
 INSERT INTO pupil_parents (pupil_id, parent_id) VALUES
 ('pupil-nic-001', 'p-nic-001'),
 ('pupil-nic-002', 'p-nic-002'),
@@ -41,8 +50,10 @@ INSERT INTO pupil_parents (pupil_id, parent_id) VALUES
 ('pupil-nic-007', 'p-nic-007'),
 ('pupil-nic-008', 'p-nic-008'),
 ('pupil-nic-009', 'p-nic-009'),
-('pupil-nic-010', 'p-nic-010');
+('pupil-nic-010', 'p-nic-010')
+ON CONFLICT (pupil_id, parent_id) DO NOTHING;
 
--- Insert Audit Log Entry
+-- 6. Insert Audit Log Entry
 INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp) VALUES
-('audit-nic-seed', 'system', 'System', 'Seeded 10 pupils', 'Nicreen Infant School', CURRENT_TIMESTAMP);
+('audit-nic-seed', COALESCE((SELECT id FROM users WHERE role = 'super_admin' LIMIT 1), (SELECT id FROM users LIMIT 1), 'KC001'), 'System Administrator', 'Seeded 10 pupils', 'Nicreen Infant School', CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO NOTHING;

@@ -21,6 +21,19 @@ export default defineConfig({
     tailwindcss(),
     react(),
     nitro(),
+    {
+      name: "mock-vercel-turborepo-summary",
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url && req.url.includes("/files/turborepo-summary")) {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ tasks: [] }));
+            return;
+          }
+          next();
+        });
+      },
+    },
   ],
   resolve: {
     alias: {
@@ -38,5 +51,15 @@ export default defineConfig({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      "/api/v6": {
+        target: "https://vercel.com",
+        changeOrigin: true,
+      },
+      "/api/v7": {
+        target: "https://vercel.com",
+        changeOrigin: true,
+      },
+    },
   },
 });

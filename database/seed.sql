@@ -4,7 +4,8 @@
 INSERT INTO schools (id, name, address, phone, email, registered_at) VALUES
 ('s1', 'Little Stars Kindergarten', '123 Sunshine Blvd, Nairobi', '+254711111111', 'littlestars@kinder.app', '2025-01-01'),
 ('s2', 'Sunshine Academy', '456 Bright Road, Mombasa', '+254722222222', 'sunshine@kinder.app', '2025-01-05'),
-('s3', 'NOBLE Primary School', '789 Education Lane, Nairobi', '+254733333333', 'noble@kinder.app', '2025-01-10');
+('s3', 'NOBLE Primary School', '789 Education Lane, Nairobi', '+254733333333', 'noble@kinder.app', '2025-01-10')
+ON CONFLICT (id) DO NOTHING;
 
 -- 1. Insert Classes (leaving teacher_id NULL temporarily to avoid circular reference)
 INSERT INTO classes (id, name, teacher_id, school_id) VALUES
@@ -15,7 +16,8 @@ INSERT INTO classes (id, name, teacher_id, school_id) VALUES
 ('c5', 'Sunflower', NULL, 's1'),
 ('c6', 'Vanguard Class', NULL, 's2'),
 ('c7', 'Grade 1', NULL, 's3'),
-('c8', 'Grade 2', NULL, 's3');
+('c8', 'Grade 2', NULL, 's3')
+ON CONFLICT (id) DO NOTHING;
 
 -- 2. Insert Users (including Super Admins)
 INSERT INTO users (id, name, email, role, status, phone, registered_at, password, class_id, school_id, subjects) VALUES
@@ -30,7 +32,8 @@ INSERT INTO users (id, name, email, role, status, phone, registered_at, password
 ('u6', 'James Kariuki (All Subjects)', 'james@kinder.app', 'teacher', 'verified', '+254700000008', '2025-06-16', 'james123', 'c1', 's1', ARRAY['Reading', 'Math', 'Writing', 'Art', 'Music', 'Physical Education', 'Science']),
 ('u7', 'Sarah Muthoni (Art & Music)', 'sarah@kinder.app', 'teacher', 'verified', '+254700000009', '2025-03-05', 'sarah123', 'c3', 's1', ARRAY['Art', 'Music']),
 ('u8', 'Sunshine Admin', 'sunshineadmin@kinder.app', 'admin', 'verified', '+254733333333', '2025-01-06', 'admin123', NULL, 's2', NULL),
-('noble', 'NOBLE Admin', 'nobleadmin@kinder.app', 'admin', 'verified', '+254744444444', '2025-01-10', 'admin123', NULL, 's3', NULL);
+('noble', 'NOBLE Admin', 'nobleadmin@kinder.app', 'admin', 'verified', '+254744444444', '2025-01-10', 'admin123', NULL, 's3', NULL)
+ON CONFLICT (id) DO NOTHING;
 
 -- 3. Update Classes to map teacher_ids
 UPDATE classes SET teacher_id = 'u6' WHERE id = 'c1';
@@ -51,7 +54,8 @@ INSERT INTO parents (id, name, phone, email, relationship, school_id) VALUES
 ('p8', 'Michael Kipchoge', '+254712000008', 'michael@example.com', 'Father', 's1'),
 ('p9', 'Christine Auma', '+254712000009', 'christine@example.com', 'Mother', 's1'),
 ('p10', 'Robert Njenga', '+254712000010', 'robert@example.com', 'Guardian', 's1'),
-('p11', 'Sunshine Parent', '+254712000011', 'sunshineparent@example.com', 'Mother', 's2');
+('p11', 'Sunshine Parent', '+254712000011', 'sunshineparent@example.com', 'Mother', 's2')
+ON CONFLICT (id) DO NOTHING;
 
 -- 5. Insert Pupils
 INSERT INTO pupils (id, admission_no, first_name, last_name, gender, dob, class_id, photo, active, school_id) VALUES
@@ -70,7 +74,8 @@ INSERT INTO pupils (id, admission_no, first_name, last_name, gender, dob, class_
 ('k9', 'KG-009', 'Maya', 'Auma', 'F', '2020-07-14', 'c5', NULL, TRUE, 's1'),
 ('k10', 'KG-010', 'Ethan', 'Wangari', 'M', '2020-05-03', 'c5', NULL, TRUE, 's1'),
 -- Vanguard Class (s2)
-('k11', 'KG-011', 'Sunny', 'Boy', 'M', '2020-01-01', 'c6', NULL, TRUE, 's2');
+('k11', 'KG-011', 'Sunny', 'Boy', 'M', '2020-01-01', 'c6', NULL, TRUE, 's2')
+ON CONFLICT (id) DO NOTHING;
 
 -- 6. Insert Pupil-Parents Join Relationships (Many-to-Many mapping)
 INSERT INTO pupil_parents (pupil_id, parent_id) VALUES
@@ -84,7 +89,8 @@ INSERT INTO pupil_parents (pupil_id, parent_id) VALUES
 ('k8', 'p2'),
 ('k9', 'p9'),
 ('k10', 'p7'),
-('k11', 'p11');
+('k11', 'p11')
+ON CONFLICT (pupil_id, parent_id) DO NOTHING;
 
 -- 7. Insert Attendance Records for today
 INSERT INTO attendance (
@@ -99,7 +105,8 @@ INSERT INTO attendance (
 ('a3', 'k10', CURRENT_DATE, '07:48', '16:30', 'Motorcycle', 'KMCA 789D', 'Jane Wangari', 'Mother', '+254712000007', 'Car', 'KAB 321E', 'Jane Wangari', 'Mother', '+254712000007'),
 -- Previous day attendance
 ('a4', 'k1', CURRENT_DATE - INTERVAL '1 day', '07:50', '16:00', 'Car', 'KDD 111A', 'Mary Atieno', 'Mother', '+254712000001', 'Car', 'KDD 111A', 'Mary Atieno', 'Mother', '+254712000001'),
-('a5', 'k8', CURRENT_DATE - INTERVAL '1 day', '08:00', '16:15', 'Walking', 'N/A', 'John Kamau', 'Father', '+254712000002', 'Walking', 'N/A', 'John Kamau', 'Father', '+254712000002');
+('a5', 'k8', CURRENT_DATE - INTERVAL '1 day', '08:00', '16:15', 'Walking', 'N/A', 'John Kamau', 'Father', '+254712000002', 'Walking', 'N/A', 'John Kamau', 'Father', '+254712000002')
+ON CONFLICT (id) DO NOTHING;
 
 -- 8. Insert Notification Records
 INSERT INTO notifications (id, pupil_id, parent_id, channel, type, status, message, timestamp, phone_number) VALUES
@@ -110,7 +117,8 @@ INSERT INTO notifications (id, pupil_id, parent_id, channel, type, status, messa
 ('n4', 'k10', 'p7', 'sms', 'departure', 'sent', 'Dear Jane Wangari, your child Ethan Wangari has left school today at 16:30.', CURRENT_TIMESTAMP - INTERVAL '30 minutes', '+254712000007'),
 ('n5', 'k10', 'p7', 'email', 'departure', 'failed', 'Email delivery failed', CURRENT_TIMESTAMP - INTERVAL '30 minutes', NULL),
 -- Yesterday's notifications
-('n6', 'k1', 'p1', 'sms', 'arrival', 'sent', 'Dear Mary Atieno, your child Liam Atieno has arrived safely at school today at 07:50.', CURRENT_TIMESTAMP - INTERVAL '1 day', '+254712000001');
+('n6', 'k1', 'p1', 'sms', 'arrival', 'sent', 'Dear Mary Atieno, your child Liam Atieno has arrived safely at school today at 07:50.', CURRENT_TIMESTAMP - INTERVAL '1 day', '+254712000001')
+ON CONFLICT (id) DO NOTHING;
 
 -- 9. Insert Audit Logs
 INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp) VALUES
@@ -120,7 +128,8 @@ INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp) VAL
 ('l4', 'u3', 'Grace Wanjiku', 'Marked arrival', 'Zuri Kamau', CURRENT_TIMESTAMP - INTERVAL '2 hours'),
 ('l5', 'u3', 'Grace Wanjiku', 'Marked departure', 'Ethan Wangari', CURRENT_TIMESTAMP - INTERVAL '30 minutes'),
 ('l6', 'u1', 'Amina Okello', 'Registered user', 'James Kariuki (james@kinder.app)', CURRENT_TIMESTAMP - INTERVAL '2 days'),
-('l7', 'u2', 'Brian Mwangi', 'Rejected teacher', 'Pending User', CURRENT_TIMESTAMP - INTERVAL '1 day');
+('l7', 'u2', 'Brian Mwangi', 'Rejected teacher', 'Pending User', CURRENT_TIMESTAMP - INTERVAL '1 day')
+ON CONFLICT (id) DO NOTHING;
 
 -- 10. Insert Marks
 INSERT INTO marks (id, pupil_id, subject, term, year, score, max_score, grade, teacher_comment, recorded_by, recorded_at) VALUES
@@ -133,4 +142,5 @@ INSERT INTO marks (id, pupil_id, subject, term, year, score, max_score, grade, t
 ('m6', 'k10', 'Reading', 'Term 1', '2025', 75, 100, 'B', 'Good progress. Keep practicing!', 'u3', '2025-03-15 11:10:00+03'),
 -- Term 2 Marks
 ('m7', 'k8', 'Reading', 'Term 2', '2025', 88, 100, 'A', 'Consistent improvement!', 'u3', '2025-06-20 10:30:00+03'),
-('m8', 'k8', 'Math', 'Term 2', '2025', 82, 100, 'A', 'Much better understanding of concepts.', 'u3', '2025-06-20 10:35:00+03');
+('m8', 'k8', 'Math', 'Term 2', '2025', 82, 100, 'A', 'Much better understanding of concepts.', 'u3', '2025-06-20 10:35:00+03')
+ON CONFLICT (id) DO NOTHING;
