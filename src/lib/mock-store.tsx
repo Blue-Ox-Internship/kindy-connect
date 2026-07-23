@@ -458,6 +458,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
       name,
       email,
       phone,
+      password,
       role,
       schoolId,
       newSchoolName,
@@ -466,7 +467,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
       photo,
     }) => {
       const res = await registerUserDb({
-        data: { id, name, email, phone, role, schoolId, newSchoolName, status, subjects, photo },
+        data: { id, name, email, phone, password, role, schoolId, newSchoolName, status, subjects, photo },
       });
       setState((s) => {
         const nextUsers = [...s.users, res.user];

@@ -161,32 +161,37 @@ function TeachersPage() {
       return toast.error("School context is missing");
     }
 
-    await registerUser({
-      id: form.id.trim(),
-      name: form.name.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim(),
-      role: form.role,
-      password: form.password,
-      schoolId: isSuperAdmin && form.role === "super_admin" ? undefined : targetSchoolId,
-      status: "verified", // Administrator creates verified accounts immediately
-      subjects: form.role === "teacher" ? form.subjects : undefined,
-      photo: form.photo,
-    });
+    try {
+      await registerUser({
+        id: form.id.trim(),
+        name: form.name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        role: form.role,
+        password: form.password,
+        schoolId: isSuperAdmin && form.role === "super_admin" ? undefined : targetSchoolId,
+        status: "verified", // Administrator creates verified accounts immediately
+        subjects: form.role === "teacher" ? form.subjects : undefined,
+        photo: form.photo,
+      });
 
-    toast.success(`Account for ${form.name} created successfully!`);
-    setOpen(false);
-    setForm({
-      id: "",
-      name: "",
-      email: "",
-      phone: "",
-      role: "teacher",
-      schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
-      password: "",
-      subjects: [],
-      photo: "",
-    });
+      toast.success(`Account for ${form.name} created successfully!`);
+      setOpen(false);
+      setForm({
+        id: "",
+        name: "",
+        email: "",
+        phone: "",
+        role: "teacher",
+        schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
+        password: "",
+        subjects: [],
+        photo: "",
+      });
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      toast.error(error.message || "Failed to create user");
+    }
   };
 
   const renderTable = (list: typeof users, withActions = false, showDelete = false) => (

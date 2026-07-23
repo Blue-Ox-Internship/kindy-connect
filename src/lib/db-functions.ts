@@ -237,6 +237,12 @@ export const registerUser = createServerFn({ method: "POST" })
     const registeredAt = new Date().toISOString().slice(0, 10);
 
     try {
+      // Check for existing ID
+      const idCheck = await sql`SELECT id FROM users WHERE LOWER(id) = LOWER(${id})`;
+      if (idCheck.length > 0) {
+        throw new Error("Assigned ID already used");
+      }
+
       // Check for existing email
       const emailCheck = await sql`SELECT id FROM users WHERE LOWER(email) = LOWER(${data.email})`;
       if (emailCheck.length > 0) {
@@ -291,11 +297,18 @@ export const registerUser = createServerFn({ method: "POST" })
     } catch (error: any) {
       console.error("Error in registerUser:", error);
       // Return user-friendly error messages
-      if (error.message === "Email already used" || error.message === "Phone number already used") {
+      if (
+        error.message === "Assigned ID already used" ||
+        error.message === "Email already used" ||
+        error.message === "Phone number already used"
+      ) {
         throw error;
       }
       // Check for PostgreSQL unique constraint violations
       if (error.code === "23505") {
+        if (error.constraint === "users_pkey" || error.message?.includes("id") || error.message?.includes("pkey")) {
+          throw new Error("Assigned ID already used");
+        }
         if (error.constraint === "users_email_key" || error.message?.includes("email")) {
           throw new Error("Email already used");
         }
