@@ -220,7 +220,10 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     }, 25000);
 
     try {
-      const data = await getInitialData();
+      const data = (await getInitialData()) as any;
+      if (data?.error) {
+        throw new Error(data.error);
+      }
       if (timedOut) return; // already shown error, ignore late response
       clearTimeout(timeoutId);
       setState((s) => ({

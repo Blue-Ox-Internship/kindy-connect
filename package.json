@@ -3,6 +3,9 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=4096 vite dev",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 vite build",

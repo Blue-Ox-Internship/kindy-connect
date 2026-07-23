@@ -23,8 +23,10 @@ export const sql = postgres(connectionString || "", {
   // REQUIRED for Supabase PgBouncer in transaction mode (default pooler)
   // Without this, prepared statements fail on pooled connections
   prepare: false,
-  // Enable SSL for cloud deployments (such as Vercel connecting to Supabase)
-  ssl: process.env.NODE_ENV === "production" || process.env.VERCEL === "1" ? "require" : false,
+  ssl:
+    process.env.NODE_ENV === "production" || process.env.VERCEL === "1"
+      ? { rejectUnauthorized: false }
+      : false,
   // Suppress notices
   onnotice: () => {},
 });

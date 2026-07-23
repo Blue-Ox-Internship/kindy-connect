@@ -180,9 +180,20 @@ export const getInitialData = createServerFn({ method: "GET" }).handler(async ()
       audit: toCamel<AuditLog[]>(audit),
       marks: toCamel<Mark[]>(marks),
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in getInitialData server function:", error);
-    throw error;
+    return {
+      schools: [],
+      users: [],
+      classes: [],
+      parents: [],
+      pupils: [],
+      attendance: [],
+      notifications: [],
+      audit: [],
+      marks: [],
+      error: error?.message || "Failed to query database",
+    };
   }
 });
 

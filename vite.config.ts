@@ -22,6 +22,7 @@ export default defineConfig({
     react(),
     nitro({
       preset: "vercel",
+      nodeVersion: "22.x",
     }),
     {
       name: "mock-vercel-turborepo-summary",
