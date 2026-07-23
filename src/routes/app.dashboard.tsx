@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { useStore } from "@/lib/mock-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -255,7 +255,7 @@ function Dashboard() {
                   </div>
                 </div>
                 <Button asChild variant="default">
-                  <a href="/app/teachers">Review</a>
+                  <Link to="/app/teachers">Review</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -654,7 +654,7 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
           {stats.map((s) => {
             const Icon = s.icon;
             return (
-              <a href={s.link} key={s.label}>
+              <Link to={s.link} key={s.label}>
                 <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                   <CardContent className="p-5 flex items-center gap-4">
                     <div
@@ -668,7 +668,7 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
                     </div>
                   </CardContent>
                 </Card>
-              </a>
+              </Link>
             );
           })}
         </div>
@@ -707,7 +707,7 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
                 </div>
               </div>
               <Button asChild variant="default">
-                <a href="/app/teachers">Review Now</a>
+                <Link to="/app/teachers">Review Now</Link>
               </Button>
             </CardContent>
           </Card>
@@ -719,7 +719,7 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <CardTitle>Schools Overview</CardTitle>
               <Button asChild size="sm" variant="outline">
-                <a href="/app/schools">Manage All</a>
+                <Link to="/app/schools">Manage All</Link>
               </Button>
             </CardHeader>
             <CardContent>
@@ -764,9 +764,9 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                         No schools registered yet.{" "}
-                        <a href="/app/schools" className="text-primary underline">
+                        <Link to="/app/schools" className="text-primary underline">
                           Create your first school
-                        </a>
+                        </Link>
                       </TableCell>
                     </TableRow>
                   )}
@@ -780,7 +780,7 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <CardTitle>Recent Activity</CardTitle>
               <Button asChild size="sm" variant="ghost">
-                <a href="/app/audit">View All</a>
+                <Link to="/app/audit">View All</Link>
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -823,7 +823,7 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <a href="/app/schools">
+              <Link to="/app/schools">
                 <Card className="border hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer">
                   <CardContent className="p-4 flex items-center gap-3">
                     <div className="h-10 w-10 rounded-lg bg-blue-500/15 text-blue-600 flex items-center justify-center">
@@ -835,8 +835,8 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
                     </div>
                   </CardContent>
                 </Card>
-              </a>
-              <a href="/app/teachers">
+              </Link>
+              <Link to="/app/users">
                 <Card className="border hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer">
                   <CardContent className="p-4 flex items-center gap-3">
                     <div className="h-10 w-10 rounded-lg bg-purple-500/15 text-purple-600 flex items-center justify-center">
@@ -848,8 +848,8 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
                     </div>
                   </CardContent>
                 </Card>
-              </a>
-              <a href="/app/classes">
+              </Link>
+              <Link to="/app/classes">
                 <Card className="border hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer">
                   <CardContent className="p-4 flex items-center gap-3">
                     <div className="h-10 w-10 rounded-lg bg-orange-500/15 text-orange-600 flex items-center justify-center">
@@ -861,8 +861,8 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
                     </div>
                   </CardContent>
                 </Card>
-              </a>
-              <a href="/app/audit">
+              </Link>
+              <Link to="/app/audit">
                 <Card className="border hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer">
                   <CardContent className="p-4 flex items-center gap-3">
                     <div className="h-10 w-10 rounded-lg bg-green-500/15 text-green-600 flex items-center justify-center">
@@ -874,7 +874,7 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
                     </div>
                   </CardContent>
                 </Card>
-              </a>
+              </Link>
             </div>
           </CardContent>
         </Card>

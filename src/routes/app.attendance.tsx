@@ -30,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
-import { Car, Info, Calendar } from "lucide-react";
+import { Car, Info, Calendar, Users, CheckCircle, XCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/app/attendance")({
@@ -73,6 +73,7 @@ function AttendancePage() {
     }
   }, [filteredClasses, currentUser, isTeacher]);
   const [date, setDate] = useState(today);
+  const [filter, setFilter] = useState<"all" | "present" | "absent">("all");
   const [arrivalDialogOpen, setArrivalDialogOpen] = useState(false);
   const [departureDialogOpen, setDepartureDialogOpen] = useState(false);
   const [selectedPupil, setSelectedPupil] = useState<any>(null);
@@ -93,6 +94,27 @@ function AttendancePage() {
 
   const classPupils = pupils.filter((p) => p.classId === classId && p.active);
   const dayAtt = attendance.filter((a) => a.date === date);
+
+  // Statistics
+  const totalCount = classPupils.length;
+  const presentCount = useMemo(() => {
+    return classPupils.filter((p) => {
+      const att = dayAtt.find((a) => a.pupilId === p.id);
+      return !!att?.arrival;
+    }).length;
+  }, [classPupils, dayAtt]);
+  const absentCount = totalCount - presentCount;
+
+  // Filtered pupils list
+  const displayedPupils = useMemo(() => {
+    return classPupils.filter((p) => {
+      const att = dayAtt.find((a) => a.pupilId === p.id);
+      const isPresent = !!att?.arrival;
+      if (filter === "present") return isPresent;
+      if (filter === "absent") return !isPresent;
+      return true;
+    });
+  }, [classPupils, dayAtt, filter]);
 
   const transportModes = ["Car", "School Bus", "Motorcycle", "Walking", "Bicycle", "Van", "Taxi"];
   const relations = [
@@ -182,59 +204,137 @@ function AttendancePage() {
 
   return (
     <AppShell title="Attendance">
+      {/* Attendance Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card className="border shadow-sm bg-card hover:bg-accent/10 transition-colors">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Total Pupils</p>
+              <h3 className="text-2xl font-bold">{totalCount}</h3>
+            </div>
+            <div className="p-2 bg-primary/10 text-primary rounded-full">
+              <Users className="h-6 w-6" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="border shadow-sm bg-card hover:bg-accent/10 transition-colors">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Present</p>
+              <h3 className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{presentCount}</h3>
+            </div>
+            <div className="p-2 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-full">
+              <CheckCircle className="h-6 w-6" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border shadow-sm bg-card hover:bg-accent/10 transition-colors">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Absent</p>
+              <h3 className="text-2xl font-bold text-rose-600 dark:text-rose-400">{absentCount}</h3>
+            </div>
+            <div className="p-2 bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 rounded-full">
+              <XCircle className="h-6 w-6" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card className="border-0 shadow-sm">
         <CardContent className="p-5">
-          <div className="flex flex-wrap gap-3 mb-4 items-center">
-            {currentUser?.role === "super_admin" && (
-              <select
-                value={superSchoolId}
-                onChange={(e) => setSuperSchoolId(e.target.value)}
-                className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring file:border-0 file:bg-transparent file:text-sm file:font-medium md:text-sm"
-              >
-                {schools.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            )}
-            <Select value={classId} onValueChange={setClassId} disabled={isTeacher}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredClasses.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex items-center gap-2">
-              <label htmlFor="date-search" className="text-sm font-medium">
-                Search Date:
-              </label>
-              <input
-                id="date-search"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              {date !== today && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setDate(today);
-                    toast.success("Reset to today's date");
-                  }}
-                  className="flex items-center gap-2"
+          <div className="flex flex-wrap gap-3 mb-6 items-center justify-between border-b pb-4">
+            <div className="flex flex-wrap gap-3 items-center">
+              {currentUser?.role === "super_admin" && (
+                <select
+                  value={superSchoolId}
+                  onChange={(e) => setSuperSchoolId(e.target.value)}
+                  className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring file:border-0 file:bg-transparent file:text-sm file:font-medium md:text-sm"
                 >
-                  <Calendar className="h-4 w-4" />
-                  Reset to Today
-                </Button>
+                  {schools.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
               )}
+              <Select value={classId} onValueChange={setClassId} disabled={isTeacher}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredClasses.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-2">
+                <label htmlFor="date-search" className="text-sm font-medium">
+                  Search Date:
+                </label>
+                <input
+                  id="date-search"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                {date !== today && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setDate(today);
+                      toast.success("Reset to today's date");
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Reset to Today
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Filters */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1">Filter:</span>
+              <Button
+                variant={filter === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilter("all")}
+                className="h-8 text-xs font-medium"
+              >
+                All ({totalCount})
+              </Button>
+              <Button
+                variant={filter === "present" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilter("present")}
+                className={`h-8 text-xs font-medium ${
+                  filter === "present" 
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white" 
+                    : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+                }`}
+              >
+                Present ({presentCount})
+              </Button>
+              <Button
+                variant={filter === "absent" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilter("absent")}
+                className={`h-8 text-xs font-medium ${
+                  filter === "absent" 
+                    ? "bg-rose-600 hover:bg-rose-700 text-white" 
+                    : "text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                }`}
+              >
+                Absent ({absentCount})
+              </Button>
             </div>
           </div>
 
@@ -251,7 +351,7 @@ function AttendancePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {classPupils.map((p) => {
+              {displayedPupils.map((p) => {
                 const att = dayAtt.find((a) => a.pupilId === p.id);
                 const isToday = date === today;
                 return (
@@ -339,9 +439,9 @@ function AttendancePage() {
                     </TableCell>
                     <TableCell>
                       {att?.arrival ? (
-                        <Badge>Present</Badge>
+                        <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 hover:bg-emerald-200">Present</Badge>
                       ) : (
-                        <Badge variant="secondary">Absent</Badge>
+                        <Badge variant="secondary" className="bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200 hover:bg-rose-200">Absent</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-right space-x-2">
@@ -364,10 +464,10 @@ function AttendancePage() {
                   </TableRow>
                 );
               })}
-              {classPupils.length === 0 && (
+              {displayedPupils.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    No pupils in this class.
+                    No pupils found matching the "{filter}" filter.
                   </TableCell>
                 </TableRow>
               )}
