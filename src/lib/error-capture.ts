@@ -27,6 +27,13 @@ if (typeof globalThis.addEventListener === "function") {
     }
     record(reason);
   });
+} else if (typeof process !== "undefined" && typeof process.on === "function") {
+  process.on("uncaughtException", (error) => {
+    record(error);
+  });
+  process.on("unhandledRejection", (reason) => {
+    record(reason);
+  });
 }
 
 export function consumeLastCapturedError(): unknown {
