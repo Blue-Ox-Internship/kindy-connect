@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Search, Edit } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/pupils")({
@@ -39,8 +39,21 @@ export const Route = createFileRoute("/app/pupils")({
 });
 
 function PupilsPage() {
-  const { pupils, classes, parents, addPupil, updatePupil, deactivatePupil } = useStore();
+  const { currentUser, pupils, classes, parents, addPupil, updatePupil, deactivatePupil, schools } = useStore();
   const [q, setQ] = useState("");
+  const [selectedClassFilter, setSelectedClassFilter] = useState<string>("all");
+  const [superSchoolId, setSuperSchoolId] = useState<string>(schools[0]?.id ?? "");
+
+  const filteredClasses = useMemo(() => {
+    if (currentUser?.role === "super_admin") {
+      return classes.filter((c) => c.schoolId === superSchoolId);
+    }
+    if (currentUser?.schoolId) {
+      return classes.filter((c) => c.schoolId === currentUser.schoolId);
+    }
+    return classes;
+  }, [classes, currentUser, superSchoolId]);
+
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingPupil, setEditingPupil] = useState<Pupil | null>(null);
@@ -50,7 +63,7 @@ function PupilsPage() {
     lastName: "",
     gender: "M" as "M" | "F",
     dob: "",
-    classId: classes[0]?.id ?? "",
+    classId: filteredClasses[0]?.id ?? classes[0]?.id ?? "",
     parentName: "",
     parentPhone: "",
     parentEmail: "",
@@ -67,9 +80,13 @@ function PupilsPage() {
     photo: "",
   });
 
-  const filtered = pupils.filter((p) =>
-    `${p.firstName} ${p.lastName} ${p.admissionNo}`.toLowerCase().includes(q.toLowerCase()),
-  );
+  const filtered = pupils.filter((p) => {
+    const matchesClass = selectedClassFilter === "all" || p.classId === selectedClassFilter;
+    const matchesQuery = `${p.firstName} ${p.lastName} ${p.admissionNo}`
+      .toLowerCase()
+      .includes(q.toLowerCase());
+    return matchesClass && matchesQuery;
+  });
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -214,6 +231,19 @@ function PupilsPage() {
       <Card className="border-0 shadow-sm">
         <CardContent className="p-5">
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            {currentUser?.role === "super_admin" && (
+              <select
+                value={superSchoolId}
+                onChange={(e) => setSuperSchoolId(e.target.value)}
+                className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
+              >
+                {schools.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            )}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -223,6 +253,19 @@ function PupilsPage() {
                 className="pl-9"
               />
             </div>
+            <Select value={selectedClassFilter} onValueChange={setSelectedClassFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Filter by class" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Classes</SelectItem>
+                {filteredClasses.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -288,7 +331,7 @@ function PupilsPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {classes.map((c) => (
+                        {filteredClasses.map((c) => (
                           <SelectItem key={c.id} value={c.id}>
                             {c.name}
                           </SelectItem>
@@ -494,7 +537,7 @@ function PupilsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {classes.map((c) => (
+                  {filteredClasses.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}
                     </SelectItem>

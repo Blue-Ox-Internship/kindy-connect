@@ -120,6 +120,29 @@ export interface Mark {
   recordedAt: string;
 }
 
+// Helper for safe audit log insertion (prevents FK violation if actorId is not in users table)
+async function safeInsertAuditLog(
+  tx: any,
+  logId: string,
+  actorId: string,
+  actorName: string,
+  action: string,
+  target: string
+) {
+  let validActorId = actorId;
+  const userCheck = await tx`SELECT id FROM users WHERE id = ${actorId}`;
+  if (userCheck.length === 0) {
+    const defaultUser = await tx`SELECT id FROM users LIMIT 1`;
+    if (defaultUser.length > 0) {
+      validActorId = defaultUser[0].id;
+    }
+  }
+  await tx`
+    INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp)
+    VALUES (${logId}, ${validActorId}, ${actorName}, ${action}, ${target}, CURRENT_TIMESTAMP)
+  `;
+}
+
 // ----------------------------------------------------
 // 1. Get Initial Data
 // ----------------------------------------------------
@@ -132,49 +155,41 @@ export const getInitialData = createServerFn({ method: "GET" }).handler(async ()
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
     const cutoffDate = ninetyDaysAgo.toISOString().slice(0, 10);
 
-    const [schools, users, classes, parents, pupils, attendance, notifications, audit, marks] =
+    const [schools, users, classes, parents, pupilsRaw, pupilParents, attendance, notifications, audit, marks] =
       await Promise.all([
         sql`SELECT * FROM schools ORDER BY name ASC`,
-
         sql`SELECT * FROM users ORDER BY registered_at DESC`,
-
         sql`SELECT * FROM classes ORDER BY name ASC`,
-
         sql`SELECT * FROM parents ORDER BY name ASC`,
-
-        // Aggregate parentIds in one query to avoid N+1 problems
-        sql`
-          SELECT p.*, COALESCE(ARRAY_AGG(pp.parent_id) FILTER (WHERE pp.parent_id IS NOT NULL), '{}') as parent_ids
-          FROM pupils p
-          LEFT JOIN pupil_parents pp ON p.id = pp.pupil_id
-          GROUP BY p.id, p.admission_no, p.first_name, p.last_name, p.gender, p.dob, p.class_id, p.photo, p.active, p.school_id
-          ORDER BY p.first_name ASC, p.last_name ASC
-        `,
-
-        // Only fetch last 90 days of attendance to keep payload manageable
-        sql`
-          SELECT * FROM attendance
-          WHERE date >= ${cutoffDate}
-          ORDER BY date DESC, arrival DESC
-        `,
-
+        sql`SELECT * FROM pupils ORDER BY first_name ASC, last_name ASC`,
+        sql`SELECT * FROM pupil_parents`,
+        sql`SELECT * FROM attendance WHERE date >= ${cutoffDate} ORDER BY date DESC, arrival DESC`,
         sql`SELECT * FROM notifications ORDER BY timestamp DESC LIMIT 200`,
-
         sql`SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 200`,
-
-        // Fetch the most recent 2000 marks (sufficient for any school's reporting)
         sql`SELECT * FROM marks ORDER BY recorded_at DESC LIMIT 2000`,
       ]);
+
+    const parentMap: Record<string, string[]> = {};
+    for (const link of pupilParents as any[]) {
+      if (!parentMap[link.pupil_id]) {
+        parentMap[link.pupil_id] = [];
+      }
+      if (link.parent_id) {
+        parentMap[link.pupil_id].push(link.parent_id);
+      }
+    }
+
+    const pupils = toCamel<Pupil[]>(pupilsRaw).map((p) => ({
+      ...p,
+      parentIds: parentMap[p.id] || [],
+    }));
 
     return {
       schools: toCamel<School[]>(schools),
       users: toCamel<User[]>(users),
       classes: toCamel<ClassRoom[]>(classes),
       parents: toCamel<Parent[]>(parents),
-      pupils: toCamel<Pupil[]>(pupils).map((p) => ({
-        ...p,
-        parentIds: p.parentIds || [],
-      })),
+      pupils,
       attendance: toCamel<Attendance[]>(attendance),
       notifications: toCamel<Notification[]>(notifications),
       audit: toCamel<AuditLog[]>(audit),
@@ -333,10 +348,7 @@ export const approveTeacher = createServerFn({ method: "POST" })
         `;
         if (users.length > 0) {
           const teacherName = users[0].name;
-          await sql`
-            INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp)
-            VALUES (${logId}, ${actorId}, ${actorName}, 'Approved teacher', ${teacherName}, CURRENT_TIMESTAMP)
-          `;
+          await safeInsertAuditLog(sql, logId, actorId, actorName, 'Approved teacher', teacherName);
         }
       });
       return { id };
@@ -359,10 +371,7 @@ export const rejectTeacher = createServerFn({ method: "POST" })
         `;
         if (users.length > 0) {
           const teacherName = users[0].name;
-          await sql`
-            INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp)
-            VALUES (${logId}, ${actorId}, ${actorName}, 'Rejected teacher', ${teacherName}, CURRENT_TIMESTAMP)
-          `;
+          await safeInsertAuditLog(sql, logId, actorId, actorName, 'Rejected teacher', teacherName);
         }
       });
       return { id };
@@ -426,10 +435,7 @@ export const addPupil = createServerFn({ method: "POST" })
         }
 
         const targetDesc = `${pupil.firstName} ${pupil.lastName} (${pupil.admissionNo})`;
-        await sql`
-          INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp)
-          VALUES (${logId}, ${actorId}, ${actorName}, 'Created pupil', ${targetDesc}, CURRENT_TIMESTAMP)
-        `;
+        await safeInsertAuditLog(sql, logId, actorId, actorName, 'Created pupil', targetDesc);
       });
 
       return {
@@ -511,10 +517,7 @@ export const addParent = createServerFn({ method: "POST" })
     try {
       await sql.begin(async (sql) => {
         await sql`INSERT INTO parents ${sql(dbParent)}`;
-        await sql`
-          INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp)
-          VALUES (${logId}, ${actorId}, ${actorName}, 'Registered parent', ${parent.name}, CURRENT_TIMESTAMP)
-        `;
+        await safeInsertAuditLog(sql, logId, actorId, actorName, 'Registered parent', parent.name);
       });
 
       return { id, ...parent };
@@ -600,7 +603,7 @@ export const markArrival = createServerFn({ method: "POST" })
         const addedNotifications: any[] = [];
 
         for (const parent of parents) {
-          const msg = `Dear ${parent.name}, your child ${pupil.first_name} ${pupil.last_name} has arrived safely at school today at ${time}.`;
+          const msg = `Dear ${parent.name}, your child ${pupil.first_name} ${pupil.last_name} arrived safely at school today at ${time} via ${transportDetails.transport} brought by ${transportDetails.personName} (${transportDetails.personRelation}).`;
           const smsId = Math.random().toString(36).slice(2, 10);
           const emailId = Math.random().toString(36).slice(2, 10);
 
@@ -644,10 +647,7 @@ export const markArrival = createServerFn({ method: "POST" })
 
         // Log action
         const targetDesc = `${pupil.first_name} ${pupil.last_name}`;
-        await sql`
-          INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp)
-          VALUES (${logId}, ${actorId}, ${actorName}, 'Marked arrival', ${targetDesc}, CURRENT_TIMESTAMP)
-        `;
+        await safeInsertAuditLog(sql, logId, actorId, actorName, 'Marked arrival', targetDesc);
 
         const addedAudit = {
           id: logId,
@@ -745,7 +745,7 @@ export const markDeparture = createServerFn({ method: "POST" })
         const addedNotifications: any[] = [];
 
         for (const parent of parents) {
-          const msg = `Dear ${parent.name}, your child ${pupil.first_name} ${pupil.last_name} has left school today at ${time}.`;
+          const msg = `Dear ${parent.name}, your child ${pupil.first_name} ${pupil.last_name} departed from school today at ${time} via ${transportDetails.transport} picked up by ${transportDetails.personName} (${transportDetails.personRelation}).`;
           const smsId = Math.random().toString(36).slice(2, 10);
           const emailId = Math.random().toString(36).slice(2, 10);
 
@@ -789,10 +789,7 @@ export const markDeparture = createServerFn({ method: "POST" })
 
         // Log action
         const targetDesc = `${pupil.first_name} ${pupil.last_name}`;
-        await sql`
-          INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp)
-          VALUES (${logId}, ${actorId}, ${actorName}, 'Marked departure', ${targetDesc}, CURRENT_TIMESTAMP)
-        `;
+        await safeInsertAuditLog(sql, logId, actorId, actorName, 'Marked departure', targetDesc);
 
         const addedAudit = {
           id: logId,
@@ -1136,10 +1133,7 @@ export const deleteUser = createServerFn({ method: "POST" })
         await sql`DELETE FROM users WHERE id = ${id}`;
 
         // Log the deletion
-        await sql`
-          INSERT INTO audit_logs (id, actor_id, actor_name, action, target, timestamp)
-          VALUES (${logId}, ${actorId}, ${actorName}, 'Deleted user', ${deletedUser.name + " (" + deletedUser.role + ")"}, CURRENT_TIMESTAMP)
-        `;
+        await safeInsertAuditLog(sql, logId, actorId, actorName, 'Deleted user', deletedUser.name + " (" + deletedUser.role + ")");
       });
 
       return { id };

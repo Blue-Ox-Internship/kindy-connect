@@ -96,20 +96,20 @@ interface Store {
   markArrival: (
     pupilId: string,
     transportDetails?: {
-      transport: string;
+      transport?: string;
       vehicleReg?: string;
-      personName: string;
-      personRelation: string;
+      personName?: string;
+      personRelation?: string;
       phone?: string;
     },
   ) => Promise<void>;
   markDeparture: (
     pupilId: string,
     transportDetails?: {
-      transport: string;
+      transport?: string;
       vehicleReg?: string;
-      personName: string;
-      personRelation: string;
+      personName?: string;
+      personRelation?: string;
       phone?: string;
     },
   ) => Promise<void>;
@@ -628,55 +628,177 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     },
 
     markArrival: async (pupilId, transportDetails) => {
-      if (!currentUser || !transportDetails) return;
-      const res = await markArrivalDb({
-        data: {
-          pupilId,
-          transportDetails,
-          actorId: currentUser.id,
-          actorName: currentUser.name,
-        },
-      });
+      if (!currentUser) return;
+      const pupil = state.pupils.find((p) => p.id === pupilId);
+      const parent = pupil?.parentIds?.[0]
+        ? state.parents.find((pr) => pr.id === pupil.parentIds[0])
+        : null;
 
+      const finalDetails = {
+        transport: transportDetails?.transport || "Car",
+        vehicleReg: transportDetails?.vehicleReg || "",
+        personName: transportDetails?.personName || parent?.name || "Parent/Guardian",
+        personRelation: transportDetails?.personRelation || parent?.relationship || "Parent",
+        phone: transportDetails?.phone || parent?.phone || "",
+      };
+
+      const date = new Date().toISOString().slice(0, 10);
+      const time = new Date().toTimeString().slice(0, 5);
+
+      // Optimistic state update for instant UI feedback across Dashboard & Attendance
       setState((s) => {
-        const exists = s.attendance.some((a) => a.id === res.attendance.id);
-        const nextAtt = exists
-          ? s.attendance.map((a) => (a.id === res.attendance.id ? res.attendance : a))
-          : [res.attendance, ...s.attendance];
+        const existingIndex = s.attendance.findIndex((a) => a.pupilId === pupilId && a.date === date);
+        let updatedAtt: Attendance;
+        if (existingIndex >= 0) {
+          updatedAtt = {
+            ...s.attendance[existingIndex],
+            arrival: time,
+            arrivalTransport: finalDetails.transport,
+            arrivalVehicleReg: finalDetails.vehicleReg,
+            arrivalPersonName: finalDetails.personName,
+            arrivalPersonRelation: finalDetails.personRelation,
+            arrivalPhone: finalDetails.phone,
+          };
+        } else {
+          updatedAtt = {
+            id: Math.random().toString(36).slice(2, 10),
+            pupilId,
+            date,
+            arrival: time,
+            arrivalTransport: finalDetails.transport,
+            arrivalVehicleReg: finalDetails.vehicleReg,
+            arrivalPersonName: finalDetails.personName,
+            arrivalPersonRelation: finalDetails.personRelation,
+            arrivalPhone: finalDetails.phone,
+          };
+        }
 
-        return {
-          ...s,
-          attendance: nextAtt,
-          notifications: [...res.notifications, ...s.notifications],
-          audit: [res.audit, ...s.audit],
-        };
+        const nextAttendance = existingIndex >= 0
+          ? s.attendance.map((a, i) => (i === existingIndex ? updatedAtt : a))
+          : [updatedAtt, ...s.attendance];
+
+        return { ...s, attendance: nextAttendance };
       });
+
+      try {
+        const res = await markArrivalDb({
+          data: {
+            pupilId,
+            transportDetails: finalDetails,
+            actorId: currentUser.id,
+            actorName: currentUser.name,
+          },
+        });
+
+        setState((s) => {
+          const exists = s.attendance.some((a) => a.id === res.attendance.id);
+          const nextAtt = exists
+            ? s.attendance.map((a) => (a.id === res.attendance.id ? res.attendance : a))
+            : [res.attendance, ...s.attendance];
+
+          return {
+            ...s,
+            attendance: nextAtt,
+            notifications: [
+              ...res.notifications,
+              ...s.notifications.filter((n) => !res.notifications.some((rn) => rn.id === n.id)),
+            ],
+            audit: [
+              res.audit,
+              ...s.audit.filter((a) => a.id !== res.audit.id),
+            ],
+          };
+        });
+      } catch (err) {
+        console.error("Failed to persist markArrival to server DB:", err);
+      }
     },
 
     markDeparture: async (pupilId, transportDetails) => {
-      if (!currentUser || !transportDetails) return;
-      const res = await markDepartureDb({
-        data: {
-          pupilId,
-          transportDetails,
-          actorId: currentUser.id,
-          actorName: currentUser.name,
-        },
-      });
+      if (!currentUser) return;
+      const pupil = state.pupils.find((p) => p.id === pupilId);
+      const parent = pupil?.parentIds?.[0]
+        ? state.parents.find((pr) => pr.id === pupil.parentIds[0])
+        : null;
 
+      const finalDetails = {
+        transport: transportDetails?.transport || "Car",
+        vehicleReg: transportDetails?.vehicleReg || "",
+        personName: transportDetails?.personName || parent?.name || "Parent/Guardian",
+        personRelation: transportDetails?.personRelation || parent?.relationship || "Parent",
+        phone: transportDetails?.phone || parent?.phone || "",
+      };
+
+      const date = new Date().toISOString().slice(0, 10);
+      const time = new Date().toTimeString().slice(0, 5);
+
+      // Optimistic state update
       setState((s) => {
-        const exists = s.attendance.some((a) => a.id === res.attendance.id);
-        const nextAtt = exists
-          ? s.attendance.map((a) => (a.id === res.attendance.id ? res.attendance : a))
-          : [res.attendance, ...s.attendance];
+        const existingIndex = s.attendance.findIndex((a) => a.pupilId === pupilId && a.date === date);
+        let updatedAtt: Attendance;
+        if (existingIndex >= 0) {
+          updatedAtt = {
+            ...s.attendance[existingIndex],
+            departure: time,
+            departureTransport: finalDetails.transport,
+            departureVehicleReg: finalDetails.vehicleReg,
+            departurePersonName: finalDetails.personName,
+            departurePersonRelation: finalDetails.personRelation,
+            departurePhone: finalDetails.phone,
+          };
+        } else {
+          updatedAtt = {
+            id: Math.random().toString(36).slice(2, 10),
+            pupilId,
+            date,
+            departure: time,
+            departureTransport: finalDetails.transport,
+            departureVehicleReg: finalDetails.vehicleReg,
+            departurePersonName: finalDetails.personName,
+            departurePersonRelation: finalDetails.personRelation,
+            departurePhone: finalDetails.phone,
+          };
+        }
 
-        return {
-          ...s,
-          attendance: nextAtt,
-          notifications: [...res.notifications, ...s.notifications],
-          audit: [res.audit, ...s.audit],
-        };
+        const nextAttendance = existingIndex >= 0
+          ? s.attendance.map((a, i) => (i === existingIndex ? updatedAtt : a))
+          : [updatedAtt, ...s.attendance];
+
+        return { ...s, attendance: nextAttendance };
       });
+
+      try {
+        const res = await markDepartureDb({
+          data: {
+            pupilId,
+            transportDetails: finalDetails,
+            actorId: currentUser.id,
+            actorName: currentUser.name,
+          },
+        });
+
+        setState((s) => {
+          const exists = s.attendance.some((a) => a.id === res.attendance.id);
+          const nextAtt = exists
+            ? s.attendance.map((a) => (a.id === res.attendance.id ? res.attendance : a))
+            : [res.attendance, ...s.attendance];
+
+          return {
+            ...s,
+            attendance: nextAtt,
+            notifications: [
+              ...res.notifications,
+              ...s.notifications.filter((n) => !res.notifications.some((rn) => rn.id === n.id)),
+            ],
+            audit: [
+              res.audit,
+              ...s.audit.filter((a) => a.id !== res.audit.id),
+            ],
+          };
+        });
+      } catch (err) {
+        console.error("Failed to persist markDeparture to server DB:", err);
+      }
     },
 
     addMark: async (markData) => {
@@ -956,7 +1078,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
               Retry now
             </button>
             <a
-              href="https://supabase.com/dashboard/project/zgkjvkchapfwbqdsmsdt"
+              href="https://supabase.com/dashboard/project/pgrrciygduxivztddomk"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-input bg-background px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"

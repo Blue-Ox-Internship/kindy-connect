@@ -1,7 +1,28 @@
 import postgres from "postgres";
+import fs from "node:fs";
+import path from "node:path";
 
-// Initialize PostgreSQL client.
-// In TanStack Start (running on Nitro), process.env is populated from environment variables.
+// Ensure process.env.DATABASE_URL is populated in local development
+if (!process.env.DATABASE_URL && typeof process !== "undefined") {
+  if (typeof process.loadEnvFile === "function") {
+    try {
+      process.loadEnvFile(".env");
+    } catch {}
+  }
+  if (!process.env.DATABASE_URL) {
+    try {
+      const envPath = path.resolve(process.cwd(), ".env");
+      if (fs.existsSync(envPath)) {
+        const envContent = fs.readFileSync(envPath, "utf-8");
+        const match = envContent.match(/^DATABASE_URL=(.+)$/m);
+        if (match) {
+          process.env.DATABASE_URL = match[1].trim();
+        }
+      }
+    } catch {}
+  }
+}
+
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
@@ -12,9 +33,9 @@ if (!connectionString) {
 }
 
 export const sql = postgres(connectionString || "", {
-  // Keep pool small — Supabase free tier allows limited concurrent connections
-  max: 5,
-  // Close idle connections quickly to free up Supabase pool slots
+  // Supabase PgBouncer pooler (port 6543) allows high client connections
+  max: 15,
+  // Close idle connections quickly to free up slots
   idle_timeout: 30,
   // Allow 30 seconds for connection — Supabase free tier can take up to 20s to wake
   connect_timeout: 30,

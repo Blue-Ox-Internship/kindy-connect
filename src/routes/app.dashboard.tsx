@@ -12,6 +12,11 @@ import {
   Building,
   ClipboardList,
   ShieldCheck,
+  Users,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -169,13 +174,39 @@ function Dashboard() {
     });
   };
 
+  const handleQuickArrival = (pupil: any) => {
+    markArrival(pupil.id);
+    toast.success(`Arrival logged for ${pupil.firstName} ${pupil.lastName} - parents notified`);
+  };
+
   const openArrivalDialog = (pupil: any) => {
     setSelectedPupil(pupil);
+    const parent = parents.find((pr) => pupil.parentIds?.includes(pr.id));
+    setArrivalForm({
+      transport: "Car",
+      vehicleReg: "",
+      personName: parent ? parent.name : "",
+      personRelation: parent ? (parent.relationship || "Parent") : "Parent",
+      phone: parent ? parent.phone : "",
+    });
     setArrivalDialogOpen(true);
+  };
+
+  const handleQuickDeparture = (pupil: any) => {
+    markDeparture(pupil.id);
+    toast.success(`Departure logged for ${pupil.firstName} ${pupil.lastName} - parents notified`);
   };
 
   const openDepartureDialog = (pupil: any) => {
     setSelectedPupil(pupil);
+    const parent = parents.find((pr) => pupil.parentIds?.includes(pr.id));
+    setDepartureForm({
+      transport: "Car",
+      vehicleReg: "",
+      personName: parent ? parent.name : "",
+      personRelation: parent ? (parent.relationship || "Parent") : "Parent",
+      phone: parent ? parent.phone : "",
+    });
     setDepartureDialogOpen(true);
   };
   const isStaff = currentUser.role !== "teacher";
@@ -213,7 +244,23 @@ function Dashboard() {
       ]
     : [];
 
+  const [teacherFilter, setTeacherFilter] = useState<"all" | "present" | "absent">("all");
   const myClassPupils = pupils.filter((p) => p.classId === currentUser.classId && p.active);
+
+  const teacherTotalCount = myClassPupils.length;
+  const teacherPresentCount = myClassPupils.filter((p) => {
+    const att = todayAtt.find((a) => a.pupilId === p.id);
+    return !!att?.arrival;
+  }).length;
+  const teacherAbsentCount = teacherTotalCount - teacherPresentCount;
+
+  const filteredTeacherPupils = myClassPupils.filter((p) => {
+    const att = todayAtt.find((a) => a.pupilId === p.id);
+    const isPresent = !!att?.arrival;
+    if (teacherFilter === "present") return isPresent;
+    if (teacherFilter === "absent") return !isPresent;
+    return true;
+  });
 
   return (
     <AppShell title={`Hello, ${currentUser.name.split(" ")[0]}`}>
@@ -329,64 +376,182 @@ function Dashboard() {
           </div>
         </>
       ) : (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>
-              My class: {classes.find((c) => c.id === currentUser.classId)?.name ?? "-"}
-            </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                window.location.reload();
-              }}
-              className="flex items-center gap-2"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Reset Page
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {myClassPupils.map((p) => {
-                const att = todayAtt.find((a) => a.pupilId === p.id);
-                return (
-                  <div
-                    key={p.id}
-                    className="flex items-center justify-between rounded-xl border p-3"
-                  >
-                    <div>
-                      <div className="font-medium">
-                        {p.firstName} {p.lastName}
+        <div className="space-y-6">
+          {/* Teacher Attendance Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border shadow-sm bg-card hover:bg-accent/10 transition-colors">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Pupils</p>
+                  <h3 className="text-2xl font-bold">{teacherTotalCount}</h3>
+                </div>
+                <div className="p-2 bg-primary/10 text-primary rounded-full">
+                  <Users className="h-6 w-6" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border shadow-sm bg-card hover:bg-accent/10 transition-colors">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Present Today</p>
+                  <h3 className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                    {teacherPresentCount}
+                  </h3>
+                </div>
+                <div className="p-2 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-full">
+                  <CheckCircle className="h-6 w-6" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border shadow-sm bg-card hover:bg-accent/10 transition-colors">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Absent Today</p>
+                  <h3 className="text-2xl font-bold text-rose-600 dark:text-rose-400">
+                    {teacherAbsentCount}
+                  </h3>
+                </div>
+                <div className="p-2 bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 rounded-full">
+                  <XCircle className="h-6 w-6" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-3 border-b">
+              <div>
+                <CardTitle className="text-xl font-bold">
+                  My class: {classes.find((c) => c.id === currentUser.classId)?.name ?? "-"}
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Record pupil arrival and departure. Timestamps are automatically captured.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1">
+                  Filter:
+                </span>
+                <Button
+                  variant={teacherFilter === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTeacherFilter("all")}
+                  className="h-8 text-xs font-medium"
+                >
+                  All ({teacherTotalCount})
+                </Button>
+                <Button
+                  variant={teacherFilter === "present" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTeacherFilter("present")}
+                  className={`h-8 text-xs font-medium ${
+                    teacherFilter === "present"
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+                  }`}
+                >
+                  Present ({teacherPresentCount})
+                </Button>
+                <Button
+                  variant={teacherFilter === "absent" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTeacherFilter("absent")}
+                  className={`h-8 text-xs font-medium ${
+                    teacherFilter === "absent"
+                      ? "bg-rose-600 hover:bg-rose-700 text-white"
+                      : "text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                  }`}
+                >
+                  Absent ({teacherAbsentCount})
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {filteredTeacherPupils.map((p) => {
+                  const att = todayAtt.find((a) => a.pupilId === p.id);
+                  const isPresent = !!att?.arrival;
+                  return (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between rounded-xl border p-3.5 bg-card hover:shadow-sm transition-all"
+                    >
+                      <div className="space-y-1">
+                        <div className="font-semibold flex items-center gap-2">
+                          <span>
+                            {p.firstName} {p.lastName}
+                          </span>
+                          {isPresent ? (
+                            <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 text-[10px] px-1.5 py-0">
+                              Present
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="secondary"
+                              className="bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200 text-[10px] px-1.5 py-0"
+                            >
+                              Absent
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground space-y-0.5">
+                          {att?.arrival ? (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span>Arrived {att.arrival}</span>
+                              {att.arrivalTransport && (
+                                <Badge variant="outline" className="text-[10px] font-normal px-1.5 py-0">
+                                  {att.arrivalTransport} ({att.arrivalPersonName || "Operator"})
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <span>Not arrived</span>
+                          )}
+                          {att?.departure && (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span>Left {att.departure}</span>
+                              {att.departureTransport && (
+                                <Badge variant="outline" className="text-[10px] font-normal px-1.5 py-0 border-secondary">
+                                  {att.departureTransport} ({att.departurePersonName || "Operator"})
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {att?.arrival ? `Arrived ${att.arrival}` : "Not arrived"}
-                        {att?.departure ? ` - Left ${att.departure}` : ""}
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          disabled={!!att?.arrival}
+                          onClick={() => openArrivalDialog(p)}
+                        >
+                          Arrival
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={!att?.arrival || !!att?.departure}
+                          onClick={() => openDepartureDialog(p)}
+                        >
+                          Departure
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        disabled={!!att?.arrival}
-                        onClick={() => openArrivalDialog(p)}
-                      >
-                        Arrival
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        disabled={!att?.arrival || !!att?.departure}
-                        onClick={() => openDepartureDialog(p)}
-                      >
-                        Departure
-                      </Button>
-                    </div>
+                  );
+                })}
+
+                {filteredTeacherPupils.length === 0 && (
+                  <div className="col-span-full py-8 text-center text-sm text-muted-foreground">
+                    No pupils found matching the "{teacherFilter}" filter.
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Arrival Dialog */}
@@ -398,6 +563,21 @@ function Dashboard() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-1">
+              <div className="flex items-center justify-between font-medium">
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5 text-primary" /> System Recorded Time:
+                </span>
+                <Badge variant="outline" className="font-mono text-xs font-semibold bg-background">
+                  {new Date().toTimeString().slice(0, 5)}
+                </Badge>
+              </div>
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1 pt-1 border-t border-border/50">
+                <Lock className="h-3 w-3 shrink-0" />
+                Arrival time is automatically logged and cannot be edited.
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="arrival-transport">Mode of Transport *</Label>
               <Select
@@ -499,6 +679,21 @@ function Dashboard() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-1">
+              <div className="flex items-center justify-between font-medium">
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5 text-primary" /> System Recorded Time:
+                </span>
+                <Badge variant="outline" className="font-mono text-xs font-semibold bg-background">
+                  {new Date().toTimeString().slice(0, 5)}
+                </Badge>
+              </div>
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1 pt-1 border-t border-border/50">
+                <Lock className="h-3 w-3 shrink-0" />
+                Departure time is automatically logged and cannot be edited.
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="departure-transport">Mode of Transport *</Label>
               <Select

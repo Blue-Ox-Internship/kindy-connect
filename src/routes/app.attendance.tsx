@@ -30,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
-import { Car, Info, Calendar, Users, CheckCircle, XCircle } from "lucide-react";
+import { Car, Info, Calendar, Users, CheckCircle, XCircle, Clock, Lock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/app/attendance")({
@@ -39,7 +39,7 @@ export const Route = createFileRoute("/app/attendance")({
 });
 
 function AttendancePage() {
-  const { currentUser, pupils, classes, attendance, markArrival, markDeparture, schools } =
+  const { currentUser, pupils, classes, attendance, markArrival, markDeparture, schools, parents } =
     useStore();
   const today = new Date().toISOString().slice(0, 10);
   const isTeacher = currentUser?.role === "teacher";
@@ -50,6 +50,9 @@ function AttendancePage() {
   const filteredClasses = useMemo(() => {
     if (currentUser?.role === "super_admin") {
       return classes.filter((c) => c.schoolId === superSchoolId);
+    }
+    if (currentUser?.schoolId) {
+      return classes.filter((c) => c.schoolId === currentUser.schoolId);
     }
     return classes;
   }, [classes, currentUser, superSchoolId]);
@@ -128,6 +131,11 @@ function AttendancePage() {
     "Sibling",
   ];
 
+  const handleQuickArrival = (pupil: any) => {
+    markArrival(pupil.id);
+    toast.success(`Arrival logged for ${pupil.firstName} ${pupil.lastName} - parents notified`);
+  };
+
   const handleArrival = () => {
     if (
       !selectedPupil ||
@@ -192,13 +200,34 @@ function AttendancePage() {
     });
   };
 
+  const handleQuickDeparture = (pupil: any) => {
+    markDeparture(pupil.id);
+    toast.success(`Departure logged for ${pupil.firstName} ${pupil.lastName} - parents notified`);
+  };
+
   const openArrivalDialog = (pupil: any) => {
     setSelectedPupil(pupil);
+    const parent = parents.find((pr) => pupil.parentIds?.includes(pr.id));
+    setArrivalForm({
+      transport: "Car",
+      vehicleReg: "",
+      personName: parent ? parent.name : "",
+      personRelation: parent ? (parent.relationship || "Parent") : "Parent",
+      phone: parent ? parent.phone : "",
+    });
     setArrivalDialogOpen(true);
   };
 
   const openDepartureDialog = (pupil: any) => {
     setSelectedPupil(pupil);
+    const parent = parents.find((pr) => pupil.parentIds?.includes(pr.id));
+    setDepartureForm({
+      transport: "Car",
+      vehicleReg: "",
+      personName: parent ? parent.name : "",
+      personRelation: parent ? (parent.relationship || "Parent") : "Parent",
+      phone: parent ? parent.phone : "",
+    });
     setDepartureDialogOpen(true);
   };
 
@@ -449,6 +478,7 @@ function AttendancePage() {
                         size="sm"
                         disabled={!isToday || !!att?.arrival}
                         onClick={() => openArrivalDialog(p)}
+                        className="bg-amber-500 hover:bg-amber-600 text-white font-medium"
                       >
                         Arrival
                       </Button>
@@ -485,6 +515,21 @@ function AttendancePage() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-1">
+              <div className="flex items-center justify-between font-medium">
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5 text-primary" /> System Recorded Time:
+                </span>
+                <Badge variant="outline" className="font-mono text-xs font-semibold bg-background">
+                  {new Date().toTimeString().slice(0, 5)}
+                </Badge>
+              </div>
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1 pt-1 border-t border-border/50">
+                <Lock className="h-3 w-3 shrink-0" />
+                Arrival time is automatically logged and cannot be edited.
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="arrival-transport">Mode of Transport *</Label>
               <Select
@@ -586,6 +631,21 @@ function AttendancePage() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-1">
+              <div className="flex items-center justify-between font-medium">
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5 text-primary" /> System Recorded Time:
+                </span>
+                <Badge variant="outline" className="font-mono text-xs font-semibold bg-background">
+                  {new Date().toTimeString().slice(0, 5)}
+                </Badge>
+              </div>
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1 pt-1 border-t border-border/50">
+                <Lock className="h-3 w-3 shrink-0" />
+                Departure time is automatically logged and cannot be edited.
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="departure-transport">Mode of Transport *</Label>
               <Select

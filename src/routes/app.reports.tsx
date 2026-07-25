@@ -28,9 +28,10 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Download, FileSpreadsheet, FileText, GraduationCap } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, GraduationCap, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useMemo, useEffect } from "react";
+import { downloadCSV } from "@/lib/export-utils";
 
 export const Route = createFileRoute("/app/reports")({
   head: () => ({ meta: [{ title: "Reports - Little Stars" }] }),
@@ -48,6 +49,9 @@ function ReportsPage() {
   const filteredClasses = useMemo(() => {
     if (currentUser?.role === "super_admin") {
       return classes.filter((c) => c.schoolId === superSchoolId);
+    }
+    if (currentUser?.schoolId) {
+      return classes.filter((c) => c.schoolId === currentUser.schoolId);
     }
     return classes;
   }, [classes, currentUser, superSchoolId]);
@@ -71,11 +75,170 @@ function ReportsPage() {
   const [selectedYear, setSelectedYear] = useState("2025");
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [previewPupil, setPreviewPupil] = useState<any>(null);
+  const [marksSheetOpen, setMarksSheetOpen] = useState(false);
+  const [sheetDisplayMode, setSheetDisplayMode] = useState<"score" | "percentage" | "grade">("score");
+
+  const subjects = ["Reading", "Math", "Writing", "Art", "Music", "Physical Education", "Science"];
+  const currentClassObj = classes.find((c) => c.id === selectedClass);
+  const currentSchoolObj = schools.find(
+    (s) => s.id === (currentClassObj?.schoolId || currentUser?.schoolId),
+  );
+  const selectedClassPupils = pupils.filter((p) => p.classId === selectedClass && p.active);
+
+  const broadsheetData = useMemo(() => {
+    return selectedClassPupils.map((p) => {
+      const pupilMarks = marks.filter(
+        (m) => m.pupilId === p.id && m.term === selectedTerm && m.year === selectedYear,
+      );
+
+      let totalPct = 0;
+      let count = 0;
+
+      const subjectMarks: Record<
+        string,
+        { score: number; maxScore: number; grade?: string; pct: number } | null
+      > = {};
+
+      subjects.forEach((subj) => {
+        const m = pupilMarks.find((x) => x.subject === subj);
+        if (m) {
+          const pct = (m.score / m.maxScore) * 100;
+          subjectMarks[subj] = { score: m.score, maxScore: m.maxScore, grade: m.grade, pct };
+          totalPct += pct;
+          count += 1;
+        } else {
+          subjectMarks[subj] = null;
+        }
+      });
+
+      const avgPct = count > 0 ? totalPct / count : null;
+      let overallGrade = "N/A";
+      if (avgPct !== null) {
+        if (avgPct >= 90) overallGrade = "A";
+        else if (avgPct >= 80) overallGrade = "B";
+        else if (avgPct >= 70) overallGrade = "C";
+        else if (avgPct >= 60) overallGrade = "D";
+        else overallGrade = "E";
+      }
+
+      return {
+        pupil: p,
+        subjectMarks,
+        avgPct,
+        overallGrade,
+      };
+    });
+  }, [selectedClassPupils, marks, selectedTerm, selectedYear, subjects]);
 
   const lateThreshold = "08:00";
   const late = todayAtt.filter((a) => a.arrival && a.arrival > lateThreshold);
 
-  const exportToast = (kind: string) => toast.success(`${kind} export prepared (demo)`);
+  const weeklySummary = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    const cutoff = d.toISOString().slice(0, 10);
+    const recent = attendance.filter((a) => a.date >= cutoff);
+
+    return pupils.map((p) => {
+      const pRecs = recent.filter((a) => a.pupilId === p.id);
+      const daysPresent = pRecs.length;
+      const lateDays = pRecs.filter((a) => a.arrival && a.arrival > lateThreshold).length;
+      const clsName = classes.find((c) => c.id === p.classId)?.name || "-";
+      return { pupil: p, className: clsName, daysPresent, lateDays };
+    });
+  }, [attendance, pupils, classes, lateThreshold]);
+
+  const monthlySummary = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    const cutoff = d.toISOString().slice(0, 10);
+    const recent = attendance.filter((a) => a.date >= cutoff);
+
+    return pupils.map((p) => {
+      const pRecs = recent.filter((a) => a.pupilId === p.id);
+      const daysPresent = pRecs.length;
+      const lateDays = pRecs.filter((a) => a.arrival && a.arrival > lateThreshold).length;
+      const clsName = classes.find((c) => c.id === p.classId)?.name || "-";
+      return { pupil: p, className: clsName, daysPresent, lateDays };
+    });
+  }, [attendance, pupils, classes, lateThreshold]);
+
+  const handleExportDailyPDF = () => {
+    window.print();
+    toast.success("Daily attendance report sent to print / PDF");
+  };
+
+  const handleExportDailyCSV = () => {
+    const headers = ["Admission No", "Pupil Name", "Class", "Arrival Time", "Departure Time"];
+    const rows = todayAtt.map((a) => {
+      const p = pupils.find((x) => x.id === a.pupilId);
+      return [
+        p?.admissionNo || "-",
+        p ? `${p.firstName} ${p.lastName}` : "Unknown",
+        classes.find((c) => c.id === p?.classId)?.name || "-",
+        a.arrival ?? "-",
+        a.departure ?? "-",
+      ];
+    });
+    downloadCSV(`Daily_Attendance_${today}`, headers, rows);
+    toast.success("Exported Daily Attendance to CSV / Excel");
+  };
+
+  const handleExportWeeklyPDF = () => {
+    window.print();
+    toast.success("Weekly attendance report sent to print / PDF");
+  };
+
+  const handleExportWeeklyCSV = () => {
+    const headers = ["Admission No", "Pupil Name", "Class", "Days Present (Last 7 Days)", "Late Arrivals"];
+    const rows = weeklySummary.map((item) => [
+      item.pupil.admissionNo,
+      `${item.pupil.firstName} ${item.pupil.lastName}`,
+      item.className,
+      item.daysPresent,
+      item.lateDays,
+    ]);
+    downloadCSV(`Weekly_Attendance_Report_${today}`, headers, rows);
+    toast.success("Exported Weekly Attendance to CSV / Excel");
+  };
+
+  const handleExportMonthlyPDF = () => {
+    window.print();
+    toast.success("Monthly attendance report sent to print / PDF");
+  };
+
+  const handleExportMonthlyCSV = () => {
+    const headers = ["Admission No", "Pupil Name", "Class", "Days Present (Last 30 Days)", "Late Arrivals"];
+    const rows = monthlySummary.map((item) => [
+      item.pupil.admissionNo,
+      `${item.pupil.firstName} ${item.pupil.lastName}`,
+      item.className,
+      item.daysPresent,
+      item.lateDays,
+    ]);
+    downloadCSV(`Monthly_Attendance_Report_${today}`, headers, rows);
+    toast.success("Exported Monthly Attendance to CSV / Excel");
+  };
+
+  const handleExportLatePDF = () => {
+    window.print();
+    toast.success("Late arrivals report sent to print / PDF");
+  };
+
+  const handleExportLateCSV = () => {
+    const headers = ["Admission No", "Pupil Name", "Class", "Arrival Time"];
+    const rows = late.map((a) => {
+      const p = pupils.find((x) => x.id === a.pupilId);
+      return [
+        p?.admissionNo || "-",
+        p ? `${p.firstName} ${p.lastName}` : "Unknown",
+        classes.find((c) => c.id === p?.classId)?.name || "-",
+        a.arrival,
+      ];
+    });
+    downloadCSV(`Late_Arrivals_${today}`, headers, rows);
+    toast.success("Exported Late Arrivals report to CSV / Excel");
+  };
 
   const terms = ["Term 1", "Term 2", "Term 3"];
 
@@ -146,11 +309,18 @@ function ReportsPage() {
       return;
     }
 
-    toast.success(`Generated ${pupilsWithMarks.length} report cards (demo)`);
+    const first = pupilsWithMarks[0];
+    const firstMarks = marks.filter(
+      (m) => m.pupilId === first.id && m.term === selectedTerm && m.year === selectedYear,
+    );
+    setPreviewPupil({ ...first, marks: firstMarks });
+    setPreviewDialogOpen(true);
+    toast.success(`Generated ${pupilsWithMarks.length} report cards ready for review and printing`);
   };
 
   const downloadReportCard = () => {
-    toast.success("Report card downloaded as PDF (demo)");
+    window.print();
+    toast.success(`Report card for ${previewPupil?.firstName || "pupil"} sent to print / PDF download`);
     setPreviewDialogOpen(false);
   };
 
@@ -170,11 +340,11 @@ function ReportsPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Today - {today}</CardTitle>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => exportToast("PDF")}>
+                <Button size="sm" variant="outline" onClick={handleExportDailyPDF}>
                   <FileText className="h-4 w-4 mr-1" />
                   PDF
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => exportToast("Excel")}>
+                <Button size="sm" variant="outline" onClick={handleExportDailyCSV}>
                   <FileSpreadsheet className="h-4 w-4 mr-1" />
                   Excel
                 </Button>
@@ -205,6 +375,13 @@ function ReportsPage() {
                       </TableRow>
                     );
                   })}
+                  {todayAtt.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+                        No attendance records for today
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -213,26 +390,116 @@ function ReportsPage() {
 
         <TabsContent value="weekly" className="mt-4">
           <Card>
-            <CardContent className="p-8 text-center text-muted-foreground">
-              <Download className="h-8 w-8 mx-auto mb-3" />
-              Weekly report aggregates this week's attendance per pupil. Export to PDF or Excel.
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Weekly Attendance Summary (Last 7 Days)</CardTitle>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={handleExportWeeklyPDF}>
+                  <FileText className="h-4 w-4 mr-1" />
+                  PDF
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleExportWeeklyCSV}>
+                  <FileSpreadsheet className="h-4 w-4 mr-1" />
+                  Excel
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Admission No</TableHead>
+                    <TableHead>Pupil</TableHead>
+                    <TableHead>Class</TableHead>
+                    <TableHead>Days Present</TableHead>
+                    <TableHead>Late Arrivals</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {weeklySummary.map((item) => (
+                    <TableRow key={item.pupil.id}>
+                      <TableCell className="font-mono text-xs">{item.pupil.admissionNo}</TableCell>
+                      <TableCell>{item.pupil.firstName} {item.pupil.lastName}</TableCell>
+                      <TableCell>{item.className}</TableCell>
+                      <TableCell>{item.daysPresent}</TableCell>
+                      <TableCell>{item.lateDays}</TableCell>
+                    </TableRow>
+                  ))}
+                  {weeklySummary.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                        No pupils found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value="monthly" className="mt-4">
           <Card>
-            <CardContent className="p-8 text-center text-muted-foreground">
-              <Download className="h-8 w-8 mx-auto mb-3" />
-              Monthly report aggregates the month's attendance per pupil and class. Export to PDF or
-              Excel.
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Monthly Attendance Summary (Last 30 Days)</CardTitle>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={handleExportMonthlyPDF}>
+                  <FileText className="h-4 w-4 mr-1" />
+                  PDF
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleExportMonthlyCSV}>
+                  <FileSpreadsheet className="h-4 w-4 mr-1" />
+                  Excel
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Admission No</TableHead>
+                    <TableHead>Pupil</TableHead>
+                    <TableHead>Class</TableHead>
+                    <TableHead>Days Present</TableHead>
+                    <TableHead>Late Arrivals</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {monthlySummary.map((item) => (
+                    <TableRow key={item.pupil.id}>
+                      <TableCell className="font-mono text-xs">{item.pupil.admissionNo}</TableCell>
+                      <TableCell>{item.pupil.firstName} {item.pupil.lastName}</TableCell>
+                      <TableCell>{item.className}</TableCell>
+                      <TableCell>{item.daysPresent}</TableCell>
+                      <TableCell>{item.lateDays}</TableCell>
+                    </TableRow>
+                  ))}
+                  {monthlySummary.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                        No pupils found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="late" className="mt-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Late arrivals (after {lateThreshold})</CardTitle>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={handleExportLatePDF}>
+                  <FileText className="h-4 w-4 mr-1" />
+                  PDF
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleExportLateCSV}>
+                  <FileSpreadsheet className="h-4 w-4 mr-1" />
+                  Excel
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -282,14 +549,30 @@ function ReportsPage() {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-3 items-end">
+                  {currentUser?.role === "super_admin" && (
+                    <div className="space-y-2">
+                      <Label>School</Label>
+                      <select
+                        value={superSchoolId}
+                        onChange={(e) => setSuperSchoolId(e.target.value)}
+                        className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
+                      >
+                        {schools.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label>Class</Label>
                     <Select value={selectedClass} onValueChange={setSelectedClass}>
                       <SelectTrigger className="w-48">
-                        <SelectValue />
+                        <SelectValue placeholder="Select Class" />
                       </SelectTrigger>
                       <SelectContent>
-                        {classes.map((c) => (
+                        {filteredClasses.map((c) => (
                           <SelectItem key={c.id} value={c.id}>
                             {c.name}
                           </SelectItem>
@@ -328,6 +611,10 @@ function ReportsPage() {
                   <Button onClick={generateAllReportCards}>
                     <FileText className="h-4 w-4 mr-2" />
                     Generate All Report Cards
+                  </Button>
+                  <Button variant="outline" onClick={() => setMarksSheetOpen(true)}>
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Preview Marks Sheet
                   </Button>
                 </div>
 
@@ -498,6 +785,223 @@ function ReportsPage() {
             <Button onClick={downloadReportCard}>
               <Download className="h-4 w-4 mr-2" />
               Download PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pupil Marks Sheet Preview Dialog */}
+      <Dialog open={marksSheetOpen} onOpenChange={setMarksSheetOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b gap-3">
+            <div>
+              <DialogTitle className="text-xl font-bold">
+                {currentSchoolObj?.name || "Little Stars Kindergarten"} - Pupil Marks Sheet
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Class: <span className="font-semibold text-foreground">{currentClassObj?.name || "All Classes"}</span> | Term: <span className="font-semibold text-foreground">{selectedTerm}</span> | Year: <span className="font-semibold text-foreground">{selectedYear}</span>
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => window.print()}>
+                <Printer className="h-4 w-4 mr-1.5" />
+                Print Sheet
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  const headers = [
+                    "Admission No",
+                    "Pupil Name",
+                    ...subjects,
+                    "Average (%)",
+                    "Overall Grade",
+                  ];
+                  const rows = broadsheetData.map(({ pupil, subjectMarks, avgPct, overallGrade }) => [
+                    pupil.admissionNo,
+                    `${pupil.firstName} ${pupil.lastName}`,
+                    ...subjects.map((s) => {
+                      const item = subjectMarks[s];
+                      if (!item) return "-";
+                      if (sheetDisplayMode === "score") return `${item.score}/${item.maxScore}`;
+                      if (sheetDisplayMode === "percentage") return `${item.pct.toFixed(0)}%`;
+                      return item.grade || "-";
+                    }),
+                    avgPct !== null ? `${avgPct.toFixed(1)}%` : "-",
+                    overallGrade,
+                  ]);
+                  const classNameStr = currentClassObj?.name || "All_Classes";
+                  downloadCSV(
+                    `Marks_Sheet_${classNameStr.replace(/\s+/g, "_")}_${selectedTerm}_${selectedYear}`,
+                    headers,
+                    rows,
+                  );
+                  toast.success("Exported Marks Sheet to CSV / Excel");
+                }}
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-1.5" />
+                Export Excel
+              </Button>
+            </div>
+          </DialogHeader>
+
+          <div className="py-2 px-3 flex flex-wrap items-center justify-between gap-3 border-b bg-muted/30 rounded-md">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold">Class:</Label>
+                <Select value={selectedClass} onValueChange={setSelectedClass}>
+                  <SelectTrigger className="h-8 text-xs w-44 bg-background">
+                    <SelectValue placeholder="Select class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredClasses.map((c) => (
+                      <SelectItem key={c.id} value={c.id} className="text-xs">
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold">Display Format:</Label>
+              <div className="flex bg-background border rounded-lg p-0.5 text-xs font-medium">
+                <button
+                  type="button"
+                  className={`px-3 py-1 rounded-md transition ${
+                    sheetDisplayMode === "score"
+                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  onClick={() => setSheetDisplayMode("score")}
+                >
+                  Score (e.g. 85/100)
+                </button>
+                <button
+                  type="button"
+                  className={`px-3 py-1 rounded-md transition ${
+                    sheetDisplayMode === "percentage"
+                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  onClick={() => setSheetDisplayMode("percentage")}
+                >
+                  Percentage (%)
+                </button>
+                <button
+                  type="button"
+                  className={`px-3 py-1 rounded-md transition ${
+                    sheetDisplayMode === "grade"
+                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  onClick={() => setSheetDisplayMode("grade")}
+                >
+                  Grade (A-E)
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground">
+              Total Pupils: <span className="font-semibold text-foreground">{selectedClassPupils.length}</span>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-auto py-2">
+            <Table className="border text-xs">
+              <TableHeader className="bg-muted/70 sticky top-0">
+                <TableRow>
+                  <TableHead className="w-10 text-center font-bold">#</TableHead>
+                  <TableHead className="w-28 font-bold">Admission No</TableHead>
+                  <TableHead className="min-w-[140px] font-bold">Pupil Name</TableHead>
+                  {subjects.map((s) => (
+                    <TableHead key={s} className="text-center min-w-[75px] font-bold">
+                      {s}
+                    </TableHead>
+                  ))}
+                  <TableHead className="text-center font-bold bg-muted/90">Average %</TableHead>
+                  <TableHead className="text-center font-bold bg-muted/90">Overall Grade</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {broadsheetData.map((row, idx) => (
+                  <TableRow key={row.pupil.id} className="hover:bg-muted/40">
+                    <TableCell className="text-center font-medium text-muted-foreground">
+                      {idx + 1}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{row.pupil.admissionNo}</TableCell>
+                    <TableCell className="font-semibold">
+                      {row.pupil.firstName} {row.pupil.lastName}
+                    </TableCell>
+                    {subjects.map((s) => {
+                      const m = row.subjectMarks[s];
+                      if (!m) {
+                        return (
+                          <TableCell key={s} className="text-center text-muted-foreground">
+                            -
+                          </TableCell>
+                        );
+                      }
+                      if (sheetDisplayMode === "score") {
+                        return (
+                          <TableCell key={s} className="text-center font-medium">
+                            {m.score}/{m.maxScore}
+                          </TableCell>
+                        );
+                      }
+                      if (sheetDisplayMode === "percentage") {
+                        return (
+                          <TableCell key={s} className="text-center font-medium">
+                            {m.pct.toFixed(0)}%
+                          </TableCell>
+                        );
+                      }
+                      return (
+                        <TableCell key={s} className="text-center">
+                          {m.grade ? (
+                            <Badge className={`${getGradeColor(m.grade)} text-[10px] px-1.5 py-0`}>
+                              {m.grade}
+                            </Badge>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="text-center font-bold bg-muted/20">
+                      {row.avgPct !== null ? `${row.avgPct.toFixed(1)}%` : "-"}
+                    </TableCell>
+                    <TableCell className="text-center font-bold bg-muted/20">
+                      {row.overallGrade !== "N/A" ? (
+                        <Badge
+                          className={`${getGradeColor(row.overallGrade)} text-[10px] px-2 py-0.5`}
+                        >
+                          {row.overallGrade}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-[10px]">
+                          N/A
+                        </Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {broadsheetData.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={subjects.length + 5}
+                      className="text-center py-8 text-muted-foreground"
+                    >
+                      No active pupils found for this class.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <DialogFooter className="pt-2 border-t flex justify-end">
+            <Button variant="outline" onClick={() => setMarksSheetOpen(false)}>
+              Close Preview
             </Button>
           </DialogFooter>
         </DialogContent>
