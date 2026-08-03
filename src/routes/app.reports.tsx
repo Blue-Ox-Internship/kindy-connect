@@ -27,8 +27,22 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Download, FileSpreadsheet, FileText, GraduationCap, Printer } from "lucide-react";
+import {
+  Download,
+  FileSpreadsheet,
+  FileText,
+  GraduationCap,
+  Printer,
+  Settings,
+  RotateCcw,
+  Check,
+  Building2,
+  Sliders,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useState, useMemo, useEffect } from "react";
 import { downloadCSV } from "@/lib/export-utils";
@@ -38,10 +52,70 @@ export const Route = createFileRoute("/app/reports")({
   component: ReportsPage,
 });
 
+interface ReportFormatConfig {
+  headerTitle: string;
+  subtitle: string;
+  schoolAddress: string;
+  showAttendance: boolean;
+  showTeacherComments: boolean;
+  showPrincipalSignature: boolean;
+  principalTitle: string;
+  showClassRank: boolean;
+  showStampBox: boolean;
+  footerRemarks: string;
+}
+
+const DEFAULT_REPORT_FORMAT: ReportFormatConfig = {
+  headerTitle: "Little Stars Kindergarten",
+  subtitle: "Academic Performance Report Card",
+  schoolAddress: "P.O. Box 1234, Kampala, Uganda | Tel: +256 700 000 000 | info@littlestars.ac.ug",
+  showAttendance: true,
+  showTeacherComments: true,
+  showPrincipalSignature: true,
+  principalTitle: "Headteacher's Signature & Date",
+  showClassRank: true,
+  showStampBox: true,
+  footerRemarks: "Next term begins on Monday, 15th September. All school fees must be cleared by the first week of term.",
+};
+
 function ReportsPage() {
   const { currentUser, pupils, attendance, classes, marks, schools } = useStore();
+  const isAdmin = currentUser?.role === "super_admin" || currentUser?.role === "admin";
   const today = new Date().toISOString().slice(0, 10);
   const todayAtt = attendance.filter((a) => a.date === today);
+
+  // Report Format Customization State
+  const [formatConfig, setFormatConfig] = useState<ReportFormatConfig>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("kindy_report_format_config");
+        if (saved) return { ...DEFAULT_REPORT_FORMAT, ...JSON.parse(saved) };
+      } catch {}
+    }
+    return DEFAULT_REPORT_FORMAT;
+  });
+
+  const [formatDialogOpen, setFormatDialogOpen] = useState(false);
+  const [editFormat, setEditFormat] = useState<ReportFormatConfig>(formatConfig);
+
+  const handleSaveFormat = () => {
+    setFormatConfig(editFormat);
+    try {
+      localStorage.setItem("kindy_report_format_config", JSON.stringify(editFormat));
+    } catch {}
+    toast.success("Report format settings saved successfully!");
+    setFormatDialogOpen(false);
+  };
+
+  const handleResetFormat = () => {
+    setEditFormat(DEFAULT_REPORT_FORMAT);
+    setFormatConfig(DEFAULT_REPORT_FORMAT);
+    try {
+      localStorage.removeItem("kindy_report_format_config");
+    } catch {}
+    toast.success("Reset report format to default settings");
+    setFormatDialogOpen(false);
+  };
 
   // Super Admin School filtering
   const [superSchoolId, setSuperSchoolId] = useState<string>(schools[0]?.id ?? "");
@@ -278,6 +352,18 @@ function ReportsPage() {
     return "E";
   };
 
+  // Helper to calculate Class Rank for a pupil
+  const getPupilClassRank = (pupilId: string) => {
+    const classPupilsWithAvg = selectedClassPupils
+      .map((p) => ({ id: p.id, avg: calculateAverage(p.id) }))
+      .filter((x) => x.avg !== null)
+      .sort((a, b) => (b.avg ?? 0) - (a.avg ?? 0));
+
+    const rankIdx = classPupilsWithAvg.findIndex((x) => x.id === pupilId);
+    if (rankIdx === -1) return "N/A";
+    return `#${rankIdx + 1} of ${classPupilsWithAvg.length}`;
+  };
+
   const generateReportCard = (pupilId: string) => {
     const pupil = pupils.find((p) => p.id === pupilId);
     if (!pupil) return;
@@ -407,7 +493,7 @@ function ReportsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Admission No</TableHead>
+                    {isAdmin && <TableHead>Admission No</TableHead>}
                     <TableHead>Pupil</TableHead>
                     <TableHead>Class</TableHead>
                     <TableHead>Days Present</TableHead>
@@ -417,7 +503,9 @@ function ReportsPage() {
                 <TableBody>
                   {weeklySummary.map((item) => (
                     <TableRow key={item.pupil.id}>
-                      <TableCell className="font-mono text-xs">{item.pupil.admissionNo}</TableCell>
+                      {isAdmin && (
+                        <TableCell className="font-mono text-xs">{item.pupil.admissionNo}</TableCell>
+                      )}
                       <TableCell>{item.pupil.firstName} {item.pupil.lastName}</TableCell>
                       <TableCell>{item.className}</TableCell>
                       <TableCell>{item.daysPresent}</TableCell>
@@ -426,7 +514,7 @@ function ReportsPage() {
                   ))}
                   {weeklySummary.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                      <TableCell colSpan={isAdmin ? 5 : 4} className="text-center py-6 text-muted-foreground">
                         No pupils found
                       </TableCell>
                     </TableRow>
@@ -456,7 +544,7 @@ function ReportsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Admission No</TableHead>
+                    {isAdmin && <TableHead>Admission No</TableHead>}
                     <TableHead>Pupil</TableHead>
                     <TableHead>Class</TableHead>
                     <TableHead>Days Present</TableHead>
@@ -466,7 +554,9 @@ function ReportsPage() {
                 <TableBody>
                   {monthlySummary.map((item) => (
                     <TableRow key={item.pupil.id}>
-                      <TableCell className="font-mono text-xs">{item.pupil.admissionNo}</TableCell>
+                      {isAdmin && (
+                        <TableCell className="font-mono text-xs">{item.pupil.admissionNo}</TableCell>
+                      )}
                       <TableCell>{item.pupil.firstName} {item.pupil.lastName}</TableCell>
                       <TableCell>{item.className}</TableCell>
                       <TableCell>{item.daysPresent}</TableCell>
@@ -475,7 +565,7 @@ function ReportsPage() {
                   ))}
                   {monthlySummary.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                      <TableCell colSpan={isAdmin ? 5 : 4} className="text-center py-6 text-muted-foreground">
                         No pupils found
                       </TableCell>
                     </TableRow>
@@ -537,14 +627,28 @@ function ReportsPage() {
 
         <TabsContent value="report-cards" className="mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5" />
-                Generate Report Cards
-              </CardTitle>
-              <CardDescription>
-                Generate academic report cards for pupils based on their marks
-              </CardDescription>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5" />
+                  Generate Report Cards
+                </CardTitle>
+                <CardDescription>
+                  Generate academic report cards for pupils based on their marks
+                </CardDescription>
+              </div>
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditFormat(formatConfig);
+                    setFormatDialogOpen(true);
+                  }}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Edit Report Format
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -622,7 +726,7 @@ function ReportsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Admission No</TableHead>
+                        {isAdmin && <TableHead>Admission No</TableHead>}
                         <TableHead>Pupil Name</TableHead>
                         <TableHead>Subjects</TableHead>
                         <TableHead>Average</TableHead>
@@ -645,7 +749,7 @@ function ReportsPage() {
 
                           return (
                             <TableRow key={p.id}>
-                              <TableCell>{p.admissionNo}</TableCell>
+                              {isAdmin && <TableCell>{p.admissionNo}</TableCell>}
                               <TableCell className="font-medium">
                                 {p.firstName} {p.lastName}
                               </TableCell>
@@ -685,70 +789,280 @@ function ReportsPage() {
         </TabsContent>
       </Tabs>
 
+      {/* Admin Report Format Settings Dialog */}
+      <Dialog open={formatDialogOpen} onOpenChange={setFormatDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+              <Sliders className="h-5 w-5 text-primary" />
+              Edit Report Format Settings
+            </DialogTitle>
+            <CardDescription>
+              Customize school headers, visible sections, signature blocks, and closing notices for report cards.
+            </CardDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-2">
+            {/* Header & Branding Section */}
+            <div className="space-y-4 border-b pb-4">
+              <h3 className="font-semibold text-sm flex items-center gap-1.5 text-primary">
+                <Building2 className="h-4 w-4" />
+                School Header & Branding
+              </h3>
+              <div className="grid grid-cols-1 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="headerTitle" className="text-xs font-semibold">School Name / Title</Label>
+                  <Input
+                    id="headerTitle"
+                    value={editFormat.headerTitle}
+                    onChange={(e) => setEditFormat({ ...editFormat, headerTitle: e.target.value })}
+                    placeholder="e.g. Little Stars Kindergarten"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="subtitle" className="text-xs font-semibold">Report Subtitle</Label>
+                  <Input
+                    id="subtitle"
+                    value={editFormat.subtitle}
+                    onChange={(e) => setEditFormat({ ...editFormat, subtitle: e.target.value })}
+                    placeholder="e.g. Academic Performance Report Card"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="schoolAddress" className="text-xs font-semibold">Address & Contact Information</Label>
+                  <Input
+                    id="schoolAddress"
+                    value={editFormat.schoolAddress}
+                    onChange={(e) => setEditFormat({ ...editFormat, schoolAddress: e.target.value })}
+                    placeholder="e.g. P.O. Box 1234, Kampala, Uganda | Tel: +256 700 000 000"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Layout & Visibility Options */}
+            <div className="space-y-4 border-b pb-4">
+              <h3 className="font-semibold text-sm flex items-center gap-1.5 text-primary">
+                <Sliders className="h-4 w-4" />
+                Visible Content & Sections
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between border p-3 rounded-lg bg-muted/20">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-medium">Class Rank / Position</Label>
+                    <p className="text-xs text-muted-foreground">Display pupil's position in class</p>
+                  </div>
+                  <Switch
+                    checked={editFormat.showClassRank}
+                    onCheckedChange={(checked) => setEditFormat({ ...editFormat, showClassRank: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between border p-3 rounded-lg bg-muted/20">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-medium">Attendance Summary</Label>
+                    <p className="text-xs text-muted-foreground">Display total days present in term</p>
+                  </div>
+                  <Switch
+                    checked={editFormat.showAttendance}
+                    onCheckedChange={(checked) => setEditFormat({ ...editFormat, showAttendance: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between border p-3 rounded-lg bg-muted/20">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-medium">Teacher Comments</Label>
+                    <p className="text-xs text-muted-foreground">Include remarks per subject</p>
+                  </div>
+                  <Switch
+                    checked={editFormat.showTeacherComments}
+                    onCheckedChange={(checked) => setEditFormat({ ...editFormat, showTeacherComments: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between border p-3 rounded-lg bg-muted/20">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-medium">Principal Signature Line</Label>
+                    <p className="text-xs text-muted-foreground">Include signature & date line</p>
+                  </div>
+                  <Switch
+                    checked={editFormat.showPrincipalSignature}
+                    onCheckedChange={(checked) => setEditFormat({ ...editFormat, showPrincipalSignature: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between border p-3 rounded-lg bg-muted/20 sm:col-span-2">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-medium">School Stamp Box</Label>
+                    <p className="text-xs text-muted-foreground">Reserve dedicated space for physical school stamp</p>
+                  </div>
+                  <Switch
+                    checked={editFormat.showStampBox}
+                    onCheckedChange={(checked) => setEditFormat({ ...editFormat, showStampBox: checked })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Signatures & Footer Notice */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-sm flex items-center gap-1.5 text-primary">
+                <FileText className="h-4 w-4" />
+                Signatures & Closing Remarks
+              </h3>
+              <div className="space-y-3">
+                {editFormat.showPrincipalSignature && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="principalTitle" className="text-xs font-semibold">Signature Line Title</Label>
+                    <Input
+                      id="principalTitle"
+                      value={editFormat.principalTitle}
+                      onChange={(e) => setEditFormat({ ...editFormat, principalTitle: e.target.value })}
+                      placeholder="e.g. Headteacher's Signature & Date"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="footerRemarks" className="text-xs font-semibold">Closing Notice / Next Term Remarks</Label>
+                  <Textarea
+                    id="footerRemarks"
+                    rows={2}
+                    value={editFormat.footerRemarks}
+                    onChange={(e) => setEditFormat({ ...editFormat, footerRemarks: e.target.value })}
+                    placeholder="e.g. Next term begins on Monday 15th September. All fees must be cleared."
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between items-center pt-4 border-t">
+            <Button variant="ghost" size="sm" onClick={handleResetFormat} className="text-muted-foreground hover:text-destructive">
+              <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+              Reset to Default
+            </Button>
+            <div className="flex gap-2 w-full sm:w-auto justify-end">
+              <Button variant="outline" onClick={() => setFormatDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveFormat}>
+                <Check className="h-4 w-4 mr-1.5" />
+                Save Format Changes
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Report Card Preview Dialog */}
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+          <DialogHeader className="flex flex-row items-center justify-between pb-2 border-b">
             <DialogTitle>Report Card Preview</DialogTitle>
+            {isAdmin && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setEditFormat(formatConfig);
+                  setFormatDialogOpen(true);
+                }}
+              >
+                <Settings className="h-3.5 w-3.5 mr-1" />
+                Format Settings
+              </Button>
+            )}
           </DialogHeader>
+
           {previewPupil && (
             <div className="space-y-4 py-4">
               {/* Header */}
-              <div className="text-center border-b pb-4">
-                <h2 className="text-2xl font-bold">Little Stars Kindergarten</h2>
-                <p className="text-muted-foreground">Academic Report Card</p>
+              <div className="text-center border-b pb-4 space-y-1">
+                <h2 className="text-2xl font-bold tracking-tight">
+                  {currentSchoolObj?.name || formatConfig.headerTitle}
+                </h2>
+                <p className="text-sm font-semibold text-primary">{formatConfig.subtitle}</p>
+                {formatConfig.schoolAddress && (
+                  <p className="text-xs text-muted-foreground">{formatConfig.schoolAddress}</p>
+                )}
               </div>
 
               {/* Pupil Info */}
-              <div className="grid grid-cols-2 gap-4 bg-muted/50 p-4 rounded-lg">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-muted/50 p-4 rounded-lg text-sm">
                 <div>
-                  <Label className="text-muted-foreground">Pupil Name</Label>
+                  <Label className="text-xs text-muted-foreground">Pupil Name</Label>
                   <p className="font-semibold">
                     {previewPupil.firstName} {previewPupil.lastName}
                   </p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Admission No</Label>
-                  <p className="font-semibold">{previewPupil.admissionNo}</p>
+                  <Label className="text-xs text-muted-foreground">Admission No</Label>
+                  <p className="font-semibold font-mono">{previewPupil.admissionNo}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Class</Label>
+                  <Label className="text-xs text-muted-foreground">Class</Label>
                   <p className="font-semibold">
-                    {classes.find((c) => c.id === previewPupil.classId)?.name}
+                    {classes.find((c) => c.id === previewPupil.classId)?.name || "-"}
                   </p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Term</Label>
+                  <Label className="text-xs text-muted-foreground">Term / Period</Label>
                   <p className="font-semibold">
                     {selectedTerm} {selectedYear}
                   </p>
                 </div>
+
+                {formatConfig.showClassRank && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Class Rank</Label>
+                    <p className="font-semibold text-primary">{getPupilClassRank(previewPupil.id)}</p>
+                  </div>
+                )}
+
+                {formatConfig.showAttendance && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Attendance</Label>
+                    <p className="font-semibold">
+                      {attendance.filter((a) => a.pupilId === previewPupil.id).length} Days Present
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Marks Table */}
               <div>
-                <h3 className="font-semibold mb-2">Academic Performance</h3>
-                <Table>
-                  <TableHeader>
+                <h3 className="font-semibold text-sm mb-2">Academic Performance</h3>
+                <Table className="border text-xs">
+                  <TableHeader className="bg-muted/60">
                     <TableRow>
-                      <TableHead>Subject</TableHead>
-                      <TableHead>Score</TableHead>
-                      <TableHead>Grade</TableHead>
-                      <TableHead>Teacher Comment</TableHead>
+                      <TableHead className="font-bold">Subject</TableHead>
+                      <TableHead className="font-bold">Score</TableHead>
+                      <TableHead className="font-bold">Grade</TableHead>
+                      {formatConfig.showTeacherComments && (
+                        <TableHead className="font-bold">Teacher Comment</TableHead>
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {previewPupil.marks.map((mark: any) => (
                       <TableRow key={mark.id}>
                         <TableCell className="font-medium">{mark.subject}</TableCell>
-                        <TableCell>
+                        <TableCell className="font-mono">
                           {mark.score}/{mark.maxScore} (
                           {((mark.score / mark.maxScore) * 100).toFixed(0)}%)
                         </TableCell>
                         <TableCell>
-                          <Badge className={getGradeColor(mark.grade || "")}>{mark.grade}</Badge>
+                          <Badge className={`${getGradeColor(mark.grade || "")} text-[11px] px-2 py-0.5`}>
+                            {mark.grade}
+                          </Badge>
                         </TableCell>
-                        <TableCell className="text-sm">{mark.teacherComment || "-"}</TableCell>
+                        {formatConfig.showTeacherComments && (
+                          <TableCell className="text-sm italic text-muted-foreground">
+                            {mark.teacherComment || "-"}
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -759,15 +1073,15 @@ function ReportsPage() {
               <div className="bg-primary/10 p-4 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-muted-foreground">Overall Average</Label>
+                    <Label className="text-xs text-muted-foreground">Overall Average</Label>
                     <p className="text-2xl font-bold">
                       {calculateAverage(previewPupil.id)?.toFixed(1)}%
                     </p>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Overall Grade</Label>
+                    <Label className="text-xs text-muted-foreground">Overall Grade</Label>
                     <Badge
-                      className={`text-xl px-4 py-2 ${getGradeColor(
+                      className={`text-xl px-4 py-1.5 ${getGradeColor(
                         getOverallGrade(calculateAverage(previewPupil.id)),
                       )}`}
                     >
@@ -776,6 +1090,36 @@ function ReportsPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Signatures & Stamp Block */}
+              {(formatConfig.showPrincipalSignature || formatConfig.showStampBox) && (
+                <div className="grid grid-cols-2 gap-6 pt-4 border-t mt-4">
+                  {formatConfig.showPrincipalSignature ? (
+                    <div className="flex flex-col justify-end pt-8">
+                      <div className="border-b border-foreground/40 mb-1 w-full" />
+                      <p className="text-xs font-semibold text-center text-muted-foreground">
+                        {formatConfig.principalTitle}
+                      </p>
+                    </div>
+                  ) : <div />}
+
+                  {formatConfig.showStampBox && (
+                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/40 rounded-lg p-3 h-20 bg-muted/20">
+                      <p className="text-[10px] font-semibold text-muted-foreground tracking-wider uppercase">
+                        Official School Stamp
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Footer Remarks */}
+              {formatConfig.footerRemarks && (
+                <div className="p-3 bg-muted/40 rounded-md border text-xs text-muted-foreground">
+                  <span className="font-semibold text-foreground mr-1">Note:</span>
+                  {formatConfig.footerRemarks}
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
@@ -796,7 +1140,7 @@ function ReportsPage() {
           <DialogHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b gap-3">
             <div>
               <DialogTitle className="text-xl font-bold">
-                {currentSchoolObj?.name || "Little Stars Kindergarten"} - Pupil Marks Sheet
+                {currentSchoolObj?.name || formatConfig.headerTitle} - Pupil Marks Sheet
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-1">
                 Class: <span className="font-semibold text-foreground">{currentClassObj?.name || "All Classes"}</span> | Term: <span className="font-semibold text-foreground">{selectedTerm}</span> | Year: <span className="font-semibold text-foreground">{selectedYear}</span>
@@ -865,44 +1209,44 @@ function ReportsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Label className="text-xs font-semibold">Display Format:</Label>
-              <div className="flex bg-background border rounded-lg p-0.5 text-xs font-medium">
-                <button
-                  type="button"
-                  className={`px-3 py-1 rounded-md transition ${
-                    sheetDisplayMode === "score"
-                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  onClick={() => setSheetDisplayMode("score")}
-                >
-                  Score (e.g. 85/100)
-                </button>
-                <button
-                  type="button"
-                  className={`px-3 py-1 rounded-md transition ${
-                    sheetDisplayMode === "percentage"
-                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  onClick={() => setSheetDisplayMode("percentage")}
-                >
-                  Percentage (%)
-                </button>
-                <button
-                  type="button"
-                  className={`px-3 py-1 rounded-md transition ${
-                    sheetDisplayMode === "grade"
-                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  onClick={() => setSheetDisplayMode("grade")}
-                >
-                  Grade (A-E)
-                </button>
+                <div className="flex bg-background border rounded-lg p-0.5 text-xs font-medium">
+                  <button
+                    type="button"
+                    className={`px-3 py-1 rounded-md transition ${
+                      sheetDisplayMode === "score"
+                        ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setSheetDisplayMode("score")}
+                  >
+                    Score (e.g. 85/100)
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-1 rounded-md transition ${
+                      sheetDisplayMode === "percentage"
+                        ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setSheetDisplayMode("percentage")}
+                  >
+                    Percentage (%)
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-1 rounded-md transition ${
+                      sheetDisplayMode === "grade"
+                        ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setSheetDisplayMode("grade")}
+                  >
+                    Grade (A-E)
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground">
               Total Pupils: <span className="font-semibold text-foreground">{selectedClassPupils.length}</span>
             </div>
           </div>
@@ -912,7 +1256,7 @@ function ReportsPage() {
               <TableHeader className="bg-muted/70 sticky top-0">
                 <TableRow>
                   <TableHead className="w-10 text-center font-bold">#</TableHead>
-                  <TableHead className="w-28 font-bold">Admission No</TableHead>
+                  {isAdmin && <TableHead className="w-28 font-bold">Admission No</TableHead>}
                   <TableHead className="min-w-[140px] font-bold">Pupil Name</TableHead>
                   {subjects.map((s) => (
                     <TableHead key={s} className="text-center min-w-[75px] font-bold">
@@ -929,7 +1273,9 @@ function ReportsPage() {
                     <TableCell className="text-center font-medium text-muted-foreground">
                       {idx + 1}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">{row.pupil.admissionNo}</TableCell>
+                    {isAdmin && (
+                      <TableCell className="font-mono text-xs">{row.pupil.admissionNo}</TableCell>
+                    )}
                     <TableCell className="font-semibold">
                       {row.pupil.firstName} {row.pupil.lastName}
                     </TableCell>

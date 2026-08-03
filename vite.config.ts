@@ -27,6 +27,11 @@ export default defineConfig(({ mode }) => {
     react(),
     nitro({
       preset: "vercel",
+      publicAssets: [
+        {
+          dir: "public",
+        },
+      ],
     }),
     {
       name: "mock-vercel-turborepo-summary",

@@ -13,19 +13,14 @@ import {
  * Only visible to users with super_admin role
  */
 export function SchoolSelector() {
-  const { currentUser, schools, setSchoolContext } = useStore();
+  const { currentUser, schools, setSchoolContext, selectedSchoolId } = useStore();
 
   // Only show for super_admin role
   if (currentUser?.role !== "super_admin") {
     return null;
   }
 
-  // Get the school store state directly for selected school ID
-  // Since the store doesn't expose it, we'll use session storage
-  const selectedSchoolId =
-    typeof window !== "undefined"
-      ? sessionStorage.getItem("kinder.selectedSchoolId") || "all"
-      : "all";
+  const currentSchoolId = selectedSchoolId || "all";
 
   const handleSchoolChange = (value: string) => {
     if (value === "all") {
@@ -36,14 +31,14 @@ export function SchoolSelector() {
   };
 
   // Find the selected school to display its name
-  const selectedSchool = schools.find((s) => s.id === selectedSchoolId);
+  const selectedSchool = schools.find((s) => s.id === currentSchoolId);
   const displayValue =
-    selectedSchoolId === "all" ? "All Schools" : selectedSchool?.name || "All Schools";
+    currentSchoolId === "all" ? "All Schools" : selectedSchool?.name || "All Schools";
 
   return (
     <div className="px-3 py-2">
       <label className="text-xs font-medium text-muted-foreground mb-1 block">School Context</label>
-      <Select value={selectedSchoolId} onValueChange={handleSchoolChange}>
+      <Select value={currentSchoolId} onValueChange={handleSchoolChange}>
         <SelectTrigger className="w-full">
           <SelectValue placeholder={displayValue}>{displayValue}</SelectValue>
         </SelectTrigger>

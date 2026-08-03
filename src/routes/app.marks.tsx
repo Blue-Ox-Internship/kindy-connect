@@ -45,6 +45,7 @@ function MarksPage() {
     useStore();
   const isTeacher = currentUser?.role === "teacher";
   const isSchoolAdmin = currentUser?.role === "admin";
+  const isAdmin = currentUser?.role === "super_admin" || currentUser?.role === "admin";
   const canEditMarks = isTeacher || isSchoolAdmin;
 
   // Super Admin School filtering
@@ -416,7 +417,7 @@ function MarksPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Pupil</TableHead>
-                <TableHead>Admission No</TableHead>
+                {isAdmin && <TableHead>Admission No</TableHead>}
                 <TableHead>Score</TableHead>
                 <TableHead>Grade</TableHead>
                 <TableHead>Comment</TableHead>
@@ -431,7 +432,7 @@ function MarksPage() {
                     <TableCell className="font-medium">
                       {p.firstName} {p.lastName}
                     </TableCell>
-                    <TableCell>{p.admissionNo}</TableCell>
+                    {isAdmin && <TableCell>{p.admissionNo}</TableCell>}
                     <TableCell>{mark ? `${mark.score}/${mark.maxScore}` : "-"}</TableCell>
                     <TableCell>
                       {mark ? (
@@ -647,7 +648,7 @@ function MarksPage() {
               <TableHeader className="bg-muted/70 sticky top-0">
                 <TableRow>
                   <TableHead className="w-10 text-center font-bold">#</TableHead>
-                  <TableHead className="w-28 font-bold">Admission No</TableHead>
+                  {isAdmin && <TableHead className="w-28 font-bold">Admission No</TableHead>}
                   <TableHead className="min-w-[140px] font-bold">Pupil Name</TableHead>
                   {subjects.map((s) => (
                     <TableHead key={s} className="text-center min-w-[75px] font-bold">
@@ -664,7 +665,9 @@ function MarksPage() {
                     <TableCell className="text-center font-medium text-muted-foreground">
                       {idx + 1}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">{row.pupil.admissionNo}</TableCell>
+                    {isAdmin && (
+                      <TableCell className="font-mono text-xs">{row.pupil.admissionNo}</TableCell>
+                    )}
                     <TableCell className="font-semibold">
                       {row.pupil.firstName} {row.pupil.lastName}
                     </TableCell>

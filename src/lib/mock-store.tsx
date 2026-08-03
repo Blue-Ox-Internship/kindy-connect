@@ -60,6 +60,7 @@ export type {
 
 interface Store {
   currentUser: User | null;
+  selectedSchoolId: string | null;
   users: User[];
   pupils: Pupil[];
   parents: Parent[];
@@ -157,29 +158,34 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
   const [isPausedError, setIsPausedError] = useState(false);
   const [retryIn, setRetryIn] = useState(0); // seconds until next auto-retry
   const retryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [state, setState] = useState(() => {
-    let savedUserId: string | null = null;
-    let savedSchoolId: string | null = null;
-    if (typeof window !== "undefined") {
-      try {
-        savedUserId = localStorage.getItem(SESSION_KEY);
-        savedSchoolId = sessionStorage.getItem(SCHOOL_CONTEXT_KEY);
-      } catch {}
-    }
-    return {
-      currentUserId: savedUserId,
-      selectedSchoolId: savedSchoolId,
-      users: [] as User[],
-      pupils: [] as Pupil[],
-      parents: [] as Parent[],
-      classes: [] as ClassRoom[],
-      attendance: [] as Attendance[],
-      notifications: [] as Notification[],
-      audit: [] as AuditLog[],
-      marks: [] as Mark[],
-      schools: [] as School[],
-    };
-  });
+  const [state, setState] = useState(() => ({
+    currentUserId: null as string | null,
+    selectedSchoolId: null as string | null,
+    users: [] as User[],
+    pupils: [] as Pupil[],
+    parents: [] as Parent[],
+    classes: [] as ClassRoom[],
+    attendance: [] as Attendance[],
+    notifications: [] as Notification[],
+    audit: [] as AuditLog[],
+    marks: [] as Mark[],
+    schools: [] as School[],
+  }));
+
+  // Hydrate saved session on client post-mount to prevent SSR hydration mismatch (Error #418)
+  useEffect(() => {
+    try {
+      const savedUserId = localStorage.getItem(SESSION_KEY);
+      const savedSchoolId = sessionStorage.getItem(SCHOOL_CONTEXT_KEY);
+      if (savedUserId || savedSchoolId) {
+        setState((s) => ({
+          ...s,
+          ...(savedUserId ? { currentUserId: savedUserId } : {}),
+          ...(savedSchoolId ? { selectedSchoolId: savedSchoolId } : {}),
+        }));
+      }
+    } catch {}
+  }, []);
 
   // ── Auto-retry countdown timer ───────────────────────────────────────────────
   const startRetryCountdown = useCallback((seconds: number, onFire: () => void) => {
@@ -420,6 +426,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
 
   const store: Store = {
     currentUser,
+    selectedSchoolId: state.selectedSchoolId,
     users: filteredUsers,
     pupils: filteredPupils,
     parents: filteredParents,

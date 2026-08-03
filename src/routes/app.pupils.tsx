@@ -40,6 +40,7 @@ export const Route = createFileRoute("/app/pupils")({
 
 function PupilsPage() {
   const { currentUser, pupils, classes, parents, addPupil, updatePupil, deactivatePupil, schools } = useStore();
+  const isAdmin = currentUser?.role === "super_admin" || currentUser?.role === "admin";
   const [q, setQ] = useState("");
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>("all");
   const [superSchoolId, setSuperSchoolId] = useState<string>(schools[0]?.id ?? "");
@@ -416,7 +417,7 @@ function PupilsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Photo</TableHead>
-                <TableHead>Adm. No</TableHead>
+                {isAdmin && <TableHead>Adm. No</TableHead>}
                 <TableHead>Name</TableHead>
                 <TableHead>Class</TableHead>
                 <TableHead>Gender</TableHead>
@@ -442,7 +443,7 @@ function PupilsPage() {
                       </div>
                     )}
                   </TableCell>
-                  <TableCell className="font-mono text-xs">{p.admissionNo}</TableCell>
+                  {isAdmin && <TableCell className="font-mono text-xs">{p.admissionNo}</TableCell>}
                   <TableCell className="font-medium">
                     {p.firstName} {p.lastName}
                   </TableCell>
