@@ -109,7 +109,7 @@ function Landing() {
                   value={assignedId}
                   onChange={(e) => setAssignedId(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="kst-001"
+                  placeholder="KC001"
                   disabled={isLoading}
                 />
               </div>
