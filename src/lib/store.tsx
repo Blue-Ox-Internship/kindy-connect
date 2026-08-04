@@ -70,7 +70,7 @@ interface Store {
   audit: AuditLog[];
   marks: Mark[];
   schools: School[];
-  login: (id: string) => Promise<User | null>;
+  login: (id: string, password: string) => Promise<User | null>;
   logout: () => void;
   setSchoolContext: (schoolId: string | null) => void;
   registerUser: (data: {
@@ -78,7 +78,7 @@ interface Store {
     name: string;
     email: string;
     phone: string;
-    password?: string;
+    password: string;
     role: Role;
     schoolId?: string;
     newSchoolName?: string;
@@ -436,8 +436,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     marks: filteredMarks,
     schools: state.schools,
 
-    login: async (id) => {
-      const u = await loginUser({ data: { id } });
+    login: async (id, password) => {
+      const u = await loginUser({ data: { id, password } });
       if (u) {
         setState((s) => ({ ...s, currentUserId: u.id }));
       }

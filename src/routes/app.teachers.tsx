@@ -369,8 +369,10 @@ function TeachersPage() {
                     <Label htmlFor="create-pwd">Password</Label>
                     <Input
                       id="create-pwd"
+                      type="password"
                       value={form.password}
                       onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      autoComplete="new-password"
                     />
                   </div>
                 </div>

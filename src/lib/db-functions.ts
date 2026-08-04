@@ -216,13 +216,14 @@ export const getInitialData = createServerFn({ method: "GET" }).handler(async ()
 // 2. Authentication Functions
 // ----------------------------------------------------
 export const loginUser = createServerFn({ method: "POST" })
-  .validator((d: { id: string }) => d)
+  .validator((d: { id: string; password: string }) => d)
   .handler(async ({ data }) => {
-    const { id } = data;
+    const { id, password } = data;
     try {
       const results = await sql`
         SELECT * FROM users 
         WHERE id = ${id}
+          AND password = ${password}
       `;
       if (results.length === 0) return null;
       const user = toCamel<User>(results[0]);
@@ -238,6 +239,7 @@ export const registerUser = createServerFn({ method: "POST" })
   .validator(
     (
       d: Omit<User, "status" | "registeredAt"> & {
+        password: string;
         schoolId?: string;
         newSchoolName?: string;
         status?: "pending" | "verified" | "rejected";
@@ -248,8 +250,13 @@ export const registerUser = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const id = data.id.trim();
+    const password = data.password.trim();
     const status = data.status || (data.role === "admin" ? "verified" : "pending");
     const registeredAt = new Date().toISOString().slice(0, 10);
+
+    if (!password) {
+      throw new Error("Password is required");
+    }
 
     try {
       // Check for existing ID
@@ -296,7 +303,7 @@ export const registerUser = createServerFn({ method: "POST" })
           role: data.role,
           status,
           registeredAt,
-          password: data.password,
+          password,
           schoolId: finalSchoolId || null,
           subjects: data.subjects || null,
           photo: data.photo || null,

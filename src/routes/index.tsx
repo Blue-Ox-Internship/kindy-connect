@@ -1,47 +1,48 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useStore } from "@/lib/store";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import type { LucideIcon } from "lucide-react";
 import {
-  GraduationCap,
-  Bell,
-  ShieldCheck,
-  BarChart3,
   ArrowRight,
-  Clock,
+  BarChart3,
+  BellRing,
+  CalendarClock,
+  GraduationCap,
+  LineChart,
+  ShieldCheck,
+  Users,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/")(
-  {
-    head: () => ({
-      meta: [
-        { title: "Kindy Connect — Kindergarten Management Platform" },
-        {
-          name: "description",
-          content:
-            "Streamline attendance tracking, parent communication, and school management for kindergartens. Real-time SMS & email notifications.",
-        },
-        { property: "og:title", content: "Kindy Connect" },
-        {
-          property: "og:description",
-          content: "Kindergarten management and parent communication platform.",
-        },
-      ],
-    }),
-    component: Landing,
-  },
-);
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useStore } from "@/lib/store";
 
-/* ─────────────────────────── Landing Page ─────────────────────────── */
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Kindy Connect - Kindergarten Management Platform" },
+      {
+        name: "description",
+        content:
+          "Streamline attendance tracking, parent communication, and school management for kindergartens.",
+      },
+      { property: "og:title", content: "Kindy Connect" },
+      {
+        property: "og:description",
+        content: "Kindergarten management and parent communication platform.",
+      },
+    ],
+  }),
+  component: Landing,
+});
 
 function Landing() {
   const { currentUser, login } = useStore();
   const navigate = useNavigate();
   const [assignedId, setAssignedId] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const loginRef = useRef<HTMLDivElement>(null);
 
@@ -51,15 +52,16 @@ function Landing() {
 
   const doLogin = async () => {
     if (!assignedId.trim()) return toast.error("Enter your assigned ID");
+    if (!password.trim()) return toast.error("Enter your password");
     setIsLoading(true);
     try {
-      const u = await login(assignedId.trim());
-      if (!u) {
-        toast.error("Invalid ID or account not verified");
+      const user = await login(assignedId.trim(), password);
+      if (!user) {
+        toast.error("Invalid ID or password, or account not verified");
         setIsLoading(false);
         return;
       }
-      toast.success(`Welcome, ${u.name.split(" ")[0]}`);
+      toast.success(`Welcome, ${user.name.split(" ")[0]}`);
       navigate({ to: "/app/dashboard" });
     } catch (error) {
       console.error("Login error:", error);
@@ -68,10 +70,8 @@ function Landing() {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !isLoading) {
-      doLogin();
-    }
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" && !isLoading) doLogin();
   };
 
   const scrollToLogin = () => {
@@ -79,196 +79,190 @@ function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* ── Navigation ─────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-lg">
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute left-[-8rem] top-[-6rem] h-[24rem] w-[24rem] rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute right-[-10rem] top-[12rem] h-[28rem] w-[28rem] rounded-full bg-accent/15 blur-3xl" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.9),transparent_55%)] dark:bg-none" />
+      </div>
+
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
               <GraduationCap className="h-5 w-5" />
             </div>
-            <span className="text-lg font-semibold tracking-tight">
-              Kindy Connect
-            </span>
+            <div>
+              <div className="text-sm font-semibold tracking-wide text-foreground">
+                Kindy Connect
+              </div>
+              <div className="text-xs text-muted-foreground">School operations, without the noise</div>
+            </div>
           </div>
-          <Button size="sm" onClick={scrollToLogin}>
-            Sign in
-          </Button>
+
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={scrollToLogin}>
+              Sign in
+            </Button>
+            <Button onClick={scrollToLogin} className="gap-2">
+              Open app <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </header>
 
-      {/* ── Hero ────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden">
-        {/* Subtle background gradient */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-primary/[0.04] via-transparent to-transparent" />
-
-        <div className="mx-auto max-w-6xl px-6 pb-16 pt-20 lg:pt-28 lg:pb-24">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-sm">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-              Trusted by kindergartens across East Africa
+      <main>
+        <section className="mx-auto grid max-w-6xl gap-10 px-6 pb-16 pt-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-12 lg:pb-24 lg:pt-20">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/80 px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur">
+              <span className="h-2 w-2 rounded-full bg-primary" />
+              Built for attendance, parent updates, and school reporting
             </div>
 
-            <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-              Your kindergarten,{" "}
-              <span className="text-primary">connected.</span>
+            <h1 className="mt-6 text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+              A calmer way to run your kindergarten.
             </h1>
 
-            <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground leading-relaxed">
-              Track every arrival and departure. Notify parents instantly via SMS and email.
-              Manage classes, marks, and reports — all in one place.
+            <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
+              Track arrivals, send parent updates, manage classes, and keep reports in one clean
+              workflow. Kindy Connect stays out of the way while the day keeps moving.
             </p>
 
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-              <Button size="lg" onClick={scrollToLogin} className="gap-2 px-8">
-                Get started <ArrowRight className="h-4 w-4" />
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Button size="lg" onClick={scrollToLogin} className="gap-2">
+                Sign in to your account <ArrowRight className="h-4 w-4" />
               </Button>
               <Button size="lg" variant="outline" onClick={scrollToLogin}>
-                Sign in to your account
+                Use assigned ID
               </Button>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ── Features ────────────────────────────────────────────────── */}
-      <section className="border-t bg-card/50">
-        <div className="mx-auto max-w-6xl px-6 py-20 lg:py-24">
-          <div className="mx-auto max-w-2xl text-center mb-14">
-            <h2 className="text-3xl font-bold tracking-tight">
-              Everything you need to run a kindergarten
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              From attendance to report cards — streamline your daily operations.
-            </p>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <FeatureCard
-              icon={Clock}
-              title="Attendance tracking"
-              description="Record arrivals and departures with timestamps, transport details, and operator info."
-            />
-            <FeatureCard
-              icon={Bell}
-              title="Parent notifications"
-              description="Automatic SMS and email alerts when pupils arrive or leave school."
-            />
-            <FeatureCard
-              icon={ShieldCheck}
-              title="Role-based access"
-              description="Separate dashboards for super admins, school staff, and teachers."
-            />
-            <FeatureCard
-              icon={BarChart3}
-              title="Reports & marks"
-              description="Generate printable report cards with academic performance and attendance data."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ── Trust / Stats ───────────────────────────────────────────── */}
-      <section className="border-t">
-        <div className="mx-auto max-w-6xl px-6 py-16 lg:py-20">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            <StatBlock value="100%" label="Uptime" />
-            <StatBlock value="Real-time" label="Parent alerts" />
-            <StatBlock value="Secure" label="Role-based access" />
-            <StatBlock value="Free" label="To get started" />
-          </div>
-        </div>
-      </section>
-
-      {/* ── How it works ────────────────────────────────────────────── */}
-      <section className="border-t bg-card/50">
-        <div className="mx-auto max-w-6xl px-6 py-20 lg:py-24">
-          <div className="mx-auto max-w-2xl text-center mb-14">
-            <h2 className="text-3xl font-bold tracking-tight">
-              How it works
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Three simple steps to modernize your kindergarten management.
-            </p>
-          </div>
-
-          <div className="grid gap-8 lg:grid-cols-3">
-            <StepCard
-              number="01"
-              title="Set up your school"
-              description="Admin creates the school, adds classes, and registers teachers with unique login IDs."
-            />
-            <StepCard
-              number="02"
-              title="Enroll pupils & parents"
-              description="Add pupils to classes and link parent contact details for SMS and email notifications."
-            />
-            <StepCard
-              number="03"
-              title="Track & notify"
-              description="Teachers log arrivals and departures. Parents receive instant notifications."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ── Login Section ───────────────────────────────────────────── */}
-      <section ref={loginRef} className="border-t" id="login">
-        <div className="mx-auto max-w-6xl px-6 py-20 lg:py-24">
-          <div className="mx-auto max-w-md">
-            <div className="text-center mb-8">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-                <GraduationCap className="h-6 w-6" />
-              </div>
-              <h2 className="text-2xl font-bold tracking-tight">
-                Sign in to Kindy Connect
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Enter the ID assigned by your administrator.
-              </p>
+            <div className="mt-10 grid gap-4 sm:grid-cols-3">
+              <MiniMetric icon={CalendarClock} label="Daily attendance" value="Fast check-in" />
+              <MiniMetric icon={BellRing} label="Parent alerts" value="Instant updates" />
+              <MiniMetric icon={LineChart} label="Reports" value="Ready to print" />
             </div>
+          </div>
 
-            <Card className="border shadow-lg">
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-id">Assigned ID</Label>
-                    <Input
-                      id="login-id"
-                      value={assignedId}
-                      onChange={(e) => setAssignedId(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="e.g. KC001"
-                      disabled={isLoading}
-                      autoComplete="username"
-                    />
+          <div className="lg:justify-self-end">
+            <Card className="overflow-hidden border-border/70 bg-card/95 shadow-[0_30px_80px_-35px_rgba(0,0,0,0.35)]">
+              <CardHeader className="space-y-2 border-b border-border/60 bg-muted/35 px-6 py-5">
+                <CardTitle className="text-lg">School access</CardTitle>
+                <CardDescription>
+                  Use the ID and password from your administrator to open your dashboard.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5 p-6">
+                <div className="rounded-2xl border border-border/70 bg-background p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-sm font-medium text-foreground">Today at a glance</div>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Attendance, notifications, and parent records in one place.
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-primary/10 p-3 text-primary">
+                      <ShieldCheck className="h-5 w-5" />
+                    </div>
                   </div>
-                  <Button
-                    className="w-full"
-                    onClick={doLogin}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Signing in…" : "Sign in"}
-                  </Button>
-                  <p className="text-center text-xs text-muted-foreground">
-                    Don't have an ID? Contact your school administrator.
-                  </p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <StatusChip label="Checked in" value="128" />
+                    <StatusChip label="Alerts sent" value="46" />
+                    <StatusChip label="Reports ready" value="9" />
+                  </div>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="login-id">Assigned ID</Label>
+                  <Input
+                    id="login-id"
+                    value={assignedId}
+                    onChange={(event) => setAssignedId(event.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="e.g. KC001"
+                    disabled={isLoading}
+                    autoComplete="username"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Password</Label>
+                  <Input
+                    id="login-password"
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Enter your password"
+                    disabled={isLoading}
+                    autoComplete="current-password"
+                  />
+                </div>
+
+                <Button className="w-full" onClick={doLogin} disabled={isLoading}>
+                  {isLoading ? "Signing in..." : "Sign in"}
+                </Button>
+
+                <p className="text-center text-xs text-muted-foreground">
+                  Don&apos;t have an ID? Ask your school administrator.
+                </p>
               </CardContent>
             </Card>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── Footer ──────────────────────────────────────────────────── */}
-      <footer className="border-t bg-card/50">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 sm:flex-row">
-          <div className="flex items-center gap-2">
+        <section className="border-y border-border/60 bg-card/40">
+          <div className="mx-auto max-w-6xl px-6 py-16 lg:py-20">
+            <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+              <div className="max-w-xl">
+                <p className="text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">
+                  What it handles
+                </p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+                  The essentials, arranged for real school work.
+                </h2>
+                <p className="mt-4 leading-7 text-muted-foreground">
+                  The goal is not more screens. It is fewer interruptions, clearer records, and less
+                  back-and-forth between staff and parents.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <FeatureCard
+                  icon={Users}
+                  title="Classes and pupils"
+                  description="Keep classrooms, pupil records, and parent contacts in a single source of truth."
+                />
+                <FeatureCard
+                  icon={BellRing}
+                  title="Parent communication"
+                  description="Send important updates without switching tools or duplicating the same message."
+                />
+                <FeatureCard
+                  icon={BarChart3}
+                  title="Marks and reporting"
+                  description="Prepare clear report cards and summaries when you need them."
+                />
+                <FeatureCard
+                  icon={ShieldCheck}
+                  title="Role-based access"
+                  description="Give each staff member the access they need and nothing more."
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-border/60 bg-card/35">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 px-6 py-8 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2 text-sm font-medium">
             <GraduationCap className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">Kindy Connect</span>
+            Kindy Connect
           </div>
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Kindy Connect. Built for kindergartens.
+            {new Date().getFullYear()} Kindy Connect. Built for schools that want clarity, not
+            clutter.
           </p>
         </div>
       </footer>
@@ -276,59 +270,55 @@ function Landing() {
   );
 }
 
-/* ─────────────────────── Sub-components ───────────────────────────── */
-
 function FeatureCard({
   icon: Icon,
   title,
   description,
 }: {
-  icon: any;
+  icon: LucideIcon;
   title: string;
   description: string;
 }) {
   return (
-    <div className="group rounded-2xl border bg-card p-6 transition-all hover:shadow-md hover:border-primary/30">
-      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+    <div className="group rounded-2xl border border-border/70 bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg">
+      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
         <Icon className="h-5 w-5" />
       </div>
-      <h3 className="font-semibold">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        {description}
-      </p>
+      <h3 className="text-base font-semibold tracking-tight">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
     </div>
   );
 }
 
-function StatBlock({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="text-center">
-      <div className="text-3xl font-bold tracking-tight text-primary">
-        {value}
-      </div>
-      <div className="mt-1 text-sm text-muted-foreground">{label}</div>
-    </div>
-  );
-}
-
-function StepCard({
-  number,
-  title,
-  description,
+function MiniMetric({
+  icon: Icon,
+  label,
+  value,
 }: {
-  number: string;
-  title: string;
-  description: string;
+  icon: LucideIcon;
+  label: string;
+  value: string;
 }) {
   return (
-    <div className="relative rounded-2xl border bg-card p-6">
-      <span className="mb-3 inline-block text-3xl font-bold text-primary/20">
-        {number}
-      </span>
-      <h3 className="text-lg font-semibold">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        {description}
-      </p>
+    <div className="rounded-2xl border border-border/70 bg-card/70 p-4 shadow-sm backdrop-blur">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{label}</div>
+          <div className="mt-2 text-sm font-semibold text-foreground">{value}</div>
+        </div>
+        <div className="rounded-xl bg-muted p-2 text-primary">
+          <Icon className="h-4 w-4" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatusChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-muted/35 px-3 py-2">
+      <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-foreground">{value}</div>
     </div>
   );
 }
