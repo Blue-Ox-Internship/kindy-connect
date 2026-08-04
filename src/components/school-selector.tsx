@@ -1,4 +1,4 @@
-import { useStore } from "@/lib/mock-store";
+import { useStore } from "@/lib/store";
 import {
   Select,
   SelectContent,

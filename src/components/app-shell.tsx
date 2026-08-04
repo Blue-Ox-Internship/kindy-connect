@@ -12,7 +12,7 @@ import {
   School,
   Building2,
 } from "lucide-react";
-import { useStore } from "@/lib/mock-store";
+import { useStore } from "@/lib/store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";

@@ -71,7 +71,6 @@ interface Store {
   marks: Mark[];
   schools: School[];
   login: (id: string) => Promise<User | null>;
-  loginAs: (role: Role) => Promise<void>;
   logout: () => void;
   setSchoolContext: (schoolId: string | null) => void;
   registerUser: (data: {
@@ -152,7 +151,7 @@ function classifyDbError(err: any): { isPaused: boolean; message: string } {
   return { isPaused, message: msg };
 }
 
-export function MockStoreProvider({ children }: { children: ReactNode }) {
+export function StoreProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isPausedError, setIsPausedError] = useState(false);
@@ -445,12 +444,7 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
       return u;
     },
 
-    loginAs: async (role) => {
-      const u = state.users.find((x: User) => x.role === role && x.status === "verified");
-      if (u) {
-        setState((s) => ({ ...s, currentUserId: u.id }));
-      }
-    },
+
 
     logout: () => {
       setState((s) => ({ ...s, currentUserId: null, selectedSchoolId: null }));
@@ -1173,6 +1167,6 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
 
 export function useStore() {
   const ctx = useContext(Ctx);
-  if (!ctx) throw new Error("useStore must be used within MockStoreProvider");
+  if (!ctx) throw new Error("useStore must be used within StoreProvider");
   return ctx;
 }
