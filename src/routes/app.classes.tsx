@@ -26,7 +26,7 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/classes")({
-  head: () => ({ meta: [{ title: "Classes - Little Stars" }] }),
+  head: () => ({ meta: [{ title: "Classes - Kindy Connect" }] }),
   component: ClassesPage,
 });
 

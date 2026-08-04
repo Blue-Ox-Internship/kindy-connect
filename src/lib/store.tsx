@@ -1118,13 +1118,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           <div className="relative">
             {/* Outer pulsing ring */}
             <div
-              className="absolute inset-0 rounded-3xl bg-primary/20 animate-ping"
+              className="absolute inset-0 rounded-2xl bg-primary/20 animate-ping"
               style={{ animationDuration: "1.5s" }}
             />
             {/* Middle ring */}
-            <div className="absolute -inset-2 rounded-[28px] bg-primary/10 animate-pulse" />
+            <div className="absolute -inset-2 rounded-[20px] bg-primary/10 animate-pulse" />
             {/* Icon container */}
-            <div className="relative h-16 w-16 rounded-3xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
+            <div className="relative h-16 w-16 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
               <svg
                 className="h-8 w-8 text-primary-foreground"
                 fill="none"
@@ -1135,7 +1135,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
+                  d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5"
                 />
               </svg>
             </div>
@@ -1143,7 +1143,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
           {/* Text */}
           <div className="text-center space-y-1">
-            <p className="text-base font-semibold text-foreground">Little Stars</p>
+            <p className="text-base font-semibold text-foreground">Kindy Connect</p>
             <p className="text-sm text-muted-foreground animate-pulse">Connecting to database…</p>
           </div>
 

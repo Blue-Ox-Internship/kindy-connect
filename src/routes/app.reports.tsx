@@ -48,7 +48,7 @@ import { useState, useMemo, useEffect } from "react";
 import { downloadCSV } from "@/lib/export-utils";
 
 export const Route = createFileRoute("/app/reports")({
-  head: () => ({ meta: [{ title: "Reports - Little Stars" }] }),
+  head: () => ({ meta: [{ title: "Reports - Kindy Connect" }] }),
   component: ReportsPage,
 });
 
@@ -66,9 +66,9 @@ interface ReportFormatConfig {
 }
 
 const DEFAULT_REPORT_FORMAT: ReportFormatConfig = {
-  headerTitle: "Little Stars Kindergarten",
+  headerTitle: "Kindy Connect",
   subtitle: "Academic Performance Report Card",
-  schoolAddress: "P.O. Box 1234, Kampala, Uganda | Tel: +256 700 000 000 | info@littlestars.ac.ug",
+  schoolAddress: "P.O. Box 1234, Kampala, Uganda | Tel: +256 700 000 000 | info@kindyconnect.com",
   showAttendance: true,
   showTeacherComments: true,
   showPrincipalSignature: true,
@@ -816,7 +816,7 @@ function ReportsPage() {
                     id="headerTitle"
                     value={editFormat.headerTitle}
                     onChange={(e) => setEditFormat({ ...editFormat, headerTitle: e.target.value })}
-                    placeholder="e.g. Little Stars Kindergarten"
+                    placeholder="e.g. Sunrise Kindergarten"
                   />
                 </div>
                 <div className="space-y-1.5">

@@ -26,7 +26,7 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/schools")({
-  head: () => ({ meta: [{ title: "Schools - Little Stars Admin" }] }),
+  head: () => ({ meta: [{ title: "Schools - Kindy Connect Admin" }] }),
   component: SchoolsPage,
 });
 
@@ -194,7 +194,7 @@ function SchoolsPage() {
                       id="name"
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      placeholder="e.g. Little Stars Kindergarten"
+                      placeholder="e.g. Sunrise Kindergarten"
                     />
                   </div>
                   <div>

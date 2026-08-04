@@ -72,7 +72,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         <div className="flex items-center gap-2 px-5 py-5 border-b">
           <div>
             <div className="font-semibold leading-tight truncate max-w-[200px]">
-              {isSuperAdmin ? "System Admin" : currentSchool?.name || "Little Stars"}
+              {isSuperAdmin ? "System Admin" : currentSchool?.name || "Kindy Connect"}
             </div>
             <div className="text-xs text-muted-foreground">
               {isSuperAdmin ? "Management Console" : "Kindergarten Section"}

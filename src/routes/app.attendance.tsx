@@ -34,7 +34,7 @@ import { Car, Info, Calendar, Users, CheckCircle, XCircle, Clock, Lock } from "l
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/app/attendance")({
-  head: () => ({ meta: [{ title: "Attendance - Little Stars" }] }),
+  head: () => ({ meta: [{ title: "Attendance - Kindy Connect" }] }),
   component: AttendancePage,
 });
 
