@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { sql, toCamel, toSnake } from "./db";
+import { sql, setRLSContext, toCamel, toSnake } from "./db";
 
 export interface School {
   id: string;
@@ -146,71 +146,84 @@ async function safeInsertAuditLog(
 // ----------------------------------------------------
 // 1. Get Initial Data
 // ----------------------------------------------------
-export const getInitialData = createServerFn({ method: "GET" }).handler(async () => {
-  try {
-    // ─── Run ALL queries in parallel ────────────────────────────────────────
-    // Previously sequential (8 awaits in a row). Now concurrent: total time =
-    // max(individual query times) instead of sum(individual query times).
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-    const cutoffDate = ninetyDaysAgo.toISOString().slice(0, 10);
+export const getInitialData = createServerFn({ method: "GET" })
+  .validator((d: { userId?: string } | undefined) => d ?? {})
+  .handler(async ({ data }) => {
+    const fetchInitialData = async (client: typeof sql) => {
+      // ─── Run ALL queries in parallel ────────────────────────────────────────
+      // Previously sequential (8 awaits in a row). Now concurrent: total time =
+      // max(individual query times) instead of sum(individual query times).
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+      const cutoffDate = ninetyDaysAgo.toISOString().slice(0, 10);
 
-    const [schools, users, classes, parents, pupilsRaw, pupilParents, attendance, notifications, audit, marks] =
-      await Promise.all([
-        sql`SELECT * FROM schools ORDER BY name ASC`,
-        sql`SELECT * FROM users ORDER BY registered_at DESC`,
-        sql`SELECT * FROM classes ORDER BY name ASC`,
-        sql`SELECT * FROM parents ORDER BY name ASC`,
-        sql`SELECT * FROM pupils ORDER BY first_name ASC, last_name ASC`,
-        sql`SELECT * FROM pupil_parents`,
-        sql`SELECT * FROM attendance WHERE date >= ${cutoffDate} ORDER BY date DESC, arrival DESC`,
-        sql`SELECT * FROM notifications ORDER BY timestamp DESC LIMIT 200`,
-        sql`SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 200`,
-        sql`SELECT * FROM marks ORDER BY recorded_at DESC LIMIT 2000`,
-      ]);
+      const [schools, users, classes, parents, pupilsRaw, pupilParents, attendance, notifications, audit, marks] =
+        await Promise.all([
+          client`SELECT * FROM schools ORDER BY name ASC`,
+          client`SELECT * FROM users ORDER BY registered_at DESC`,
+          client`SELECT * FROM classes ORDER BY name ASC`,
+          client`SELECT * FROM parents ORDER BY name ASC`,
+          client`SELECT * FROM pupils ORDER BY first_name ASC, last_name ASC`,
+          client`SELECT * FROM pupil_parents`,
+          client`SELECT * FROM attendance WHERE date >= ${cutoffDate} ORDER BY date DESC, arrival DESC`,
+          client`SELECT * FROM notifications ORDER BY timestamp DESC LIMIT 200`,
+          client`SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 200`,
+          client`SELECT * FROM marks ORDER BY recorded_at DESC LIMIT 2000`,
+        ]);
 
-    const parentMap: Record<string, string[]> = {};
-    for (const link of pupilParents as any[]) {
-      if (!parentMap[link.pupil_id]) {
-        parentMap[link.pupil_id] = [];
+      const parentMap: Record<string, string[]> = {};
+      for (const link of pupilParents as any[]) {
+        if (!parentMap[link.pupil_id]) {
+          parentMap[link.pupil_id] = [];
+        }
+        if (link.parent_id) {
+          parentMap[link.pupil_id].push(link.parent_id);
+        }
       }
-      if (link.parent_id) {
-        parentMap[link.pupil_id].push(link.parent_id);
+
+      const pupils = toCamel<Pupil[]>(pupilsRaw).map((p) => ({
+        ...p,
+        parentIds: parentMap[p.id] || [],
+      }));
+
+      return {
+        schools: toCamel<School[]>(schools),
+        users: toCamel<User[]>(users),
+        classes: toCamel<ClassRoom[]>(classes),
+        parents: toCamel<Parent[]>(parents),
+        pupils,
+        attendance: toCamel<Attendance[]>(attendance),
+        notifications: toCamel<Notification[]>(notifications),
+        audit: toCamel<AuditLog[]>(audit),
+        marks: toCamel<Mark[]>(marks),
+      };
+    };
+
+    try {
+      if (data?.userId) {
+        return await sql.begin(async (tx) => {
+          await setRLSContext(tx, data.userId!);
+          return fetchInitialData(tx as typeof sql);
+        });
       }
+
+      return await fetchInitialData(sql);
+    } catch (error: any) {
+      console.error("Error in getInitialData server function:", error);
+      return {
+        schools: [],
+        users: [],
+        classes: [],
+        parents: [],
+        pupils: [],
+        attendance: [],
+        notifications: [],
+        audit: [],
+        marks: [],
+        error: error?.message || "Failed to query database",
+      };
     }
-
-    const pupils = toCamel<Pupil[]>(pupilsRaw).map((p) => ({
-      ...p,
-      parentIds: parentMap[p.id] || [],
-    }));
-
-    return {
-      schools: toCamel<School[]>(schools),
-      users: toCamel<User[]>(users),
-      classes: toCamel<ClassRoom[]>(classes),
-      parents: toCamel<Parent[]>(parents),
-      pupils,
-      attendance: toCamel<Attendance[]>(attendance),
-      notifications: toCamel<Notification[]>(notifications),
-      audit: toCamel<AuditLog[]>(audit),
-      marks: toCamel<Mark[]>(marks),
-    };
-  } catch (error: any) {
-    console.error("Error in getInitialData server function:", error);
-    return {
-      schools: [],
-      users: [],
-      classes: [],
-      parents: [],
-      pupils: [],
-      attendance: [],
-      notifications: [],
-      audit: [],
-      marks: [],
-      error: error?.message || "Failed to query database",
-    };
-  }
-});
+  });
 
 // ----------------------------------------------------
 // 2. Authentication Functions

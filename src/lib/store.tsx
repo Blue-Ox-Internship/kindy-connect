@@ -225,7 +225,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }, 25000);
 
     try {
-      const data = (await getInitialData()) as any;
+      const data = (await getInitialData({ data: { userId: state.currentUserId ?? undefined } })) as any;
       if (data?.error) {
         throw new Error(data.error);
       }
@@ -258,7 +258,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (isPaused) startRetryCountdown(15, attemptLoad);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startRetryCountdown]);
+  }, [startRetryCountdown, state.currentUserId]);
 
   useEffect(() => {
     attemptLoad();
@@ -271,7 +271,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // Refresh function to reload data from database
   const refreshData = useCallback(async () => {
     try {
-      const data = await getInitialData();
+      const data = await getInitialData({ data: { userId: state.currentUserId ?? undefined } });
       setState((s) => ({
         ...s,
         schools: data.schools || [],
@@ -287,7 +287,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("Failed to refresh database data:", err);
     }
-  }, []);
+  }, [state.currentUserId]);
 
   // Sync user session to local storage
   useEffect(() => {
