@@ -137,10 +137,14 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
       <main className="flex-1 min-w-0">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 backdrop-blur px-6 py-4">
           <h1 className="text-2xl font-semibold">{title}</h1>
-          <div className="hidden sm:flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-4">
             <Badge variant="outline" className="capitalize">
               {currentUser.role.replace("_", " ")}
             </Badge>
+            <div className="hidden md:flex flex-col items-end text-right text-sm text-muted-foreground">
+              <a href="tel:0786951347" className="hover:underline">0786951347</a>
+              <a href="mailto:nobleahimbisibwe5@gmail.com" className="hover:underline">nobleahimbisibwe5@gmail.com</a>
+            </div>
           </div>
         </header>
         <div className="p-6">{children}</div>
