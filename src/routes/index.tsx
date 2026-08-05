@@ -289,9 +289,6 @@ function MiniMetric({
           <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{label}</div>
           <div className="mt-2 text-sm font-semibold text-foreground">{value}</div>
         </div>
-        <div className="rounded-xl bg-muted p-2 text-primary">
-          <Icon className="h-4 w-4" />
-        </div>
       </div>
     </div>
   );
