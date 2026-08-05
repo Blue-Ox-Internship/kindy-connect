@@ -145,7 +145,7 @@ function Landing() {
           </div>
 
           <div className="lg:justify-self-end">
-            <Card className="overflow-hidden border-border/70 bg-card/95 shadow-[0_30px_80px_-35px_rgba(0,0,0,0.35)]">
+            <Card ref={loginRef} className="overflow-hidden border-border/70 bg-card/95 shadow-[0_30px_80px_-35px_rgba(0,0,0,0.35)]">
               <CardHeader className="space-y-2 border-b border-border/60 bg-muted/35 px-6 py-5">
                 <CardTitle className="text-lg">School access</CardTitle>
                 <CardDescription>
@@ -153,24 +153,7 @@ function Landing() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5 p-6">
-                <div className="rounded-2xl border border-border/70 bg-background p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <div className="text-sm font-medium text-foreground">Today at a glance</div>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Attendance, notifications, and parent records in one place.
-                      </p>
-                    </div>
-                    <div className="rounded-xl bg-primary/10 p-3 text-primary">
-                      <ShieldCheck className="h-5 w-5" />
-                    </div>
-                  </div>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                    <StatusChip label="Checked in" value="128" />
-                    <StatusChip label="Alerts sent" value="46" />
-                    <StatusChip label="Reports ready" value="9" />
-                  </div>
-                </div>
+                {/* Removed the "Today at a glance" status chips per request */}
 
                 <div className="space-y-2">
                   <Label htmlFor="login-id">Assigned ID</Label>
@@ -305,9 +288,6 @@ function MiniMetric({
         <div>
           <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{label}</div>
           <div className="mt-2 text-sm font-semibold text-foreground">{value}</div>
-        </div>
-        <div className="rounded-xl bg-muted p-2 text-primary">
-          <Icon className="h-4 w-4" />
         </div>
       </div>
     </div>
