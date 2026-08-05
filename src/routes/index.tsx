@@ -163,7 +163,7 @@ function Landing() {
                     value={assignedId}
                     onChange={(event) => setAssignedId(event.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder=""
+                    placeholder="Enter assigned ID"
                     disabled={isLoading}
                     autoComplete="off"
                   />
