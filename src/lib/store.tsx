@@ -160,7 +160,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const IDLE_DEFAULT = 15 * 60 * 1000;
   const [isLocked, setIsLocked] = useState(() => {
     try {
-      return sessionStorage.getItem("kinder.locked") === "1";
+      const storedLocked = sessionStorage.getItem("kinder.locked");
+      const savedUserId = localStorage.getItem(SESSION_KEY);
+
+      if (storedLocked === "1") return true;
+      if (savedUserId) {
+        sessionStorage.setItem("kinder.locked", "1");
+        return true;
+      }
+      return false;
     } catch {
       return false;
     }
@@ -537,6 +545,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     logout: () => {
       setState((s) => ({ ...s, currentUserId: null, selectedSchoolId: null }));
+      setIsLocked(false);
+      try {
+        sessionStorage.removeItem("kinder.locked");
+      } catch {}
     },
 
     setSchoolContext: (schoolId: string | null) => {
