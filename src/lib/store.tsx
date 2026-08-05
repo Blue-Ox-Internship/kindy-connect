@@ -131,6 +131,10 @@ interface Store {
   updateClass: (id: string, data: Partial<Omit<ClassRoom, "id">>) => Promise<void>;
   deleteClass: (id: string) => Promise<void>;
   refreshData: () => Promise<void>;
+  isLocked: boolean;
+  lock: () => void;
+  unlock: (password: string) => Promise<boolean>;
+  idleTimeoutMs?: number;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -152,6 +156,17 @@ function classifyDbError(err: any): { isPaused: boolean; message: string } {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  // Idle timeout for auto-lock (default 15 minutes)
+  const IDLE_DEFAULT = 15 * 60 * 1000;
+  const [isLocked, setIsLocked] = useState(() => {
+    try {
+      return sessionStorage.getItem("kinder.locked") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const idleTimeoutMsRef = useRef<number>(IDLE_DEFAULT);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isPausedError, setIsPausedError] = useState(false);
@@ -299,6 +314,80 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     } catch {}
   }, [state.currentUserId]);
+
+  // ── Inactivity / Auto-lock logic ───────────────────────────────────────────
+  const clearIdleTimer = useCallback(() => {
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
+    }
+  }, []);
+
+  const startIdleTimer = useCallback(() => {
+    clearIdleTimer();
+    // Only start when a user is signed in
+    if (!state.currentUserId) return;
+    idleTimerRef.current = setTimeout(() => {
+      setIsLocked(true);
+      try {
+        sessionStorage.setItem("kinder.locked", "1");
+      } catch {}
+    }, idleTimeoutMsRef.current);
+  }, [clearIdleTimer, state.currentUserId]);
+
+  const onUserActivity = useCallback(() => {
+    // If locked, do not auto-unlock — require password
+    if (isLocked) return;
+    startIdleTimer();
+  }, [isLocked, startIdleTimer]);
+
+  useEffect(() => {
+    // Attach activity listeners on client
+    const ev = ["mousemove", "keydown", "mousedown", "touchstart", "click"] as const;
+    ev.forEach((e) => window.addEventListener(e, onUserActivity));
+    // Reset timer when visibility changes to visible
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") onUserActivity();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    // Start timer initially (only when user present)
+    startIdleTimer();
+
+    return () => {
+      ev.forEach((e) => window.removeEventListener(e, onUserActivity));
+      document.removeEventListener("visibilitychange", onVisibility);
+      clearIdleTimer();
+    };
+  }, [onUserActivity, startIdleTimer, clearIdleTimer]);
+
+  // lock/unlock helpers
+  const lock = useCallback(() => {
+    setIsLocked(true);
+    try {
+      sessionStorage.setItem("kinder.locked", "1");
+    } catch {}
+  }, []);
+
+  const unlock = useCallback(async (password: string) => {
+    // Validate password for current user id
+    if (!state.currentUserId) return false;
+    try {
+      const u = await loginUser({ data: { id: state.currentUserId, password } });
+      if (u) {
+        setIsLocked(false);
+        try {
+          sessionStorage.removeItem("kinder.locked");
+        } catch {}
+        // refresh idle timer
+        startIdleTimer();
+        return true;
+      }
+    } catch (err) {
+      console.error("Unlock failed:", err);
+    }
+    return false;
+  }, [state.currentUserId, startIdleTimer]);
 
   // Sync school context to session storage
   useEffect(() => {
@@ -948,6 +1037,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
 
     refreshData,
+    isLocked,
+    lock,
+    unlock,
+    idleTimeoutMs: idleTimeoutMsRef.current,
   };
 
   // ── Error State ─────────────────────────────────────────────────────────────
@@ -1162,7 +1255,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={store}>
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 export function useStore() {

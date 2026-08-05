@@ -21,6 +21,7 @@ import { useEffect, type ReactNode } from "react";
 
 export function AppShell({ children, title }: { children: ReactNode; title: string }) {
   const { currentUser, users, logout, schools } = useStore();
+  const { isLocked } = useStore() as any;
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
@@ -68,6 +69,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
 
   return (
     <div className="flex min-h-screen w-full bg-background">
+      {isLocked ? <div /> : null}
       <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
         <div className="flex items-center gap-2 px-5 py-5 border-b">
           <div>
