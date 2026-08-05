@@ -159,12 +159,13 @@ function Landing() {
                   <Label htmlFor="login-id">Assigned ID</Label>
                   <Input
                     id="login-id"
+                    name="assigned-login-id"
                     value={assignedId}
                     onChange={(event) => setAssignedId(event.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="e.g. KC001"
+                    placeholder=""
                     disabled={isLoading}
-                    autoComplete="username"
+                    autoComplete="off"
                   />
                 </div>
 
