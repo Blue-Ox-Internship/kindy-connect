@@ -12,6 +12,8 @@ import { type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { StoreProvider } from "../lib/store";
 import { Toaster } from "@/components/ui/sonner";
+import LockScreen from "@/components/lock-screen";
+import { useStore } from "@/lib/store";
 
 function NotFoundComponent() {
   return (
@@ -121,9 +123,19 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <StoreProvider>
-        <Outlet />
+        <AppContent />
         <Toaster richColors position="top-right" />
       </StoreProvider>
     </QueryClientProvider>
+  );
+}
+
+function AppContent() {
+  const { isLocked } = useStore() as any;
+  return (
+    <>
+      <Outlet />
+      {isLocked ? <LockScreen /> : null}
+    </>
   );
 }
