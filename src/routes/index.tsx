@@ -145,7 +145,7 @@ function Landing() {
           </div>
 
           <div className="lg:justify-self-end">
-            <Card className="overflow-hidden border-border/70 bg-card/95 shadow-[0_30px_80px_-35px_rgba(0,0,0,0.35)]">
+            <Card ref={loginRef} className="overflow-hidden border-border/70 bg-card/95 shadow-[0_30px_80px_-35px_rgba(0,0,0,0.35)]">
               <CardHeader className="space-y-2 border-b border-border/60 bg-muted/35 px-6 py-5">
                 <CardTitle className="text-lg">School access</CardTitle>
                 <CardDescription>
