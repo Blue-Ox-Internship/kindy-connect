@@ -29,9 +29,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Edit } from "lucide-react";
+import { Plus, Search, Edit, Upload } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
+import { BulkUploadPupilsDialog } from "@/components/bulk-upload-pupils-dialog";
 
 export const Route = createFileRoute("/app/pupils")({
   head: () => ({ meta: [{ title: "Pupils - Kindy Connect" }] }),
@@ -56,6 +57,7 @@ function PupilsPage() {
   }, [classes, currentUser, superSchoolId]);
 
   const [open, setOpen] = useState(false);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingPupil, setEditingPupil] = useState<Pupil | null>(null);
   const [form, setForm] = useState({
@@ -267,6 +269,9 @@ function PupilsPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Button variant="outline" onClick={() => setBulkUploadOpen(true)}>
+              <Upload className="h-4 w-4 mr-1" /> Bulk Upload
+            </Button>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -568,6 +573,12 @@ function PupilsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Upload Dialog */}
+      <BulkUploadPupilsDialog 
+        open={bulkUploadOpen} 
+        onOpenChange={setBulkUploadOpen} 
+      />
     </AppShell>
   );
 }

@@ -16,6 +16,7 @@ import {
   rejectTeacher as rejectTeacherDb,
   deleteUser as deleteUserDb,
   addPupil as addPupilDb,
+  bulkAddPupils as bulkAddPupilsDb,
   updatePupil as updatePupilDb,
   deactivatePupil as deactivatePupilDb,
   addParent as addParentDb,
@@ -90,6 +91,21 @@ interface Store {
   rejectTeacher: (id: string) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
   addPupil: (data: Omit<Pupil, "id" | "active"> & { parent?: Omit<Parent, "id"> }) => Promise<void>;
+  bulkAddPupils: (pupils: Array<{
+    pupil: Omit<Pupil, "id" | "active">;
+    parent: Omit<Parent, "id">;
+  }>) => Promise<{
+    total: number;
+    successCount: number;
+    failCount: number;
+    results: Array<{
+      success: boolean;
+      pupilId?: string;
+      admissionNo: string;
+      name: string;
+      error?: string;
+    }>;
+  }>;
   updatePupil: (id: string, data: Partial<Pupil>) => Promise<void>;
   deactivatePupil: (id: string) => Promise<void>;
   addParent: (data: Omit<Parent, "id">) => Promise<void>;
@@ -583,6 +599,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       // Refresh data from database to ensure dashboard updates
       await refreshData();
+    },
+
+    bulkAddPupils: async (pupils) => {
+      if (!currentUser) return {
+        total: 0,
+        successCount: 0,
+        failCount: 0,
+        results: [],
+      };
+
+      const schoolId = currentUser.schoolId;
+
+      const result = await bulkAddPupilsDb({
+        data: {
+          pupils: pupils.map(({ pupil, parent }) => ({
+            pupil: {
+              ...pupil,
+              schoolId: schoolId || pupil.schoolId,
+            },
+            parent,
+          })),
+          actorId: currentUser.id,
+          actorName: currentUser.name,
+        },
+      });
+
+      // Refresh data from database to show new pupils
+      await refreshData();
+
+      return result;
     },
 
     updatePupil: async (id, data) => {
