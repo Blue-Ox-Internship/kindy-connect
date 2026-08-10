@@ -470,6 +470,115 @@ export const addPupil = createServerFn({ method: "POST" })
     }
   });
 
+// Bulk add pupils with their parents
+export const bulkAddPupils = createServerFn({ method: "POST" })
+  .validator(
+    (d: {
+      pupils: Array<{
+        pupil: Omit<Pupil, "id" | "active">;
+        parent: ParentInput;
+      }>;
+      actorId: string;
+      actorName: string;
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    const { pupils, actorId, actorName } = data;
+
+    if (!pupils || pupils.length === 0) {
+      throw new Error("No pupils provided for bulk upload");
+    }
+
+    const results: Array<{
+      success: boolean;
+      pupilId?: string;
+      admissionNo: string;
+      name: string;
+      error?: string;
+    }> = [];
+
+    try {
+      await sql.begin(async (sql) => {
+        for (const item of pupils) {
+          const { pupil, parent } = item;
+          const pupilId = Math.random().toString(36).slice(2, 10);
+          const parentId = Math.random().toString(36).slice(2, 10);
+          const logId = Math.random().toString(36).slice(2, 10);
+
+          try {
+            // Validate parent info
+            if (!parent.name || !parent.phone || !parent.email || !parent.relationship) {
+              throw new Error("Parent details are incomplete");
+            }
+
+            // Insert parent
+            const dbParent = toSnake({
+              id: parentId,
+              ...parent,
+              schoolId: pupil.schoolId,
+            });
+            await sql`INSERT INTO parents ${sql(dbParent)}`;
+
+            // Insert pupil
+            const dbPupil = toSnake({
+              id: pupilId,
+              admissionNo: pupil.admissionNo,
+              firstName: pupil.firstName,
+              lastName: pupil.lastName,
+              gender: pupil.gender,
+              dob: pupil.dob,
+              classId: pupil.classId,
+              photo: pupil.photo || null,
+              active: true,
+              schoolId: pupil.schoolId,
+            });
+            await sql`INSERT INTO pupils ${sql(dbPupil)}`;
+
+            // Link pupil to parent
+            await sql`INSERT INTO pupil_parents ${sql(
+              [{ pupil_id: pupilId, parent_id: parentId }],
+              "pupil_id",
+              "parent_id"
+            )}`;
+
+            // Log the action
+            const targetDesc = `${pupil.firstName} ${pupil.lastName} (${pupil.admissionNo})`;
+            await safeInsertAuditLog(sql, logId, actorId, actorName, 'Bulk created pupil', targetDesc);
+
+            results.push({
+              success: true,
+              pupilId,
+              admissionNo: pupil.admissionNo,
+              name: `${pupil.firstName} ${pupil.lastName}`,
+            });
+          } catch (error: any) {
+            // Log individual error but continue with other pupils
+            console.error(`Error adding pupil ${pupil.admissionNo}:`, error);
+            results.push({
+              success: false,
+              admissionNo: pupil.admissionNo,
+              name: `${pupil.firstName} ${pupil.lastName}`,
+              error: error.message || "Unknown error",
+            });
+          }
+        }
+      });
+
+      const successCount = results.filter((r) => r.success).length;
+      const failCount = results.filter((r) => !r.success).length;
+
+      return {
+        total: pupils.length,
+        successCount,
+        failCount,
+        results,
+      };
+    } catch (error) {
+      console.error("Error in bulkAddPupils:", error);
+      throw error;
+    }
+  });
+
 export const updatePupil = createServerFn({ method: "POST" })
   .validator((d: { id: string; data: Partial<Pupil> }) => d)
   .handler(async ({ data }) => {
