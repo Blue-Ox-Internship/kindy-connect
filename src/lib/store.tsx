@@ -10,6 +10,8 @@ import {
 } from "react";
 import {
   getInitialData,
+  purgeServerCache,
+  getServerCacheStats,
   loginUser,
   registerUser as registerUserDb,
   approveTeacher as approveTeacherDb,
@@ -44,6 +46,7 @@ import {
   type Mark,
   type School,
 } from "./db-functions";
+import { queryClient, queryKeys } from "./query-client";
 
 // Re-export types so we don't break existing imports in components
 export type {
@@ -160,6 +163,9 @@ interface Store {
   updateClass: (id: string, data: Partial<Omit<ClassRoom, "id">>) => Promise<void>;
   deleteClass: (id: string) => Promise<void>;
   refreshData: () => Promise<void>;
+  lastSyncTime: string | null;
+  purgeCache: () => Promise<void>;
+  getServerStats: () => Promise<any>;
   isLocked: boolean;
   lock: () => void;
   unlock: (password: string) => Promise<boolean>;
@@ -202,6 +208,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [isPausedError, setIsPausedError] = useState(false);
   const [retryIn, setRetryIn] = useState(0); // seconds until next auto-retry
   const retryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [state, setState] = useState(() => ({
     currentUserId: null as string | null,
     selectedSchoolId: null as string | null,
@@ -288,6 +295,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         audit: data.audit ?? s.audit,
         marks: data.marks ?? s.marks,
       }));
+      setLastSyncTime(new Date().toLocaleTimeString());
+      queryClient.setQueryData(queryKeys.initialData(state.currentUserId), data);
       setLoadError(null);
       setIsPausedError(false);
       setLoading(false);
@@ -333,10 +342,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         audit: data.audit ?? s.audit,
         marks: data.marks ?? s.marks,
       }));
+      setLastSyncTime(new Date().toLocaleTimeString());
+      queryClient.setQueryData(queryKeys.initialData(state.currentUserId), data);
     } catch (err) {
       console.error("Failed to refresh database data:", err);
     }
   }, [state.currentUserId]);
+
+  const purgeCache = useCallback(async () => {
+    try {
+      await purgeServerCache();
+      queryClient.clear();
+      await attemptLoad();
+    } catch (err) {
+      console.error("Failed to purge cache:", err);
+    }
+  }, [attemptLoad]);
+
+  const getServerStats = useCallback(async () => {
+    try {
+      return await getServerCacheStats();
+    } catch (err) {
+      console.error("Failed to get server cache stats:", err);
+      return null;
+    }
+  }, []);
 
   // Sync user session to local storage
   useEffect(() => {
@@ -558,6 +588,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     audit: filteredAudit,
     marks: filteredMarks,
     schools: state.schools,
+    lastSyncTime,
+    purgeCache,
+    getServerStats,
 
     login: async (id, password) => {
       const u = await loginUser({ data: { id, password } });

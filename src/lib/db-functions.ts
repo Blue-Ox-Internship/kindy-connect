@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { sql, setRLSContext, toCamel, toSnake } from "./db";
+import { serverCache } from "./cache";
 
 export interface School {
   id: string;
@@ -200,14 +201,28 @@ export const getInitialData = createServerFn({ method: "GET" })
     };
 
     try {
-      if (data?.userId) {
-        return await sql.begin(async (tx) => {
-          await setRLSContext(tx, data.userId!);
-          return fetchInitialData(tx as typeof sql);
-        });
-      }
+      const cacheKey = `initial_data_${data?.userId || "all"}`;
+      const cacheTags = [
+        "schools",
+        "users",
+        "classes",
+        "parents",
+        "pupils",
+        "attendance",
+        "notifications",
+        "audit",
+        "marks",
+      ];
 
-      return await fetchInitialData(sql);
+      return await serverCache.cachedFetch(cacheKey, 60, cacheTags, async () => {
+        if (data?.userId) {
+          return await sql.begin(async (tx) => {
+            await setRLSContext(tx, data.userId!);
+            return fetchInitialData(tx as typeof sql);
+          });
+        }
+        return await fetchInitialData(sql);
+      });
     } catch (error: any) {
       console.error("Error in getInitialData server function:", error);
       return {
@@ -224,6 +239,17 @@ export const getInitialData = createServerFn({ method: "GET" })
       };
     }
   });
+
+// Server cache stats helper
+export const getServerCacheStats = createServerFn({ method: "GET" }).handler(async () => {
+  return serverCache.getStats();
+});
+
+// Purge server cache helper
+export const purgeServerCache = createServerFn({ method: "POST" }).handler(async () => {
+  serverCache.purgeAll();
+  return { success: true, timestamp: new Date().toISOString() };
+});
 
 // ----------------------------------------------------
 // 2. Authentication Functions
@@ -323,6 +349,7 @@ export const registerUser = createServerFn({ method: "POST" })
         });
 
         await sql`INSERT INTO users ${sql(dbUser)}`;
+        serverCache.invalidateTags(["users", "schools"]);
         return {
           user: toCamel<User>(dbUser),
           school: newSchool,
@@ -371,6 +398,7 @@ export const approveTeacher = createServerFn({ method: "POST" })
           await safeInsertAuditLog(sql, logId, actorId, actorName, 'Approved teacher', teacherName);
         }
       });
+      serverCache.invalidateTags(["users", "audit"]);
       return { id };
     } catch (error) {
       console.error("Error in approveTeacher:", error);
@@ -457,6 +485,7 @@ export const addPupil = createServerFn({ method: "POST" })
         const targetDesc = `${pupil.firstName} ${pupil.lastName} (${pupil.admissionNo})`;
         await safeInsertAuditLog(sql, logId, actorId, actorName, 'Created pupil', targetDesc);
       });
+      serverCache.invalidateTags(["pupils", "parents", "audit"]);
 
       return {
         id,
@@ -566,6 +595,7 @@ export const bulkAddPupils = createServerFn({ method: "POST" })
 
       const successCount = results.filter((r) => r.success).length;
       const failCount = results.filter((r) => !r.success).length;
+      serverCache.invalidateTags(["pupils", "parents", "audit"]);
 
       return {
         total: pupils.length,
@@ -607,6 +637,7 @@ export const updatePupil = createServerFn({ method: "POST" })
           }
         }
       });
+      serverCache.invalidateTags(["pupils", "parents", "audit"]);
       return { id, data: pupilData };
     } catch (error) {
       console.error("Error in updatePupil:", error);
@@ -621,6 +652,7 @@ export const deactivatePupil = createServerFn({ method: "POST" })
       await sql`
         UPDATE pupils SET active = false WHERE id = ${data.id}
       `;
+      serverCache.invalidateTags(["pupils", "audit"]);
       return { id: data.id };
     } catch (error) {
       console.error("Error in deactivatePupil:", error);
@@ -648,6 +680,7 @@ export const addParent = createServerFn({ method: "POST" })
         await sql`INSERT INTO parents ${sql(dbParent)}`;
         await safeInsertAuditLog(sql, logId, actorId, actorName, 'Registered parent', parent.name);
       });
+      serverCache.invalidateTags(["parents", "audit"]);
 
       return { id, ...parent };
     } catch (error) {
@@ -793,6 +826,7 @@ export const markArrival = createServerFn({ method: "POST" })
           audit: addedAudit,
         };
       });
+      serverCache.invalidateTags(["attendance", "notifications", "audit"]);
 
       return result;
     } catch (error) {
@@ -935,6 +969,7 @@ export const markDeparture = createServerFn({ method: "POST" })
           audit: addedAudit,
         };
       });
+      serverCache.invalidateTags(["attendance", "notifications", "audit"]);
 
       return result;
     } catch (error) {
@@ -1000,6 +1035,7 @@ export const addMark = createServerFn({ method: "POST" })
       await sql`
         INSERT INTO marks ${sql(dbMark)}
       `;
+      serverCache.invalidateTags(["marks", "audit"]);
       return toCamel<Mark>(dbMark);
     } catch (error) {
       console.error("Error in addMark:", error);
@@ -1087,6 +1123,7 @@ export const updateMark = createServerFn({ method: "POST" })
       await sql`
         UPDATE marks SET ${sql(dbFields)} WHERE id = ${id}
       `;
+      serverCache.invalidateTags(["marks", "audit"]);
       return { id, data: { ...markData, ...(grade !== undefined ? { grade } : {}) } };
     } catch (error) {
       console.error("Error in updateMark:", error);
@@ -1101,6 +1138,7 @@ export const deleteMark = createServerFn({ method: "POST" })
       await sql`
         DELETE FROM marks WHERE id = ${data.id}
       `;
+      serverCache.invalidateTags(["marks", "audit"]);
       return { id: data.id };
     } catch (error) {
       console.error("Error in deleteMark:", error);
@@ -1188,6 +1226,7 @@ export const saveBulkMarks = createServerFn({ method: "POST" })
       }
     }
 
+    serverCache.invalidateTags(["marks", "audit"]);
     return results;
   });
 
@@ -1207,6 +1246,7 @@ export const addSchool = createServerFn({ method: "POST" })
     });
     try {
       await sql`INSERT INTO schools ${sql(dbSchool)}`;
+      serverCache.invalidateTags(["schools", "audit"]);
       return toCamel<School>(dbSchool);
     } catch (error) {
       console.error("Error in addSchool:", error);
@@ -1221,6 +1261,7 @@ export const updateSchool = createServerFn({ method: "POST" })
     const dbFields = toSnake(schoolData);
     try {
       await sql`UPDATE schools SET ${sql(dbFields)} WHERE id = ${id}`;
+      serverCache.invalidateTags(["schools", "audit"]);
       return { id, data: schoolData };
     } catch (error) {
       console.error("Error in updateSchool:", error);
@@ -1233,6 +1274,7 @@ export const deleteSchool = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       await sql`DELETE FROM schools WHERE id = ${data.id}`;
+      serverCache.invalidateTags(["schools", "audit"]);
       return { id: data.id };
     } catch (error) {
       console.error("Error in deleteSchool:", error);
@@ -1260,6 +1302,7 @@ export const addClass = createServerFn({ method: "POST" })
           await sql`UPDATE users SET class_id = ${id} WHERE id = ${data.teacherId}`;
         }
       });
+      serverCache.invalidateTags(["classes", "users", "audit"]);
       return toCamel<ClassRoom>(dbClass);
     } catch (error) {
       console.error("Error in addClass:", error);
@@ -1285,6 +1328,7 @@ export const updateClass = createServerFn({ method: "POST" })
           }
         }
       });
+      serverCache.invalidateTags(["classes", "users", "audit"]);
       return { id, data: classData };
     } catch (error) {
       console.error("Error in updateClass:", error);
@@ -1300,6 +1344,7 @@ export const deleteClass = createServerFn({ method: "POST" })
         await sql`UPDATE users SET class_id = NULL WHERE class_id = ${data.id}`;
         await sql`DELETE FROM classes WHERE id = ${data.id}`;
       });
+      serverCache.invalidateTags(["classes", "users", "audit"]);
       return { id: data.id };
     } catch (error) {
       console.error("Error in deleteClass:", error);
@@ -1348,6 +1393,7 @@ export const deleteUser = createServerFn({ method: "POST" })
         // Log the deletion
         await safeInsertAuditLog(sql, logId, actorId, actorName, 'Deleted user', deletedUser.name + " (" + deletedUser.role + ")");
       });
+      serverCache.invalidateTags(["users", "audit"]);
 
       return { id };
     } catch (error) {

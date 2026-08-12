@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SchoolSelector } from "@/components/school-selector";
+import { CacheStatusModal } from "@/components/cache-status-modal";
 import { useEffect, type ReactNode } from "react";
 
 export function AppShell({ children, title }: { children: ReactNode; title: string }) {
@@ -137,7 +138,8 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
       <main className="flex-1 min-w-0">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 backdrop-blur px-6 py-4">
           <h1 className="text-2xl font-semibold">{title}</h1>
-          <div className="hidden sm:flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <CacheStatusModal />
             <Badge variant="outline" className="capitalize">
               {currentUser.role.replace("_", " ")}
             </Badge>
