@@ -68,7 +68,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
+      <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground print:hidden">
         <div className="flex items-center gap-2 px-5 py-5 border-b">
           <div>
             <div className="font-semibold leading-tight truncate max-w-[200px]">
@@ -133,7 +133,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
       </aside>
 
       <main className="flex-1 min-w-0">
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 backdrop-blur px-6 py-4">
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 backdrop-blur px-6 py-4 print:hidden">
           <h1 className="text-2xl font-semibold">{title}</h1>
           <div className="hidden sm:flex items-center gap-2">
             <Badge variant="outline" className="capitalize">

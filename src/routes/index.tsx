@@ -62,6 +62,9 @@ function Landing() {
         return;
       }
       toast.success(`Welcome, ${user.name.split(" ")[0]}`);
+      setAssignedId("");
+      setPassword("");
+      setIsLoading(false);
       navigate({ to: "/app/dashboard" });
     } catch (error) {
       console.error("Login error:", error);
