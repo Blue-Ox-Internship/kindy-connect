@@ -33,7 +33,7 @@ export const Route = createFileRoute("/app/teachers")({
 });
 
 function TeachersPage() {
-  const { currentUser, users, schools, approveTeacher, rejectTeacher, registerUser, deleteUser } =
+  const { currentUser, users, schools, approveTeacher, rejectTeacher, registerUser, deleteUser, getSchoolSubjects } =
     useStore();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
@@ -46,15 +46,8 @@ function TeachersPage() {
   const [schoolFilter, setSchoolFilter] = useState<string>("all");
 
   // Available subjects for selection
-  const availableSubjects = [
-    "Reading",
-    "Math",
-    "Writing",
-    "Art",
-    "Music",
-    "Physical Education",
-    "Science",
-  ];
+  const rawSubjects = getSchoolSubjects(schoolFilter !== "all" ? schoolFilter : undefined);
+  const availableSubjects = useMemo(() => rawSubjects.map((s) => s.name), [rawSubjects]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

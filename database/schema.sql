@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS pupils CASCADE;
 DROP TABLE IF EXISTS parents CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS classes CASCADE;
+DROP TABLE IF EXISTS subjects CASCADE;
 DROP TABLE IF EXISTS schools CASCADE;
 
 -- 0. Schools Table
@@ -135,10 +136,23 @@ CREATE TABLE marks (
     CONSTRAINT chk_score_limit CHECK (score <= max_score)
 );
 
+-- 10. Subjects Table
+CREATE TABLE subjects (
+    id VARCHAR(50) PRIMARY KEY,
+    school_id VARCHAR(50) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    code VARCHAR(20),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unq_school_subject_name UNIQUE (school_id, name)
+);
+
 -- Add Foreign Key Constraints (separately to resolve circular dependency at table creation)
 ALTER TABLE classes 
     ADD CONSTRAINT fk_classes_teacher FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE SET NULL,
     ADD CONSTRAINT fk_classes_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE;
+
+ALTER TABLE subjects
+    ADD CONSTRAINT fk_subjects_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE;
 
 ALTER TABLE users 
     ADD CONSTRAINT fk_users_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL,
@@ -174,6 +188,7 @@ CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_phone ON users(phone);
 CREATE INDEX idx_users_school ON users(school_id);
 CREATE INDEX idx_classes_school ON classes(school_id);
+CREATE INDEX idx_subjects_school ON subjects(school_id);
 CREATE INDEX idx_pupils_class ON pupils(class_id);
 CREATE INDEX idx_pupils_school ON pupils(school_id);
 CREATE INDEX idx_parents_school ON parents(school_id);
@@ -181,3 +196,4 @@ CREATE INDEX idx_attendance_pupil_date ON attendance(pupil_id, date);
 CREATE INDEX idx_marks_pupil ON marks(pupil_id);
 CREATE INDEX idx_notifications_pupil ON notifications(pupil_id);
 CREATE INDEX idx_audit_logs_timestamp ON audit_logs(timestamp);
+

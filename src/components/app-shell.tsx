@@ -48,6 +48,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         { to: "/app/users", label: "Users", icon: Users },
         { to: "/app/teachers", label: "Teachers", icon: GraduationCap, badge: pendingCount },
         { to: "/app/classes", label: "Classes", icon: GraduationCap },
+        { to: "/app/subjects", label: "Subjects", icon: BookOpen },
         { to: "/app/audit", label: "Audit log", icon: ScrollText },
       ]
     : isStaff
@@ -57,6 +58,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
           { to: "/app/parents", label: "Parents", icon: Users },
           { to: "/app/teachers", label: "Teachers", icon: GraduationCap, badge: pendingCount },
           { to: "/app/classes", label: "Classes", icon: BookOpen },
+          { to: "/app/subjects", label: "Subjects", icon: BookOpen },
           { to: "/app/attendance", label: "Attendance", icon: CalendarCheck },
           { to: "/app/marks", label: "Marks", icon: BookOpen },
           { to: "/app/reports", label: "Reports", icon: BarChart3 },

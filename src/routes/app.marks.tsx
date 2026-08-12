@@ -51,6 +51,7 @@ function MarksPage() {
     deleteMark,
     saveBulkMarks,
     schools,
+    getSchoolSubjects,
   } = useStore();
 
   const isTeacher = currentUser?.role === "teacher";
@@ -116,7 +117,9 @@ function MarksPage() {
     );
   }, [marks, term, year, subject]);
 
-  const subjects = ["Reading", "Math", "Writing", "Art", "Music", "Physical Education", "Science"];
+  const activeSchoolId = currentUser?.role === "super_admin" ? superSchoolId : currentUser?.schoolId;
+  const rawSchoolSubjects = getSchoolSubjects(activeSchoolId);
+  const subjects = useMemo(() => rawSchoolSubjects.map((s) => s.name), [rawSchoolSubjects]);
 
   // Filter subjects for teachers - they can only see their assigned subjects
   const availableSubjects = useMemo(() => {
@@ -124,7 +127,7 @@ function MarksPage() {
       return subjects.filter((s) => currentUser.subjects?.includes(s));
     }
     return subjects;
-  }, [isTeacher, currentUser]);
+  }, [isTeacher, currentUser, subjects]);
 
   const terms = ["Term 1", "Term 2", "Term 3"];
 
@@ -498,7 +501,6 @@ function MarksPage() {
       }
     }
   };
-  };
 
   const getGradeColor = (grade: string) => {
     switch (grade) {
@@ -632,34 +634,7 @@ function MarksPage() {
           </div>
         </div>
       </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3 mb-4">
-            {currentUser?.role === "super_admin" && (
-              <div className="flex items-center gap-2">
-                <Label>School:</Label>
-                <select
-                  value={superSchoolId}
-                  onChange={(e) => setSuperSchoolId(e.target.value)}
-                  className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring file:border-0 file:bg-transparent file:text-sm file:font-medium md:text-sm"
->>>>>>> noble
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save All Marks {dirtyCount > 0 && `(${dirtyCount})`}
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
+      <CardContent>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4 p-3 bg-muted/30 rounded-lg border">
             <div className="flex flex-wrap items-center gap-3">
               {currentUser?.role === "super_admin" && (

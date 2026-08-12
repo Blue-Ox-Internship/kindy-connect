@@ -11,6 +11,14 @@ export interface School {
   registeredAt: string;
 }
 
+export interface Subject {
+  id: string;
+  schoolId: string;
+  name: string;
+  code?: string;
+  createdAt?: string;
+}
+
 // Type aliases used across the app
 export type Role = "super_admin" | "admin" | "deputy" | "teacher";
 export type TeacherStatus = "pending" | "verified" | "rejected";
@@ -158,7 +166,7 @@ export const getInitialData = createServerFn({ method: "GET" })
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
       const cutoffDate = ninetyDaysAgo.toISOString().slice(0, 10);
 
-      const [schools, users, classes, parents, pupilsRaw, pupilParents, attendance, notifications, audit, marks] =
+      const [schools, users, classes, parents, pupilsRaw, pupilParents, attendance, notifications, audit, marks, subjects] =
         await Promise.all([
           client`SELECT * FROM schools ORDER BY name ASC`,
           client`SELECT * FROM users ORDER BY registered_at DESC`,
@@ -170,6 +178,7 @@ export const getInitialData = createServerFn({ method: "GET" })
           client`SELECT * FROM notifications ORDER BY timestamp DESC LIMIT 200`,
           client`SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 200`,
           client`SELECT * FROM marks ORDER BY recorded_at DESC LIMIT 2000`,
+          client`SELECT * FROM subjects ORDER BY name ASC`,
         ]);
 
       const parentMap: Record<string, string[]> = {};
@@ -197,6 +206,7 @@ export const getInitialData = createServerFn({ method: "GET" })
         notifications: toCamel<Notification[]>(notifications),
         audit: toCamel<AuditLog[]>(audit),
         marks: toCamel<Mark[]>(marks),
+        subjects: toCamel<Subject[]>(subjects),
       };
     };
 
@@ -212,6 +222,7 @@ export const getInitialData = createServerFn({ method: "GET" })
         "notifications",
         "audit",
         "marks",
+        "subjects",
       ];
 
       return await serverCache.cachedFetch(cacheKey, 60, cacheTags, async () => {
@@ -235,6 +246,7 @@ export const getInitialData = createServerFn({ method: "GET" })
         notifications: [],
         audit: [],
         marks: [],
+        subjects: [],
         error: error?.message || "Failed to query database",
       };
     }
@@ -1401,3 +1413,104 @@ export const deleteUser = createServerFn({ method: "POST" })
       throw error;
     }
   });
+
+// ----------------------------------------------------
+// 10. Subject Management Functions
+// ----------------------------------------------------
+export const addSubject = createServerFn({ method: "POST" })
+  .validator((d: { schoolId: string; name: string; code?: string; actorId?: string; actorName?: string }) => d)
+  .handler(async ({ data }) => {
+    const id = `subj_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const dbSubject = toSnake({
+      id,
+      schoolId: data.schoolId,
+      name: data.name.trim(),
+      code: data.code?.trim().toUpperCase() || undefined,
+    });
+    try {
+      await sql`INSERT INTO subjects ${sql(dbSubject)}`;
+      if (data.actorId && data.actorName) {
+        const logId = Math.random().toString(36).slice(2, 10);
+        await safeInsertAuditLog(sql, logId, data.actorId, data.actorName, "Added subject", data.name);
+      }
+      serverCache.invalidateTags(["subjects", "audit"]);
+      return toCamel<Subject>(dbSubject);
+    } catch (error) {
+      console.error("Error in addSubject:", error);
+      throw error;
+    }
+  });
+
+export const updateSubject = createServerFn({ method: "POST" })
+  .validator((d: { id: string; name: string; code?: string; actorId?: string; actorName?: string }) => d)
+  .handler(async ({ data }) => {
+    try {
+      const dbFields = toSnake({
+        name: data.name.trim(),
+        code: data.code?.trim().toUpperCase() || undefined,
+      });
+      await sql`UPDATE subjects SET ${sql(dbFields)} WHERE id = ${data.id}`;
+      if (data.actorId && data.actorName) {
+        const logId = Math.random().toString(36).slice(2, 10);
+        await safeInsertAuditLog(sql, logId, data.actorId, data.actorName, "Updated subject", data.name);
+      }
+      serverCache.invalidateTags(["subjects", "audit"]);
+      return { id: data.id, name: data.name, code: data.code };
+    } catch (error) {
+      console.error("Error in updateSubject:", error);
+      throw error;
+    }
+  });
+
+export const deleteSubject = createServerFn({ method: "POST" })
+  .validator((d: { id: string; actorId?: string; actorName?: string }) => d)
+  .handler(async ({ data }) => {
+    try {
+      const subjects = await sql`SELECT name FROM subjects WHERE id = ${data.id}`;
+      const subjectName = subjects[0]?.name || data.id;
+      await sql`DELETE FROM subjects WHERE id = ${data.id}`;
+      if (data.actorId && data.actorName) {
+        const logId = Math.random().toString(36).slice(2, 10);
+        await safeInsertAuditLog(sql, logId, data.actorId, data.actorName, "Deleted subject", subjectName);
+      }
+      serverCache.invalidateTags(["subjects", "audit"]);
+      return { id: data.id };
+    } catch (error) {
+      console.error("Error in deleteSubject:", error);
+      throw error;
+    }
+  });
+
+export const seedDefaultSubjects = createServerFn({ method: "POST" })
+  .validator((d: { schoolId: string; actorId?: string; actorName?: string }) => d)
+  .handler(async ({ data }) => {
+    const defaultList = [
+      { name: "Reading", code: "RDG" },
+      { name: "Math", code: "MTH" },
+      { name: "Writing", code: "WRT" },
+      { name: "Art", code: "ART" },
+      { name: "Music", code: "MUS" },
+      { name: "Physical Education", code: "PE" },
+      { name: "Science", code: "SCI" },
+    ];
+    try {
+      for (const sub of defaultList) {
+        const id = `subj_${data.schoolId}_${sub.name.toLowerCase().replace(/\s+/g, "_")}`;
+        await sql`
+          INSERT INTO subjects (id, school_id, name, code)
+          VALUES (${id}, ${data.schoolId}, ${sub.name}, ${sub.code})
+          ON CONFLICT (school_id, name) DO NOTHING
+        `;
+      }
+      if (data.actorId && data.actorName) {
+        const logId = Math.random().toString(36).slice(2, 10);
+        await safeInsertAuditLog(sql, logId, data.actorId, data.actorName, "Seeded default subjects", `School ${data.schoolId}`);
+      }
+      serverCache.invalidateTags(["subjects", "audit"]);
+      return { success: true };
+    } catch (error) {
+      console.error("Error in seedDefaultSubjects:", error);
+      throw error;
+    }
+  });
+

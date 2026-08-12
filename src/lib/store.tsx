@@ -34,6 +34,10 @@ import {
   addClass as addClassDb,
   updateClass as updateClassDb,
   deleteClass as deleteClassDb,
+  addSubject as addSubjectDb,
+  updateSubject as updateSubjectDb,
+  deleteSubject as deleteSubjectDb,
+  seedDefaultSubjects as seedDefaultSubjectsDb,
   type Role,
   type TeacherStatus,
   type User,
@@ -45,6 +49,7 @@ import {
   type AuditLog,
   type Mark,
   type School,
+  type Subject,
 } from "./db-functions";
 import { queryClient, queryKeys } from "./query-client";
 
@@ -61,6 +66,7 @@ export type {
   AuditLog,
   Mark,
   School,
+  Subject,
 };
 
 interface Store {
@@ -75,6 +81,7 @@ interface Store {
   audit: AuditLog[];
   marks: Mark[];
   schools: School[];
+  subjects: Subject[];
   login: (id: string, password: string) => Promise<User | null>;
   logout: () => void;
   setSchoolContext: (schoolId: string | null) => void;
@@ -162,6 +169,11 @@ interface Store {
   addClass: (data: { name: string; schoolId: string; teacherId?: string }) => Promise<void>;
   updateClass: (id: string, data: Partial<Omit<ClassRoom, "id">>) => Promise<void>;
   deleteClass: (id: string) => Promise<void>;
+  addSubject: (data: { schoolId: string; name: string; code?: string }) => Promise<void>;
+  updateSubject: (id: string, name: string, code?: string) => Promise<void>;
+  deleteSubject: (id: string) => Promise<void>;
+  seedDefaultSubjects: (schoolId: string) => Promise<void>;
+  getSchoolSubjects: (schoolId?: string) => Subject[];
   refreshData: () => Promise<void>;
   lastSyncTime: string | null;
   purgeCache: () => Promise<void>;
@@ -221,6 +233,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     audit: [] as AuditLog[],
     marks: [] as Mark[],
     schools: [] as School[],
+    subjects: [] as Subject[],
   }));
 
   // Hydrate saved session on client post-mount to prevent SSR hydration mismatch (Error #418)
@@ -294,6 +307,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         notifications: data.notifications ?? s.notifications,
         audit: data.audit ?? s.audit,
         marks: data.marks ?? s.marks,
+        subjects: data.subjects ?? s.subjects,
       }));
       setLastSyncTime(new Date().toLocaleTimeString());
       queryClient.setQueryData(queryKeys.initialData(state.currentUserId), data);
@@ -341,6 +355,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         notifications: data.notifications ?? s.notifications,
         audit: data.audit ?? s.audit,
         marks: data.marks ?? s.marks,
+        subjects: data.subjects ?? s.subjects,
       }));
       setLastSyncTime(new Date().toLocaleTimeString());
       queryClient.setQueryData(queryKeys.initialData(state.currentUserId), data);
@@ -1165,6 +1180,78 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         ...s,
         classes: s.classes.filter((cls) => cls.id !== id),
         users: s.users.map((u) => (u.classId === id ? { ...u, classId: undefined } : u)),
+      }));
+    },
+
+    subjects: state.subjects,
+
+    addSubject: async (data) => {
+      if (!currentUser) return;
+      const newSubj = await addSubjectDb({
+        data: { ...data, actorId: currentUser.id, actorName: currentUser.name },
+      });
+      setState((s) => ({
+        ...s,
+        subjects: [...s.subjects, newSubj],
+      }));
+    },
+
+    updateSubject: async (id, name, code) => {
+      if (!currentUser) return;
+      await updateSubjectDb({
+        data: { id, name, code, actorId: currentUser.id, actorName: currentUser.name },
+      });
+      setState((s) => ({
+        ...s,
+        subjects: s.subjects.map((sub) =>
+          sub.id === id ? { ...sub, name, code: code || undefined } : sub,
+        ),
+      }));
+    },
+
+    deleteSubject: async (id) => {
+      if (!currentUser) return;
+      await deleteSubjectDb({
+        data: { id, actorId: currentUser.id, actorName: currentUser.name },
+      });
+      setState((s) => ({
+        ...s,
+        subjects: s.subjects.filter((sub) => sub.id !== id),
+      }));
+    },
+
+    seedDefaultSubjects: async (schoolId) => {
+      if (!currentUser) return;
+      await seedDefaultSubjectsDb({
+        data: { schoolId, actorId: currentUser.id, actorName: currentUser.name },
+      });
+      await refreshData();
+    },
+
+    getSchoolSubjects: (targetSchoolId?: string) => {
+      const effectiveSchoolId = targetSchoolId || state.selectedSchoolId || currentUser?.schoolId;
+      const schoolSubjects = effectiveSchoolId
+        ? state.subjects.filter((s) => s.schoolId === effectiveSchoolId)
+        : state.subjects;
+
+      if (schoolSubjects.length > 0) {
+        return schoolSubjects;
+      }
+
+      const defaultList = [
+        { name: "Reading", code: "RDG" },
+        { name: "Math", code: "MTH" },
+        { name: "Writing", code: "WRT" },
+        { name: "Art", code: "ART" },
+        { name: "Music", code: "MUS" },
+        { name: "Physical Education", code: "PE" },
+        { name: "Science", code: "SCI" },
+      ];
+      return defaultList.map((item, idx) => ({
+        id: `default_${idx}_${item.name.toLowerCase()}`,
+        schoolId: effectiveSchoolId || "default",
+        name: item.name,
+        code: item.code,
       }));
     },
 

@@ -79,7 +79,7 @@ const DEFAULT_REPORT_FORMAT: ReportFormatConfig = {
 };
 
 function ReportsPage() {
-  const { currentUser, pupils, attendance, classes, marks, schools } = useStore();
+  const { currentUser, pupils, attendance, classes, marks, schools, getSchoolSubjects } = useStore();
   const isAdmin = currentUser?.role === "super_admin" || currentUser?.role === "admin";
   const today = new Date().toISOString().slice(0, 10);
   const todayAtt = attendance.filter((a) => a.date === today);
@@ -152,11 +152,15 @@ function ReportsPage() {
   const [marksSheetOpen, setMarksSheetOpen] = useState(false);
   const [sheetDisplayMode, setSheetDisplayMode] = useState<"score" | "percentage" | "grade">("score");
 
-  const subjects = ["Reading", "Math", "Writing", "Art", "Music", "Physical Education", "Science"];
   const currentClassObj = classes.find((c) => c.id === selectedClass);
   const currentSchoolObj = schools.find(
     (s) => s.id === (currentClassObj?.schoolId || currentUser?.schoolId),
   );
+  const reportSchoolId = currentUser?.role === "super_admin"
+    ? superSchoolId
+    : (currentClassObj?.schoolId || currentUser?.schoolId);
+  const rawReportSubjects = getSchoolSubjects(reportSchoolId);
+  const subjects = useMemo(() => rawReportSubjects.map((s) => s.name), [rawReportSubjects]);
   const selectedClassPupils = pupils.filter((p) => p.classId === selectedClass && p.active);
 
   const broadsheetData = useMemo(() => {
