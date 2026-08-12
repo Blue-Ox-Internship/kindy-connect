@@ -235,6 +235,93 @@ function MarksPage() {
     setEditDialogOpen(true);
   };
 
+  const handleKeyDownForm = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>, isEditMode: boolean = false) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      
+      const currentPupilId = isEditMode ? editingMark?.pupilId : selectedPupilId;
+      if (!currentPupilId) return;
+
+      if (formData.score && formData.maxScore) {
+        const existingMark = marks.find(
+          (m) =>
+            m.pupilId === currentPupilId &&
+            m.subject === subject &&
+            m.term === term &&
+            m.year === year,
+        );
+
+        if (isEditMode && existingMark) {
+          updateMark(existingMark.id, {
+            score: parseFloat(formData.score),
+            maxScore: parseFloat(formData.maxScore),
+            teacherComment: formData.teacherComment,
+          });
+        } else if (!isEditMode && !existingMark) {
+          addMark({
+            pupilId: currentPupilId,
+            subject,
+            term,
+            year,
+            score: parseFloat(formData.score),
+            maxScore: parseFloat(formData.maxScore),
+            teacherComment: formData.teacherComment,
+          });
+        } else if (!isEditMode && existingMark) {
+          updateMark(existingMark.id, {
+            score: parseFloat(formData.score),
+            maxScore: parseFloat(formData.maxScore),
+            teacherComment: formData.teacherComment,
+          });
+        }
+      }
+
+      const currentIndex = classPupils.findIndex((p) => p.id === currentPupilId);
+      if (currentIndex !== -1) {
+        const nextIndex = e.key === "ArrowDown" 
+          ? (currentIndex + 1) % classPupils.length 
+          : (currentIndex - 1 + classPupils.length) % classPupils.length;
+        
+        const nextPupil = classPupils[nextIndex];
+        
+        const nextMark = marks.find(
+          (m) =>
+            m.pupilId === nextPupil.id &&
+            m.subject === subject &&
+            m.term === term &&
+            m.year === year,
+        );
+        
+        if (isEditMode) {
+          if (nextMark) {
+            setEditingMark(nextMark);
+            setFormData({
+              score: nextMark.score.toString(),
+              maxScore: nextMark.maxScore.toString(),
+              teacherComment: nextMark.teacherComment || "",
+            });
+          } else {
+            setEditDialogOpen(false);
+            setSelectedPupilId(nextPupil.id);
+            setFormData({ score: "", maxScore: formData.maxScore || "100", teacherComment: "" });
+            setAddDialogOpen(true);
+          }
+        } else {
+          setSelectedPupilId(nextPupil.id);
+          if (nextMark) {
+            setFormData({
+              score: nextMark.score.toString(),
+              maxScore: nextMark.maxScore.toString(),
+              teacherComment: nextMark.teacherComment || "",
+            });
+          } else {
+            setFormData((prev) => ({ ...prev, score: "", teacherComment: "" }));
+          }
+        }
+      }
+    }
+  };
+
   const getGradeColor = (grade: string) => {
     switch (grade) {
       case "A":
@@ -303,6 +390,7 @@ function MarksPage() {
                         min="0"
                         value={formData.score}
                         onChange={(e) => setFormData({ ...formData, score: e.target.value })}
+                        onKeyDown={(e) => handleKeyDownForm(e, false)}
                         placeholder="e.g., 85"
                       />
                     </div>
@@ -314,6 +402,7 @@ function MarksPage() {
                         min="1"
                         value={formData.maxScore}
                         onChange={(e) => setFormData({ ...formData, maxScore: e.target.value })}
+                        onKeyDown={(e) => handleKeyDownForm(e, false)}
                       />
                     </div>
                   </div>
@@ -323,6 +412,7 @@ function MarksPage() {
                       id="add-comment"
                       value={formData.teacherComment}
                       onChange={(e) => setFormData({ ...formData, teacherComment: e.target.value })}
+                      onKeyDown={(e) => handleKeyDownForm(e, false)}
                       placeholder="e.g., Excellent work! Keep it up."
                       rows={3}
                     />
@@ -492,6 +582,7 @@ function MarksPage() {
                   min="0"
                   value={formData.score}
                   onChange={(e) => setFormData({ ...formData, score: e.target.value })}
+                  onKeyDown={(e) => handleKeyDownForm(e, true)}
                 />
               </div>
               <div className="space-y-2">
@@ -502,6 +593,7 @@ function MarksPage() {
                   min="1"
                   value={formData.maxScore}
                   onChange={(e) => setFormData({ ...formData, maxScore: e.target.value })}
+                  onKeyDown={(e) => handleKeyDownForm(e, true)}
                 />
               </div>
             </div>
@@ -511,6 +603,7 @@ function MarksPage() {
                 id="edit-comment"
                 value={formData.teacherComment}
                 onChange={(e) => setFormData({ ...formData, teacherComment: e.target.value })}
+                onKeyDown={(e) => handleKeyDownForm(e, true)}
                 rows={3}
               />
             </div>
