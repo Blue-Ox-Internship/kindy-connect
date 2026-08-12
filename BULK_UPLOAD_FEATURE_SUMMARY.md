@@ -137,7 +137,7 @@ admissionNo,firstName,lastName,gender,dob,className,parentName,parentPhone,paren
 | parentRelationship | Required | "Parent relationship is required" |
 
 ### Warnings (Non-blocking):
-- Age < 2 or > 7 years: "Pupil age is X years - typical kindergarten age is 2-6 years"
+- Age < 1 or > 25 years: "Pupil age is X years - please verify date of birth"
 - Phone without country code: "Phone number should include country code"
 
 ---

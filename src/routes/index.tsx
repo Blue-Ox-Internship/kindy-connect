@@ -22,16 +22,16 @@ import { useStore } from "@/lib/store";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Kindy Connect - Kindergarten Management Platform" },
+      { title: "School Connect - School Management Platform" },
       {
         name: "description",
         content:
-          "Streamline attendance tracking, parent communication, and school management for kindergartens.",
+          "Streamline attendance tracking, parent communication, and school management for all institutions.",
       },
-      { property: "og:title", content: "Kindy Connect" },
+      { property: "og:title", content: "School Connect" },
       {
         property: "og:description",
-        content: "Kindergarten management and parent communication platform.",
+        content: "School management and parent communication platform.",
       },
     ],
   }),
@@ -97,7 +97,7 @@ function Landing() {
             </div>
             <div>
               <div className="text-sm font-semibold tracking-wide text-foreground">
-                Kindy Connect
+                School Connect
               </div>
               <div className="text-xs text-muted-foreground">School operations, without the noise</div>
             </div>
@@ -123,12 +123,12 @@ function Landing() {
             </div>
 
             <h1 className="mt-6 text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-              A calmer way to run your kindergarten.
+              A calmer way to run your school.
             </h1>
 
             <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
               Track arrivals, send parent updates, manage classes, and keep reports in one clean
-              workflow. Kindy Connect stays out of the way while the day keeps moving.
+              workflow. School Connect stays out of the way while the day keeps moving.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -245,10 +245,10 @@ function Landing() {
         <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 px-6 py-8 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2 text-sm font-medium">
             <GraduationCap className="h-4 w-4 text-primary" />
-            Kindy Connect
+            School Connect
           </div>
           <p className="text-xs text-muted-foreground">
-            {new Date().getFullYear()} Kindy Connect. Built for schools that want clarity, not
+            {new Date().getFullYear()} School Connect. Built for schools that want clarity, not
             clutter.
           </p>
         </div>

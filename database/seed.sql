@@ -1,8 +1,8 @@
--- Kindy Connect Database Seed Data (Supabase/PostgreSQL Compatible)
+-- School Connect Database Seed Data (Supabase/PostgreSQL Compatible)
 
 -- 0. Insert Schools
 INSERT INTO schools (id, name, address, phone, email, registered_at) VALUES
-('s1', 'Little Stars Kindergarten', '123 Sunshine Blvd, Nairobi', '+254711111111', 'littlestars@kinder.app', '2025-01-01'),
+('s1', 'Little Stars School', '123 Sunshine Blvd, Nairobi', '+254711111111', 'littlestars@kinder.app', '2025-01-01'),
 ('s2', 'Sunshine Academy', '456 Bright Road, Mombasa', '+254722222222', 'sunshine@kinder.app', '2025-01-05'),
 ('s3', 'NOBLE Primary School', '789 Education Lane, Nairobi', '+254733333333', 'noble@kinder.app', '2025-01-10')
 ON CONFLICT (id) DO NOTHING;

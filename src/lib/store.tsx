@@ -1455,7 +1455,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
           {/* Text */}
           <div className="text-center space-y-1">
-            <p className="text-base font-semibold text-foreground">Kindy Connect</p>
+            <p className="text-base font-semibold text-foreground">School Connect</p>
             <p className="text-sm text-muted-foreground animate-pulse">Connecting to database…</p>
           </div>
 

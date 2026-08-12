@@ -26,7 +26,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/parents")({
-  head: () => ({ meta: [{ title: "Parents - Kindy Connect" }] }),
+  head: () => ({ meta: [{ title: "Parents - School Connect" }] }),
   component: ParentsPage,
 });
 

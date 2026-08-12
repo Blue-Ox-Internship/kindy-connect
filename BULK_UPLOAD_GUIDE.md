@@ -196,7 +196,7 @@ After upload completes:
 admissionNo,firstName,lastName,gender,dob,className,parentName,parentPhone,parentEmail,parentRelationship
 "P001","John","Doe","M","2018-05-15","Nursery A","Jane Doe","+254712345678","jane.doe@example.com","Mother"
 "P002","Mary","Smith","F","2019-03-22","Pre-K B","Bob Smith","+254723456789","bob.smith@example.com","Father"
-"P003","David","Johnson","M","2018-11-08","Kindergarten","Sarah Johnson","+254734567890","sarah.j@example.com","Mother"
+"P003","David","Johnson","M","2018-11-08","Primary 1","Sarah Johnson","+254734567890","sarah.j@example.com","Mother"
 ```
 
 ---
@@ -317,7 +317,7 @@ Need help?
 - Check validation error messages (they're specific!)
 - Review this guide
 - Contact: nobleahimbisibwe5@gmail.com
-- Or ask in the Kindy Connect support channel
+- Or ask in the School Connect support channel
 
 ---
 
