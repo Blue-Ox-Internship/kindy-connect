@@ -172,19 +172,12 @@ function classifyDbError(err: any): { isPaused: boolean; message: string } {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  // Idle timeout for auto-lock (default 15 minutes)
-  const IDLE_DEFAULT = 15 * 60 * 1000;
+  // Idle timeout for auto-lock (default 4 minutes)
+  const IDLE_DEFAULT = 4 * 60 * 1000;
   const [isLocked, setIsLocked] = useState(() => {
     try {
       const storedLocked = sessionStorage.getItem("kinder.locked");
-      const savedUserId = localStorage.getItem(SESSION_KEY);
-
-      if (storedLocked === "1") return true;
-      if (savedUserId) {
-        sessionStorage.setItem("kinder.locked", "1");
-        return true;
-      }
-      return false;
+      return storedLocked === "1";
     } catch {
       return false;
     }
@@ -272,15 +265,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       clearTimeout(timeoutId);
       setState((s) => ({
         ...s,
-        schools: data.schools || [],
-        users: data.users,
-        pupils: data.pupils,
-        parents: data.parents,
-        classes: data.classes,
-        attendance: data.attendance,
-        notifications: data.notifications,
-        audit: data.audit,
-        marks: data.marks,
+        schools: data.schools?.length ? data.schools : s.schools,
+        users: data.users?.length ? data.users : s.users,
+        pupils: data.pupils ?? s.pupils,
+        parents: data.parents ?? s.parents,
+        classes: data.classes ?? s.classes,
+        attendance: data.attendance ?? s.attendance,
+        notifications: data.notifications ?? s.notifications,
+        audit: data.audit ?? s.audit,
+        marks: data.marks ?? s.marks,
       }));
       setLoadError(null);
       setIsPausedError(false);
@@ -310,18 +303,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // Refresh function to reload data from database
   const refreshData = useCallback(async () => {
     try {
-      const data = await getInitialData({ data: { userId: state.currentUserId ?? undefined } });
+      const data = (await getInitialData({ data: { userId: state.currentUserId ?? undefined } })) as any;
+      if (!data || data.error || !data.users || data.users.length === 0) {
+        console.warn("refreshData returned error or empty users, preserving existing state:", data?.error);
+        return;
+      }
       setState((s) => ({
         ...s,
-        schools: data.schools || [],
-        users: data.users,
-        pupils: data.pupils,
-        parents: data.parents,
-        classes: data.classes,
-        attendance: data.attendance,
-        notifications: data.notifications,
-        audit: data.audit,
-        marks: data.marks,
+        schools: data.schools?.length ? data.schools : s.schools,
+        users: data.users?.length ? data.users : s.users,
+        pupils: data.pupils ?? s.pupils,
+        parents: data.parents ?? s.parents,
+        classes: data.classes ?? s.classes,
+        attendance: data.attendance ?? s.attendance,
+        notifications: data.notifications ?? s.notifications,
+        audit: data.audit ?? s.audit,
+        marks: data.marks ?? s.marks,
       }));
     } catch (err) {
       console.error("Failed to refresh database data:", err);
