@@ -412,6 +412,94 @@ function MarksPage() {
     return "E";
   };
 
+  const handleKeyDownForm = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>, isEditMode: boolean = false) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      
+      const currentPupilId = isEditMode ? editingMark?.pupilId : selectedPupilId;
+      if (!currentPupilId) return;
+
+      if (formData.score && formData.maxScore) {
+        const existingMark = marks.find(
+          (m) =>
+            m.pupilId === currentPupilId &&
+            m.subject === subject &&
+            m.term === term &&
+            m.year === year,
+        );
+
+        if (isEditMode && existingMark) {
+          updateMark(existingMark.id, {
+            score: parseFloat(formData.score),
+            maxScore: parseFloat(formData.maxScore),
+            teacherComment: formData.teacherComment,
+          });
+        } else if (!isEditMode && !existingMark) {
+          addMark({
+            pupilId: currentPupilId,
+            subject,
+            term,
+            year,
+            score: parseFloat(formData.score),
+            maxScore: parseFloat(formData.maxScore),
+            teacherComment: formData.teacherComment,
+          });
+        } else if (!isEditMode && existingMark) {
+          updateMark(existingMark.id, {
+            score: parseFloat(formData.score),
+            maxScore: parseFloat(formData.maxScore),
+            teacherComment: formData.teacherComment,
+          });
+        }
+      }
+
+      const currentIndex = classPupils.findIndex((p) => p.id === currentPupilId);
+      if (currentIndex !== -1) {
+        const nextIndex = e.key === "ArrowDown" 
+          ? (currentIndex + 1) % classPupils.length 
+          : (currentIndex - 1 + classPupils.length) % classPupils.length;
+        
+        const nextPupil = classPupils[nextIndex];
+        
+        const nextMark = marks.find(
+          (m) =>
+            m.pupilId === nextPupil.id &&
+            m.subject === subject &&
+            m.term === term &&
+            m.year === year,
+        );
+        
+        if (isEditMode) {
+          if (nextMark) {
+            setEditingMark(nextMark);
+            setFormData({
+              score: nextMark.score.toString(),
+              maxScore: nextMark.maxScore.toString(),
+              teacherComment: nextMark.teacherComment || "",
+            });
+          } else {
+            setEditDialogOpen(false);
+            setSelectedPupilId(nextPupil.id);
+            setFormData({ score: "", maxScore: formData.maxScore || "100", teacherComment: "" });
+            setAddDialogOpen(true);
+          }
+        } else {
+          setSelectedPupilId(nextPupil.id);
+          if (nextMark) {
+            setFormData({
+              score: nextMark.score.toString(),
+              maxScore: nextMark.maxScore.toString(),
+              teacherComment: nextMark.teacherComment || "",
+            });
+          } else {
+            setFormData((prev) => ({ ...prev, score: "", teacherComment: "" }));
+          }
+        }
+      }
+    }
+  };
+  };
+
   const getGradeColor = (grade: string) => {
     switch (grade) {
       case "A":
@@ -455,6 +543,105 @@ function MarksPage() {
                   onClick={handleSaveAllInlineMarks}
                   disabled={isSaving || dirtyCount === 0}
                   className={dirtyCount > 0 ? "bg-primary shadow-sm" : ""}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save All Marks {dirtyCount > 0 && `(${dirtyCount})`}
+                    </>
+                  )}
+                </Button>
+              )}
+              <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Mark
+                  </Button>
+                </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Mark</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="add-pupil">Pupil</Label>
+                    <Select value={selectedPupilId} onValueChange={setSelectedPupilId}>
+                      <SelectTrigger id="add-pupil">
+                        <SelectValue placeholder="Select pupil" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {classPupils.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.firstName} {p.lastName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="add-score">Score</Label>
+                      <Input
+                        id="add-score"
+                        type="number"
+                        min="0"
+                        value={formData.score}
+                        onChange={(e) => setFormData({ ...formData, score: e.target.value })}
+                        onKeyDown={(e) => handleKeyDownForm(e, false)}
+                        placeholder="e.g., 85"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="add-max">Max Score</Label>
+                      <Input
+                        id="add-max"
+                        type="number"
+                        min="1"
+                        value={formData.maxScore}
+                        onChange={(e) => setFormData({ ...formData, maxScore: e.target.value })}
+                        onKeyDown={(e) => handleKeyDownForm(e, false)}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="add-comment">Teacher Comment (Optional)</Label>
+                    <Textarea
+                      id="add-comment"
+                      value={formData.teacherComment}
+                      onChange={(e) => setFormData({ ...formData, teacherComment: e.target.value })}
+                      onKeyDown={(e) => handleKeyDownForm(e, false)}
+                      placeholder="e.g., Excellent work! Keep it up."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddMark}>Add Mark</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+      </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3 mb-4">
+            {currentUser?.role === "super_admin" && (
+              <div className="flex items-center gap-2">
+                <Label>School:</Label>
+                <select
+                  value={superSchoolId}
+                  onChange={(e) => setSuperSchoolId(e.target.value)}
+                  className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring file:border-0 file:bg-transparent file:text-sm file:font-medium md:text-sm"
+>>>>>>> noble
                 >
                   {isSaving ? (
                     <>
@@ -719,6 +906,55 @@ function MarksPage() {
         </CardContent>
       </Card>
 
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Mark</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-score">Score</Label>
+                <Input
+                  id="edit-score"
+                  type="number"
+                  min="0"
+                  value={formData.score}
+                  onChange={(e) => setFormData({ ...formData, score: e.target.value })}
+                  onKeyDown={(e) => handleKeyDownForm(e, true)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-max">Max Score</Label>
+                <Input
+                  id="edit-max"
+                  type="number"
+                  min="1"
+                  value={formData.maxScore}
+                  onChange={(e) => setFormData({ ...formData, maxScore: e.target.value })}
+                  onKeyDown={(e) => handleKeyDownForm(e, true)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-comment">Teacher Comment (Optional)</Label>
+              <Textarea
+                id="edit-comment"
+                value={formData.teacherComment}
+                onChange={(e) => setFormData({ ...formData, teacherComment: e.target.value })}
+                onKeyDown={(e) => handleKeyDownForm(e, true)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditMark}>Update Mark</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {/* Pupil Marks Sheet Preview Dialog */}
       <Dialog open={sheetDialogOpen} onOpenChange={setSheetDialogOpen}>
         <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
