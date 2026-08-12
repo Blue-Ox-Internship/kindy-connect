@@ -123,7 +123,7 @@ function Landing() {
             </div>
 
             <h1 className="mt-6 text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-              A calmer way to run your school.
+              A simpler way to run your school.
             </h1>
 
             <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
