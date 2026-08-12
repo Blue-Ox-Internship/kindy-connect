@@ -1,4 +1,4 @@
--- Row Level Security (RLS) Policies for Kindy Connect
+-- Row Level Security (RLS) Policies for School Connect
 
 -- Enable RLS on all tables
 ALTER TABLE classes ENABLE ROW LEVEL SECURITY;

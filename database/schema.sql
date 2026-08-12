@@ -1,4 +1,4 @@
--- Kindy Connect Database Schema (Supabase/PostgreSQL Compatible)
+-- School Connect Database Schema (Supabase/PostgreSQL Compatible)
 
 -- Drop tables if they exist (for clean migrations)
 DROP TABLE IF EXISTS marks CASCADE;

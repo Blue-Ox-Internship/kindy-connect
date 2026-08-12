@@ -67,7 +67,7 @@
 
 :root {
   --radius: 0.75rem;
-  /* Professional kindergarten management palette — teal + amber */
+  /* Professional school management palette — teal + amber */
   --background: oklch(0.985 0.002 250); /* clean near-white with cool undertone */
   --foreground: oklch(0.2 0.02 260); /* deep slate */
   --card: oklch(1 0 0);

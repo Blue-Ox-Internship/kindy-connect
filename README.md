@@ -1,6 +1,6 @@
-# Kindy Connect 🎓
+# School Connect 🎓
 
-A comprehensive kindergarten/preschool management system built with TanStack Start and Supabase.
+A comprehensive school management system built with TanStack Start and Supabase.
 
 ## Features
 
@@ -297,4 +297,4 @@ For issues or questions:
 
 ---
 
-**Built with ❤️ for Little Stars Kindergarten**
+**Built with ❤️ for Little Stars School**

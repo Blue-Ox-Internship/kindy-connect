@@ -83,7 +83,7 @@ export function generateCSVTemplate(): string {
       "Johnson",
       "M",
       "2018-11-08",
-      "Kindergarten",
+      "Primary 1",
       "Sarah Johnson",
       "+254734567890",
       "sarah.j@example.com",
@@ -213,10 +213,10 @@ export function validatePupilsCSV(data: Record<string, string>[]): ParseResult {
 
       // Check age
       const age = calculateAge(validated.dob);
-      if (age < 2 || age > 7) {
+      if (age < 1 || age > 25) {
         warnings.push({
           row: rowNumber,
-          message: `Pupil age is ${age} years - typical kindergarten age is 2-6 years`,
+          message: `Pupil age is ${age} years - please verify date of birth`,
         });
       }
     } catch (err) {
