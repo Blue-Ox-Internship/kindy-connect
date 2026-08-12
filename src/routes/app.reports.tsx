@@ -990,45 +990,63 @@ function ReportsPage() {
               </div>
 
               {/* Pupil Info */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-muted/50 p-4 rounded-lg text-sm">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Pupil Name</Label>
-                  <p className="font-semibold">
-                    {previewPupil.firstName} {previewPupil.lastName}
-                  </p>
+              <div className="flex flex-col sm:flex-row gap-4 bg-muted/50 p-4 rounded-lg text-sm items-start">
+                <div className="shrink-0 flex items-center justify-center">
+                  {previewPupil.photo ? (
+                    <img
+                      src={previewPupil.photo}
+                      alt={`${previewPupil.firstName} ${previewPupil.lastName}`}
+                      className="w-24 h-24 rounded-md object-cover border-2 border-background shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-md bg-background flex items-center justify-center border shadow-sm">
+                      <span className="text-3xl text-muted-foreground font-semibold">
+                        {previewPupil.firstName?.[0]}{previewPupil.lastName?.[0]}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Admission No</Label>
-                  <p className="font-semibold font-mono">{previewPupil.admissionNo}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Class</Label>
-                  <p className="font-semibold">
-                    {classes.find((c) => c.id === previewPupil.classId)?.name || "-"}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Term / Period</Label>
-                  <p className="font-semibold">
-                    {selectedTerm} {selectedYear}
-                  </p>
-                </div>
-
-                {formatConfig.showClassRank && (
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 flex-1 w-full">
                   <div>
-                    <Label className="text-xs text-muted-foreground">Class Rank</Label>
-                    <p className="font-semibold text-primary">{getPupilClassRank(previewPupil.id)}</p>
-                  </div>
-                )}
-
-                {formatConfig.showAttendance && (
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Attendance</Label>
+                    <Label className="text-xs text-muted-foreground">Pupil Name</Label>
                     <p className="font-semibold">
-                      {attendance.filter((a) => a.pupilId === previewPupil.id).length} Days Present
+                      {previewPupil.firstName} {previewPupil.lastName}
                     </p>
                   </div>
-                )}
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Admission No</Label>
+                    <p className="font-semibold font-mono">{previewPupil.admissionNo}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Class</Label>
+                    <p className="font-semibold">
+                      {classes.find((c) => c.id === previewPupil.classId)?.name || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Term / Period</Label>
+                    <p className="font-semibold">
+                      {selectedTerm} {selectedYear}
+                    </p>
+                  </div>
+
+                  {formatConfig.showClassRank && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Class Rank</Label>
+                      <p className="font-semibold text-primary">{getPupilClassRank(previewPupil.id)}</p>
+                    </div>
+                  )}
+
+                  {formatConfig.showAttendance && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Attendance</Label>
+                      <p className="font-semibold">
+                        {attendance.filter((a) => a.pupilId === previewPupil.id).length} Days Present
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Marks Table */}
