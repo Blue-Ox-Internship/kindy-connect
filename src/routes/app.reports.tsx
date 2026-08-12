@@ -69,7 +69,7 @@ const DEFAULT_REPORT_FORMAT: ReportFormatConfig = {
   headerTitle: "Kindy Connect",
   subtitle: "Academic Performance Report Card",
   schoolAddress: "P.O. Box 1234, Kampala, Uganda | Tel: +256 700 000 000 | info@kindyconnect.com",
-  showAttendance: true,
+  showAttendance: false,
   showTeacherComments: true,
   showPrincipalSignature: true,
   principalTitle: "Headteacher's Signature & Date",
@@ -644,12 +644,13 @@ function ReportsPage() {
               {isAdmin && (
                 <Button
                   variant="outline"
+                  className="print:hidden"
                   onClick={() => {
                     setEditFormat(formatConfig);
                     setFormatDialogOpen(true);
                   }}
                 >
-                  <Settings className="h-4 w-4 mr-2" />
+                  <Settings className="h-4 w-4 mr-2 print:hidden" />
                   Edit Report Format
                 </Button>
               )}
@@ -962,19 +963,19 @@ function ReportsPage() {
       {/* Report Card Preview Dialog */}
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="flex flex-row items-center justify-between pb-2 border-b">
+          <DialogHeader className="flex flex-row items-center justify-between pb-2 border-b print:hidden">
             <DialogTitle>Report Card Preview</DialogTitle>
             {isAdmin && (
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-xs text-muted-foreground hover:text-foreground"
+                className="text-xs text-muted-foreground hover:text-foreground print:hidden"
                 onClick={() => {
                   setEditFormat(formatConfig);
                   setFormatDialogOpen(true);
                 }}
               >
-                <Settings className="h-3.5 w-3.5 mr-1" />
+                <Settings className="h-3.5 w-3.5 mr-1 print:hidden" />
                 Format Settings
               </Button>
             )}
@@ -1039,15 +1040,6 @@ function ReportsPage() {
                     <div>
                       <Label className="text-xs text-muted-foreground">Class Rank</Label>
                       <p className="font-semibold text-primary">{getPupilClassRank(previewPupil.id)}</p>
-                    </div>
-                  )}
-
-                  {formatConfig.showAttendance && (
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Attendance</Label>
-                      <p className="font-semibold">
-                        {attendance.filter((a) => a.pupilId === previewPupil.id).length} Days Present
-                      </p>
                     </div>
                   )}
                 </div>
@@ -1144,7 +1136,7 @@ function ReportsPage() {
               )}
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="print:hidden">
             <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>
               Close
             </Button>

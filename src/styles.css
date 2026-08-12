@@ -164,3 +164,40 @@
     letter-spacing: -0.02em;
   }
 }
+
+@media print {
+  body {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #000000 !important;
+  }
+
+  aside,
+  header,
+  nav,
+  .print\:hidden,
+  [role="dialog"] > button,
+  button {
+    display: none !important;
+  }
+
+  [role="dialog"] {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  div[data-state="open"] > div.fixed.inset-0 {
+    display: none !important;
+  }
+}
+

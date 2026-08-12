@@ -32,7 +32,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
+<<<<<<< HEAD
 import { Plus, Pencil, Trash2, FileSpreadsheet, Printer, Save, Check, Loader2, RotateCcw } from "lucide-react";
+=======
+import { Plus, Pencil, Trash2, FileSpreadsheet, Printer, Search, User, ChevronRight, CheckCircle2 } from "lucide-react";
+>>>>>>> noble
 import { downloadCSV } from "@/lib/export-utils";
 
 export const Route = createFileRoute("/app/marks")({
@@ -98,6 +102,7 @@ function MarksPage() {
   const [sheetDialogOpen, setSheetDialogOpen] = useState(false);
   const [sheetDisplayMode, setSheetDisplayMode] = useState<"score" | "percentage" | "grade">("score");
   const [selectedPupilId, setSelectedPupilId] = useState("");
+  const [pupilSearch, setPupilSearch] = useState("");
   const [editingMark, setEditingMark] = useState<any>(null);
   const [formData, setFormData] = useState({
     score: "",
@@ -136,6 +141,7 @@ function MarksPage() {
     (s) => s.id === (currentClass?.schoolId || currentUser?.schoolId),
   );
 
+<<<<<<< HEAD
   // State for Class-Wide Inline Marks Entry
   const [inlineMarks, setInlineMarks] = useState<
     Record<
@@ -282,6 +288,52 @@ function MarksPage() {
         (prevInput as HTMLInputElement).focus();
         (prevInput as HTMLInputElement).select();
       }
+=======
+  const selectedPupil = useMemo(
+    () => classPupils.find((p) => p.id === selectedPupilId),
+    [classPupils, selectedPupilId],
+  );
+
+  const existingMarkForSelected = useMemo(
+    () => filteredMarks.find((m) => m.pupilId === selectedPupilId),
+    [filteredMarks, selectedPupilId],
+  );
+
+  // Auto select first pupil when opening Add Mark dialog if none selected
+  useEffect(() => {
+    if (addDialogOpen && classPupils.length > 0) {
+      if (!selectedPupilId || !classPupils.some((p) => p.id === selectedPupilId)) {
+        selectPupilForEntry(classPupils[0].id);
+      } else {
+        selectPupilForEntry(selectedPupilId);
+      }
+    }
+  }, [addDialogOpen]);
+
+  const selectPupilForEntry = (pupilId: string) => {
+    setSelectedPupilId(pupilId);
+    const existingMark = marks.find(
+      (m) =>
+        m.pupilId === pupilId &&
+        m.subject === subject &&
+        m.term === term &&
+        m.year === year,
+    );
+    if (existingMark) {
+      setEditingMark(existingMark);
+      setFormData({
+        score: existingMark.score.toString(),
+        maxScore: existingMark.maxScore.toString(),
+        teacherComment: existingMark.teacherComment || "",
+      });
+    } else {
+      setEditingMark(null);
+      setFormData((prev) => ({
+        score: "",
+        maxScore: prev.maxScore || "100",
+        teacherComment: "",
+      }));
+>>>>>>> noble
     }
   };
 
@@ -331,9 +383,17 @@ function MarksPage() {
     });
   }, [classPupils, marks, term, year, subjects]);
 
-  const handleAddMark = () => {
+  const handleSaveMark = (andNext: boolean = false) => {
     if (!selectedPupilId || !formData.score || !formData.maxScore) {
-      toast.error("Please fill in all required fields");
+      toast.error("Please fill in score and max score");
+      return;
+    }
+
+    const scoreNum = parseFloat(formData.score);
+    const maxScoreNum = parseFloat(formData.maxScore);
+
+    if (isNaN(scoreNum) || isNaN(maxScoreNum) || maxScoreNum <= 0) {
+      toast.error("Please enter valid numeric values");
       return;
     }
 
@@ -347,24 +407,32 @@ function MarksPage() {
     );
 
     if (existingMark) {
-      toast.error("Mark already exists for this pupil in this subject and term");
-      return;
+      updateMark(existingMark.id, {
+        score: scoreNum,
+        maxScore: maxScoreNum,
+        teacherComment: formData.teacherComment,
+      });
+      toast.success(`Mark updated for ${pupil?.firstName} ${pupil?.lastName}`);
+    } else {
+      addMark({
+        pupilId: selectedPupilId,
+        subject,
+        term,
+        year,
+        score: scoreNum,
+        maxScore: maxScoreNum,
+        teacherComment: formData.teacherComment,
+      });
+      toast.success(`Mark added for ${pupil?.firstName} ${pupil?.lastName}`);
     }
 
-    addMark({
-      pupilId: selectedPupilId,
-      subject,
-      term,
-      year,
-      score: parseFloat(formData.score),
-      maxScore: parseFloat(formData.maxScore),
-      teacherComment: formData.teacherComment,
-    });
-
-    toast.success(`Mark added for ${pupil?.firstName} ${pupil?.lastName}`);
-    setAddDialogOpen(false);
-    setSelectedPupilId("");
-    setFormData({ score: "", maxScore: "100", teacherComment: "" });
+    if (andNext) {
+      const currentIndex = classPupils.findIndex((p) => p.id === selectedPupilId);
+      if (currentIndex !== -1 && currentIndex < classPupils.length - 1) {
+        const nextPupil = classPupils[currentIndex + 1];
+        selectPupilForEntry(nextPupil.id);
+      }
+    }
   };
 
   const handleEditMark = () => {
@@ -390,17 +458,27 @@ function MarksPage() {
     if (confirm(`Are you sure you want to delete this mark for ${pupilName}?`)) {
       deleteMark(markId);
       toast.success("Mark deleted");
+      if (editingMark?.id === markId) {
+        setFormData((prev) => ({ ...prev, score: "", teacherComment: "" }));
+        setEditingMark(null);
+      }
     }
   };
 
   const openEditDialog = (mark: any) => {
+    setSelectedPupilId(mark.pupilId);
     setEditingMark(mark);
     setFormData({
       score: mark.score.toString(),
       maxScore: mark.maxScore.toString(),
       teacherComment: mark.teacherComment || "",
     });
-    setEditDialogOpen(true);
+    setAddDialogOpen(true);
+  };
+
+  const openAddForPupil = (pupilId: string) => {
+    selectPupilForEntry(pupilId);
+    setAddDialogOpen(true);
   };
 
   const computeGrade = (scoreStr: string, maxScoreStr: string) => {
@@ -419,7 +497,7 @@ function MarksPage() {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
       
-      const currentPupilId = isEditMode ? editingMark?.pupilId : selectedPupilId;
+      const currentPupilId = selectedPupilId;
       if (!currentPupilId) return;
 
       if (formData.score && formData.maxScore) {
@@ -431,24 +509,18 @@ function MarksPage() {
             m.year === year,
         );
 
-        if (isEditMode && existingMark) {
+        if (existingMark) {
           updateMark(existingMark.id, {
             score: parseFloat(formData.score),
             maxScore: parseFloat(formData.maxScore),
             teacherComment: formData.teacherComment,
           });
-        } else if (!isEditMode && !existingMark) {
+        } else {
           addMark({
             pupilId: currentPupilId,
             subject,
             term,
             year,
-            score: parseFloat(formData.score),
-            maxScore: parseFloat(formData.maxScore),
-            teacherComment: formData.teacherComment,
-          });
-        } else if (!isEditMode && existingMark) {
-          updateMark(existingMark.id, {
             score: parseFloat(formData.score),
             maxScore: parseFloat(formData.maxScore),
             teacherComment: formData.teacherComment,
@@ -463,41 +535,7 @@ function MarksPage() {
           : (currentIndex - 1 + classPupils.length) % classPupils.length;
         
         const nextPupil = classPupils[nextIndex];
-        
-        const nextMark = marks.find(
-          (m) =>
-            m.pupilId === nextPupil.id &&
-            m.subject === subject &&
-            m.term === term &&
-            m.year === year,
-        );
-        
-        if (isEditMode) {
-          if (nextMark) {
-            setEditingMark(nextMark);
-            setFormData({
-              score: nextMark.score.toString(),
-              maxScore: nextMark.maxScore.toString(),
-              teacherComment: nextMark.teacherComment || "",
-            });
-          } else {
-            setEditDialogOpen(false);
-            setSelectedPupilId(nextPupil.id);
-            setFormData({ score: "", maxScore: formData.maxScore || "100", teacherComment: "" });
-            setAddDialogOpen(true);
-          }
-        } else {
-          setSelectedPupilId(nextPupil.id);
-          if (nextMark) {
-            setFormData({
-              score: nextMark.score.toString(),
-              maxScore: nextMark.maxScore.toString(),
-              teacherComment: nextMark.teacherComment || "",
-            });
-          } else {
-            setFormData((prev) => ({ ...prev, score: "", teacherComment: "" }));
-          }
-        }
+        selectPupilForEntry(nextPupil.id);
       }
     }
   };
@@ -518,6 +556,19 @@ function MarksPage() {
         return "bg-gray-500 text-white";
     }
   };
+
+  const gradePreview = useMemo(() => {
+    const s = parseFloat(formData.score);
+    const m = parseFloat(formData.maxScore);
+    if (isNaN(s) || isNaN(m) || m <= 0) return null;
+    const pct = (s / m) * 100;
+    let grade = "E";
+    if (pct >= 90) grade = "A";
+    else if (pct >= 80) grade = "B";
+    else if (pct >= 70) grade = "C";
+    else if (pct >= 60) grade = "D";
+    return { pct, grade };
+  }, [formData.score, formData.maxScore]);
 
   return (
     <AppShell title="Marks & Grades">
@@ -566,71 +617,238 @@ function MarksPage() {
                     Add Mark
                   </Button>
                 </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add Mark</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="add-pupil">Pupil</Label>
-                    <Select value={selectedPupilId} onValueChange={setSelectedPupilId}>
-                      <SelectTrigger id="add-pupil">
-                        <SelectValue placeholder="Select pupil" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {classPupils.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.firstName} {p.lastName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="add-score">Score</Label>
-                      <Input
-                        id="add-score"
-                        type="number"
-                        min="0"
-                        value={formData.score}
-                        onChange={(e) => setFormData({ ...formData, score: e.target.value })}
-                        onKeyDown={(e) => handleKeyDownForm(e, false)}
-                        placeholder="e.g., 85"
-                      />
+                <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-6">
+                  <DialogHeader className="pb-3 border-b">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <DialogTitle className="text-xl font-bold">Enter / Add Marks</DialogTitle>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Subject: <span className="font-semibold text-foreground">{subject}</span> | Class:{" "}
+                          <span className="font-semibold text-foreground">{currentClass?.name || "Selected Class"}</span> |{" "}
+                          Term: <span className="font-semibold text-foreground">{term}</span> | Year:{" "}
+                          <span className="font-semibold text-foreground">{year}</span>
+                        </p>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="add-max">Max Score</Label>
-                      <Input
-                        id="add-max"
-                        type="number"
-                        min="1"
-                        value={formData.maxScore}
-                        onChange={(e) => setFormData({ ...formData, maxScore: e.target.value })}
-                        onKeyDown={(e) => handleKeyDownForm(e, false)}
-                      />
+                  </DialogHeader>
+
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6 py-4 flex-1 overflow-hidden">
+                    {/* Left Column: All Students Display */}
+                    <div className="md:col-span-5 flex flex-col border-r pr-4 h-full min-h-0">
+                      <div className="space-y-2 mb-3">
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Search student..."
+                            value={pupilSearch}
+                            onChange={(e) => setPupilSearch(e.target.value)}
+                            className="pl-9 h-9 text-xs"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+                          <span>
+                            All Students (<strong className="text-foreground">{classPupils.length}</strong>)
+                          </span>
+                          <span>
+                            <strong className="text-green-600">{filteredMarks.length}</strong> / {classPupils.length} marked
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-[380px]">
+                        {classPupils
+                          .filter((p) =>
+                            `${p.firstName} ${p.lastName} ${p.admissionNo || ""}`
+                              .toLowerCase()
+                              .includes(pupilSearch.toLowerCase()),
+                          )
+                          .map((p) => {
+                            const m = filteredMarks.find((mark) => mark.pupilId === p.id);
+                            const isSelected = p.id === selectedPupilId;
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => selectPupilForEntry(p.id)}
+                                className={`w-full text-left p-2.5 rounded-lg border transition-all flex items-center justify-between cursor-pointer ${
+                                  isSelected
+                                    ? "bg-primary/10 border-primary shadow-xs ring-1 ring-primary"
+                                    : "bg-card hover:bg-accent/50 border-border"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div
+                                    className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                                      isSelected
+                                        ? "bg-primary text-primary-foreground"
+                                        : "bg-muted text-muted-foreground"
+                                    }`}
+                                  >
+                                    {p.firstName[0]}
+                                    {p.lastName[0]}
+                                  </div>
+                                  <div className="min-w-0 truncate">
+                                    <p className="font-semibold text-xs leading-none truncate">
+                                      {p.firstName} {p.lastName}
+                                    </p>
+                                    {p.admissionNo && (
+                                      <p className="text-[11px] text-muted-foreground mt-0.5 font-mono truncate">
+                                        {p.admissionNo}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="shrink-0 ml-2">
+                                  {m ? (
+                                    <Badge className={`${getGradeColor(m.grade || "")} text-[10px] px-1.5 py-0.5`}>
+                                      {m.score}/{m.maxScore} ({m.grade})
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-[10px] text-muted-foreground px-1.5 py-0.5">
+                                      No mark
+                                    </Badge>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        {classPupils.length === 0 && (
+                          <p className="text-center text-xs text-muted-foreground py-8">
+                            No students in this class.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right Column: Selected Student Mark Form */}
+                    <div className="md:col-span-7 flex flex-col justify-between h-full space-y-4">
+                      {selectedPupil ? (
+                        <>
+                          <div className="space-y-4">
+                            <div className="p-3 bg-muted/40 rounded-lg border flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-sm">
+                                  {selectedPupil.firstName[0]}
+                                  {selectedPupil.lastName[0]}
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-sm">
+                                    {selectedPupil.firstName} {selectedPupil.lastName}
+                                  </h4>
+                                  <p className="text-xs text-muted-foreground">
+                                    Adm No: {selectedPupil.admissionNo || "N/A"}
+                                  </p>
+                                </div>
+                              </div>
+                              {existingMarkForSelected ? (
+                                <Badge className={`${getGradeColor(existingMarkForSelected.grade || "")} px-2.5 py-1 text-xs font-semibold`}>
+                                  Saved: {existingMarkForSelected.score}/{existingMarkForSelected.maxScore} ({existingMarkForSelected.grade})
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="px-2.5 py-1 text-xs">
+                                  Pending Entry
+                                </Badge>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="add-score" className="text-xs font-semibold">
+                                  Score
+                                </Label>
+                                <Input
+                                  id="add-score"
+                                  type="number"
+                                  min="0"
+                                  value={formData.score}
+                                  onChange={(e) => setFormData({ ...formData, score: e.target.value })}
+                                  onKeyDown={(e) => handleKeyDownForm(e, !!existingMarkForSelected)}
+                                  placeholder="e.g. 85"
+                                  className="text-sm font-semibold"
+                                  autoFocus
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="add-max" className="text-xs font-semibold">
+                                  Max Score
+                                </Label>
+                                <Input
+                                  id="add-max"
+                                  type="number"
+                                  min="1"
+                                  value={formData.maxScore}
+                                  onChange={(e) => setFormData({ ...formData, maxScore: e.target.value })}
+                                  onKeyDown={(e) => handleKeyDownForm(e, !!existingMarkForSelected)}
+                                  className="text-sm"
+                                />
+                              </div>
+                            </div>
+
+                            {gradePreview && (
+                              <div className="p-3 bg-accent/30 rounded-lg border text-xs flex items-center justify-between">
+                                <span className="text-muted-foreground font-medium">Calculated Percentage & Grade:</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono font-bold text-sm">{gradePreview.pct.toFixed(1)}%</span>
+                                  <Badge className={`${getGradeColor(gradePreview.grade)} px-2 py-0.5 text-xs font-bold`}>
+                                    Grade {gradePreview.grade}
+                                  </Badge>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="space-y-2">
+                              <Label htmlFor="add-comment" className="text-xs font-semibold">
+                                Teacher Remarks / Comment (Optional)
+                              </Label>
+                              <Textarea
+                                id="add-comment"
+                                value={formData.teacherComment}
+                                onChange={(e) => setFormData({ ...formData, teacherComment: e.target.value })}
+                                onKeyDown={(e) => handleKeyDownForm(e, !!existingMarkForSelected)}
+                                placeholder="e.g., Excellent performance, shown good understanding."
+                                rows={3}
+                                className="text-xs"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="pt-3 border-t flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <span>Tip: Use ↑ ↓ arrow keys to navigate</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(false)}>
+                                Close
+                              </Button>
+                              {existingMarkForSelected && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDelete(existingMarkForSelected.id, `${selectedPupil.firstName} ${selectedPupil.lastName}`)}
+                                >
+                                  Delete
+                                </Button>
+                              )}
+                              <Button size="sm" onClick={() => handleSaveMark(false)}>
+                                {existingMarkForSelected ? "Update Mark" : "Save Mark"}
+                              </Button>
+                              <Button size="sm" variant="secondary" onClick={() => handleSaveMark(true)}>
+                                Save & Next <ChevronRight className="h-4 w-4 ml-1" />
+                              </Button>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full py-12 text-muted-foreground">
+                          <User className="h-10 w-10 mb-2 opacity-40" />
+                          <p className="text-xs">Click on a student from the list on the left to enter marks.</p>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-comment">Teacher Comment (Optional)</Label>
-                    <Textarea
-                      id="add-comment"
-                      value={formData.teacherComment}
-                      onChange={(e) => setFormData({ ...formData, teacherComment: e.target.value })}
-                      onKeyDown={(e) => handleKeyDownForm(e, false)}
-                      placeholder="e.g., Excellent work! Keep it up."
-                      rows={3}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleAddMark}>Add Mark</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </div>
       </CardHeader>
