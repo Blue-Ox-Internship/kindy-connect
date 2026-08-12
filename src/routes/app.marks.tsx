@@ -32,7 +32,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, FileSpreadsheet, Printer } from "lucide-react";
+import { Plus, Pencil, Trash2, FileSpreadsheet, Printer, Save, Check, Loader2, RotateCcw } from "lucide-react";
 import { downloadCSV } from "@/lib/export-utils";
 
 export const Route = createFileRoute("/app/marks")({
@@ -41,8 +41,18 @@ export const Route = createFileRoute("/app/marks")({
 });
 
 function MarksPage() {
-  const { currentUser, pupils, classes, marks, addMark, updateMark, deleteMark, schools } =
-    useStore();
+  const {
+    currentUser,
+    pupils,
+    classes,
+    marks,
+    addMark,
+    updateMark,
+    deleteMark,
+    saveBulkMarks,
+    schools,
+  } = useStore();
+
   const isTeacher = currentUser?.role === "teacher";
   const isSchoolAdmin = currentUser?.role === "admin";
   const isAdmin = currentUser?.role === "super_admin" || currentUser?.role === "admin";
@@ -94,15 +104,21 @@ function MarksPage() {
     teacherComment: "",
   });
 
-  const classPupils = pupils.filter((p) => p.classId === classId && p.active);
-  const filteredMarks = marks.filter(
-    (m) => m.term === term && m.year === year && m.subject === subject,
-  );
+  const classPupils = useMemo(() => {
+    return pupils
+      .filter((p) => p.classId === classId && p.active)
+      .sort((a, b) => a.firstName.localeCompare(b.firstName));
+  }, [pupils, classId]);
+
+  const filteredMarks = useMemo(() => {
+    return marks.filter(
+      (m) => m.term === term && m.year === year && m.subject === subject,
+    );
+  }, [marks, term, year, subject]);
 
   const subjects = ["Reading", "Math", "Writing", "Art", "Music", "Physical Education", "Science"];
 
   // Filter subjects for teachers - they can only see their assigned subjects
-  // School admins can see all subjects
   const availableSubjects = useMemo(() => {
     if (isTeacher && currentUser?.subjects && currentUser.subjects.length > 0) {
       return subjects.filter((s) => currentUser.subjects?.includes(s));
@@ -116,6 +132,155 @@ function MarksPage() {
   const currentSchool = schools.find(
     (s) => s.id === (currentClass?.schoolId || currentUser?.schoolId),
   );
+
+  // State for Class-Wide Inline Marks Entry
+  const [inlineMarks, setInlineMarks] = useState<
+    Record<
+      string,
+      { score: string; maxScore: string; teacherComment: string; markId?: string; isDirty?: boolean }
+    >
+  >({});
+  const [defaultMaxScore, setDefaultMaxScore] = useState("100");
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Sync inline state whenever pupils or selected criteria change
+  useEffect(() => {
+    const initialMap: Record<
+      string,
+      { score: string; maxScore: string; teacherComment: string; markId?: string; isDirty?: boolean }
+    > = {};
+
+    classPupils.forEach((p) => {
+      const existing = filteredMarks.find((m) => m.pupilId === p.id);
+      if (existing) {
+        initialMap[p.id] = {
+          score: existing.score.toString(),
+          maxScore: existing.maxScore.toString(),
+          teacherComment: existing.teacherComment || "",
+          markId: existing.id,
+          isDirty: false,
+        };
+      } else {
+        initialMap[p.id] = {
+          score: "",
+          maxScore: defaultMaxScore,
+          teacherComment: "",
+          markId: undefined,
+          isDirty: false,
+        };
+      }
+    });
+
+    setInlineMarks(initialMap);
+  }, [classPupils, filteredMarks, term, year, subject, classId]);
+
+  const handleInlineChange = (
+    pupilId: string,
+    field: "score" | "maxScore" | "teacherComment",
+    value: string,
+  ) => {
+    setInlineMarks((prev) => {
+      const existing = prev[pupilId] || {
+        score: "",
+        maxScore: defaultMaxScore,
+        teacherComment: "",
+      };
+      return {
+        ...prev,
+        [pupilId]: {
+          ...existing,
+          [field]: value,
+          isDirty: true,
+        },
+      };
+    });
+  };
+
+  const applyDefaultMaxScoreToAll = (newMax: string) => {
+    setDefaultMaxScore(newMax);
+    setInlineMarks((prev) => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach((pid) => {
+        updated[pid] = {
+          ...updated[pid],
+          maxScore: newMax,
+          isDirty: true,
+        };
+      });
+      return updated;
+    });
+  };
+
+  const dirtyCount = useMemo(() => {
+    return Object.values(inlineMarks).filter((m) => m.isDirty && m.score.trim() !== "").length;
+  }, [inlineMarks]);
+
+  const handleSaveAllInlineMarks = async () => {
+    const marksToSave: Array<{
+      id?: string;
+      pupilId: string;
+      subject: string;
+      term: string;
+      year: string;
+      score: number;
+      maxScore: number;
+      teacherComment?: string;
+    }> = [];
+
+    Object.entries(inlineMarks).forEach(([pupilId, data]) => {
+      if (data.isDirty && data.score.trim() !== "" && !isNaN(parseFloat(data.score))) {
+        marksToSave.push({
+          id: data.markId,
+          pupilId,
+          subject,
+          term,
+          year,
+          score: parseFloat(data.score),
+          maxScore: parseFloat(data.maxScore) || 100,
+          teacherComment: data.teacherComment,
+        });
+      }
+    });
+
+    if (marksToSave.length === 0) {
+      toast.info("No unsaved marks to save.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await saveBulkMarks(marksToSave);
+      toast.success(`Successfully saved marks for ${marksToSave.length} pupil(s)!`);
+    } catch (err: any) {
+      console.error("Failed to save bulk marks:", err);
+      toast.error(err?.message || "Failed to save marks");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Keyboard Navigation: Enter / Down Arrow moves to next pupil's score input, Up Arrow moves to previous
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    pupilIndex: number,
+    field: "score" | "maxScore" | "teacherComment",
+  ) => {
+    if (e.key === "Enter" || e.key === "ArrowDown") {
+      e.preventDefault();
+      const nextInput = document.getElementById(`inline-${field}-${pupilIndex + 1}`);
+      if (nextInput) {
+        (nextInput as HTMLInputElement).focus();
+        (nextInput as HTMLInputElement).select();
+      }
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prevInput = document.getElementById(`inline-${field}-${pupilIndex - 1}`);
+      if (prevInput) {
+        (prevInput as HTMLInputElement).focus();
+        (prevInput as HTMLInputElement).select();
+      }
+    }
+  };
 
   // Compute broadsheet marks matrix for the pupil sheet preview
   const broadsheetData = useMemo(() => {
@@ -235,20 +400,32 @@ function MarksPage() {
     setEditDialogOpen(true);
   };
 
+  const computeGrade = (scoreStr: string, maxScoreStr: string) => {
+    const s = parseFloat(scoreStr);
+    const m = parseFloat(maxScoreStr);
+    if (isNaN(s) || isNaN(m) || m <= 0) return null;
+    const pct = (s / m) * 100;
+    if (pct >= 90) return "A";
+    if (pct >= 80) return "B";
+    if (pct >= 70) return "C";
+    if (pct >= 60) return "D";
+    return "E";
+  };
+
   const getGradeColor = (grade: string) => {
     switch (grade) {
       case "A":
-        return "bg-green-500";
+        return "bg-green-500 text-white";
       case "B":
-        return "bg-blue-500";
+        return "bg-blue-500 text-white";
       case "C":
-        return "bg-yellow-500";
+        return "bg-yellow-500 text-white";
       case "D":
-        return "bg-orange-500";
+        return "bg-orange-500 text-white";
       case "E":
-        return "bg-red-500";
+        return "bg-red-500 text-white";
       default:
-        return "bg-gray-500";
+        return "bg-gray-500 text-white";
     }
   };
 
@@ -256,8 +433,13 @@ function MarksPage() {
     <AppShell title="Marks & Grades">
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle>Student Marks</CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-xl">Class Marks Entry</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Enter scores directly for all pupils in the class sequentially without individual lookup.
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
@@ -265,264 +447,277 @@ function MarksPage() {
                 onClick={() => setSheetDialogOpen(true)}
               >
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Preview Marks Sheet
+                Preview Broadsheet
               </Button>
-              <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Mark
-                  </Button>
-                </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add Mark</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="add-pupil">Pupil</Label>
-                    <Select value={selectedPupilId} onValueChange={setSelectedPupilId}>
-                      <SelectTrigger id="add-pupil">
-                        <SelectValue placeholder="Select pupil" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {classPupils.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.firstName} {p.lastName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="add-score">Score</Label>
-                      <Input
-                        id="add-score"
-                        type="number"
-                        min="0"
-                        value={formData.score}
-                        onChange={(e) => setFormData({ ...formData, score: e.target.value })}
-                        placeholder="e.g., 85"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="add-max">Max Score</Label>
-                      <Input
-                        id="add-max"
-                        type="number"
-                        min="1"
-                        value={formData.maxScore}
-                        onChange={(e) => setFormData({ ...formData, maxScore: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-comment">Teacher Comment (Optional)</Label>
-                    <Textarea
-                      id="add-comment"
-                      value={formData.teacherComment}
-                      onChange={(e) => setFormData({ ...formData, teacherComment: e.target.value })}
-                      placeholder="e.g., Excellent work! Keep it up."
-                      rows={3}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleAddMark}>Add Mark</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3 mb-4">
-            {currentUser?.role === "super_admin" && (
-              <div className="flex items-center gap-2">
-                <Label>School:</Label>
-                <select
-                  value={superSchoolId}
-                  onChange={(e) => setSuperSchoolId(e.target.value)}
-                  className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring file:border-0 file:bg-transparent file:text-sm file:font-medium md:text-sm"
+              {canEditMarks && (
+                <Button
+                  size="sm"
+                  onClick={handleSaveAllInlineMarks}
+                  disabled={isSaving || dirtyCount === 0}
+                  className={dirtyCount > 0 ? "bg-primary shadow-sm" : ""}
                 >
-                  {schools.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save All Marks {dirtyCount > 0 && `(${dirtyCount})`}
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4 p-3 bg-muted/30 rounded-lg border">
+            <div className="flex flex-wrap items-center gap-3">
+              {currentUser?.role === "super_admin" && (
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs font-semibold">School:</Label>
+                  <select
+                    value={superSchoolId}
+                    onChange={(e) => setSuperSchoolId(e.target.value)}
+                    className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {schools.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold">Class:</Label>
+                <Select value={classId} onValueChange={setClassId} disabled={isTeacher}>
+                  <SelectTrigger className="w-40 h-9 text-xs bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredClasses.map((c) => (
+                      <SelectItem key={c.id} value={c.id} className="text-xs">
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold">Subject:</Label>
+                <Select value={subject} onValueChange={setSubject}>
+                  <SelectTrigger className="w-44 h-9 text-xs bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSubjects.map((s) => (
+                      <SelectItem key={s} value={s} className="text-xs">
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold">Term:</Label>
+                <Select value={term} onValueChange={setTerm}>
+                  <SelectTrigger className="w-28 h-9 text-xs bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {terms.map((t) => (
+                      <SelectItem key={t} value={t} className="text-xs">
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold">Year:</Label>
+                <Input
+                  type="number"
+                  className="w-20 h-9 text-xs bg-background"
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {canEditMarks && (
+              <div className="flex items-center gap-2 border-l pl-3">
+                <Label className="text-xs font-semibold text-muted-foreground">Default Max Score:</Label>
+                <Input
+                  type="number"
+                  className="w-20 h-9 text-xs bg-background"
+                  value={defaultMaxScore}
+                  onChange={(e) => applyDefaultMaxScoreToAll(e.target.value)}
+                />
               </div>
             )}
-            <div className="flex items-center gap-2">
-              <Label>Class:</Label>
-              <Select value={classId} onValueChange={setClassId} disabled={isTeacher}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredClasses.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Label>Subject:</Label>
-              <Select value={subject} onValueChange={setSubject}>
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableSubjects.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Label>Term:</Label>
-              <Select value={term} onValueChange={setTerm}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {terms.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Label>Year:</Label>
-              <Input
-                type="number"
-                className="w-24"
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-              />
-            </div>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Pupil</TableHead>
-                {isAdmin && <TableHead>Admission No</TableHead>}
-                <TableHead>Score</TableHead>
-                <TableHead>Grade</TableHead>
-                <TableHead>Comment</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {classPupils.map((p) => {
-                const mark = filteredMarks.find((m) => m.pupilId === p.id);
-                return (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-medium">
-                      {p.firstName} {p.lastName}
-                    </TableCell>
-                    {isAdmin && <TableCell>{p.admissionNo}</TableCell>}
-                    <TableCell>{mark ? `${mark.score}/${mark.maxScore}` : "-"}</TableCell>
-                    <TableCell>
-                      {mark ? (
-                        <Badge className={getGradeColor(mark.grade || "")}>{mark.grade}</Badge>
-                      ) : (
-                        <Badge variant="secondary">Not graded</Badge>
+          <div className="overflow-x-auto border rounded-lg">
+            <Table className="text-xs">
+              <TableHeader className="bg-muted/50">
+                <TableRow>
+                  <TableHead className="w-10 text-center font-bold">#</TableHead>
+                  <TableHead className="min-w-[160px] font-bold">Pupil Name</TableHead>
+                  {isAdmin && <TableHead className="w-28 font-bold">Admission No</TableHead>}
+                  <TableHead className="w-28 font-bold">Score</TableHead>
+                  <TableHead className="w-24 font-bold">Max Score</TableHead>
+                  <TableHead className="w-20 text-center font-bold">Grade</TableHead>
+                  <TableHead className="min-w-[200px] font-bold">Teacher Comment</TableHead>
+                  <TableHead className="w-28 text-right font-bold">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {classPupils.map((p, idx) => {
+                  const item = inlineMarks[p.id] || {
+                    score: "",
+                    maxScore: defaultMaxScore,
+                    teacherComment: "",
+                    markId: undefined,
+                    isDirty: false,
+                  };
+                  const liveGrade = computeGrade(item.score, item.maxScore);
+
+                  return (
+                    <TableRow key={p.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="text-center font-medium text-muted-foreground">
+                        {idx + 1}
+                      </TableCell>
+                      <TableCell className="font-semibold text-foreground">
+                        {p.firstName} {p.lastName}
+                      </TableCell>
+                      {isAdmin && (
+                        <TableCell className="font-mono text-xs text-muted-foreground">
+                          {p.admissionNo}
+                        </TableCell>
                       )}
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {mark?.teacherComment || "-"}
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      {mark ? (
-                        <>
-                          <Button size="sm" variant="outline" onClick={() => openEditDialog(mark)}>
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDelete(mark.id, `${p.firstName} ${p.lastName}`)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">No mark</span>
-                      )}
+                      <TableCell>
+                        <Input
+                          id={`inline-score-${idx}`}
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max={item.maxScore}
+                          placeholder="Score"
+                          disabled={!canEditMarks}
+                          value={item.score}
+                          onChange={(e) => handleInlineChange(p.id, "score", e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(e, idx, "score")}
+                          className="h-8 text-xs font-semibold w-24 bg-background focus:ring-2 focus:ring-primary"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          id={`inline-maxScore-${idx}`}
+                          type="number"
+                          min="1"
+                          placeholder="Max"
+                          disabled={!canEditMarks}
+                          value={item.maxScore}
+                          onChange={(e) => handleInlineChange(p.id, "maxScore", e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(e, idx, "maxScore")}
+                          className="h-8 text-xs w-20 bg-background text-muted-foreground"
+                        />
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {liveGrade ? (
+                          <Badge className={`${getGradeColor(liveGrade)} text-[10px] px-2 py-0.5`}>
+                            {liveGrade}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                            -
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          id={`inline-teacherComment-${idx}`}
+                          type="text"
+                          placeholder="Optional comment..."
+                          disabled={!canEditMarks}
+                          value={item.teacherComment}
+                          onChange={(e) => handleInlineChange(p.id, "teacherComment", e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(e, idx, "teacherComment")}
+                          className="h-8 text-xs bg-background"
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {item.isDirty ? (
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-300 text-[10px]">
+                              Modified
+                            </Badge>
+                          ) : item.markId ? (
+                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px] gap-1">
+                              <Check className="h-3 w-3" /> Saved
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                              Empty
+                            </Badge>
+                          )}
+                          {item.markId && canEditMarks && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDelete(item.markId!, `${p.firstName} ${p.lastName}`)}
+                              title="Delete mark"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {classPupils.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-8 text-muted-foreground">
+                      No pupils in this class. Select a class to enter marks.
                     </TableCell>
                   </TableRow>
-                );
-              })}
-              {classPupils.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No pupils in this class.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {canEditMarks && classPupils.length > 0 && (
+            <div className="flex items-center justify-between pt-4 mt-2 border-t">
+              <div className="text-xs text-muted-foreground">
+                Tip: Press <kbd className="px-1.5 py-0.5 bg-muted rounded border text-[10px] font-mono">Enter</kbd> or <kbd className="px-1.5 py-0.5 bg-muted rounded border text-[10px] font-mono">↓</kbd> in the score box to jump quickly to the next student.
+              </div>
+              <Button
+                size="sm"
+                onClick={handleSaveAllInlineMarks}
+                disabled={isSaving || dirtyCount === 0}
+                className={dirtyCount > 0 ? "bg-primary shadow-sm" : ""}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving Marks...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save All Marks {dirtyCount > 0 && `(${dirtyCount})`}
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Mark</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-score">Score</Label>
-                <Input
-                  id="edit-score"
-                  type="number"
-                  min="0"
-                  value={formData.score}
-                  onChange={(e) => setFormData({ ...formData, score: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-max">Max Score</Label>
-                <Input
-                  id="edit-max"
-                  type="number"
-                  min="1"
-                  value={formData.maxScore}
-                  onChange={(e) => setFormData({ ...formData, maxScore: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-comment">Teacher Comment (Optional)</Label>
-              <Textarea
-                id="edit-comment"
-                value={formData.teacherComment}
-                onChange={(e) => setFormData({ ...formData, teacherComment: e.target.value })}
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleEditMark}>Update Mark</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Pupil Marks Sheet Preview Dialog */}
       <Dialog open={sheetDialogOpen} onOpenChange={setSheetDialogOpen}>
@@ -601,44 +796,44 @@ function MarksPage() {
               )}
               <div className="flex items-center gap-2">
                 <Label className="text-xs font-semibold">Display Format:</Label>
-              <div className="flex bg-background border rounded-lg p-0.5 text-xs font-medium">
-                <button
-                  type="button"
-                  className={`px-3 py-1 rounded-md transition ${
-                    sheetDisplayMode === "score"
-                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  onClick={() => setSheetDisplayMode("score")}
-                >
-                  Score (e.g. 85/100)
-                </button>
-                <button
-                  type="button"
-                  className={`px-3 py-1 rounded-md transition ${
-                    sheetDisplayMode === "percentage"
-                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  onClick={() => setSheetDisplayMode("percentage")}
-                >
-                  Percentage (%)
-                </button>
-                <button
-                  type="button"
-                  className={`px-3 py-1 rounded-md transition ${
-                    sheetDisplayMode === "grade"
-                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  onClick={() => setSheetDisplayMode("grade")}
-                >
-                  Grade (A-E)
-                </button>
+                <div className="flex bg-background border rounded-lg p-0.5 text-xs font-medium">
+                  <button
+                    type="button"
+                    className={`px-3 py-1 rounded-md transition ${
+                      sheetDisplayMode === "score"
+                        ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setSheetDisplayMode("score")}
+                  >
+                    Score (e.g. 85/100)
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-1 rounded-md transition ${
+                      sheetDisplayMode === "percentage"
+                        ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setSheetDisplayMode("percentage")}
+                  >
+                    Percentage (%)
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-1 rounded-md transition ${
+                      sheetDisplayMode === "grade"
+                        ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setSheetDisplayMode("grade")}
+                  >
+                    Grade (A-E)
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground">
               Total Pupils: <span className="font-semibold text-foreground">{classPupils.length}</span>
             </div>
           </div>

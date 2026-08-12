@@ -25,6 +25,7 @@ import {
   addMark as addMarkDb,
   updateMark as updateMarkDb,
   deleteMark as deleteMarkDb,
+  saveBulkMarks as saveBulkMarksDb,
   addSchool as addSchoolDb,
   updateSchool as updateSchoolDb,
   deleteSchool as deleteSchoolDb,
@@ -135,6 +136,18 @@ interface Store {
     data: Partial<Omit<Mark, "id" | "recordedBy" | "recordedAt">>,
   ) => Promise<void>;
   deleteMark: (id: string) => Promise<void>;
+  saveBulkMarks: (
+    marks: Array<{
+      id?: string;
+      pupilId: string;
+      subject: string;
+      term: string;
+      year: string;
+      score: number;
+      maxScore: number;
+      teacherComment?: string;
+    }>,
+  ) => Promise<void>;
   addSchool: (data: {
     name: string;
     address?: string;
@@ -1020,6 +1033,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 pupil && existingMark
                   ? `${pupil.firstName} ${pupil.lastName} - ${existingMark.subject}`
                   : "Mark",
+              timestamp: new Date().toISOString(),
+            },
+            ...s.audit,
+          ],
+        };
+      });
+    },
+
+    saveBulkMarks: async (markItems) => {
+      if (!currentUser || !markItems.length) return;
+      const savedMarks = await saveBulkMarksDb({
+        data: { marks: markItems, actorId: currentUser.id },
+      });
+
+      setState((s) => {
+        const savedIds = new Set(savedMarks.map((m) => m.id));
+        const updatedMarksList = [
+          ...savedMarks,
+          ...s.marks.filter((m) => !savedIds.has(m.id)),
+        ];
+
+        return {
+          ...s,
+          marks: updatedMarksList,
+          audit: [
+            {
+              id: Math.random().toString(36).slice(2, 10),
+              actorId: currentUser.id,
+              actorName: currentUser.name,
+              action: "Batch saved marks",
+              target: `${savedMarks.length} mark(s) saved for ${markItems[0]?.subject || "class"}`,
               timestamp: new Date().toISOString(),
             },
             ...s.audit,

@@ -1108,6 +1108,90 @@ export const deleteMark = createServerFn({ method: "POST" })
     }
   });
 
+export const saveBulkMarks = createServerFn({ method: "POST" })
+  .validator(
+    (d: {
+      marks: Array<{
+        id?: string;
+        pupilId: string;
+        subject: string;
+        term: string;
+        year: string;
+        score: number;
+        maxScore: number;
+        teacherComment?: string;
+      }>;
+      actorId: string;
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    const { marks: markItems, actorId } = data;
+    if (!markItems || markItems.length === 0) {
+      return [];
+    }
+
+    const recordedAt = new Date().toISOString();
+    const results: Mark[] = [];
+
+    for (const item of markItems) {
+      const percentage = (item.score / item.maxScore) * 100;
+      let grade = "E";
+      if (percentage >= 90) grade = "A";
+      else if (percentage >= 80) grade = "B";
+      else if (percentage >= 70) grade = "C";
+      else if (percentage >= 60) grade = "D";
+
+      let existingId = item.id;
+      if (!existingId) {
+        const check = await sql`
+          SELECT id FROM marks 
+          WHERE pupil_id = ${item.pupilId} AND subject = ${item.subject} AND term = ${item.term} AND year = ${item.year}
+        `;
+        if (check.length > 0) {
+          existingId = check[0].id;
+        }
+      }
+
+      if (existingId) {
+        const dbFields = toSnake({
+          score: item.score,
+          maxScore: item.maxScore,
+          teacherComment: item.teacherComment || "",
+          grade,
+        });
+        await sql`
+          UPDATE marks SET ${sql(dbFields)} WHERE id = ${existingId}
+        `;
+        const updated = await sql`SELECT * FROM marks WHERE id = ${existingId}`;
+        if (updated.length > 0) {
+          results.push(toCamel<Mark>(updated[0]));
+        }
+      } else {
+        const id = Math.random().toString(36).slice(2, 10);
+        const dbMark = toSnake({
+          id,
+          pupilId: item.pupilId,
+          subject: item.subject,
+          term: item.term,
+          year: item.year,
+          score: item.score,
+          maxScore: item.maxScore,
+          teacherComment: item.teacherComment || "",
+          grade,
+          recordedBy: actorId,
+          recordedAt,
+        });
+        await sql`
+          INSERT INTO marks ${sql(dbMark)}
+        `;
+        results.push(toCamel<Mark>(dbMark));
+      }
+    }
+
+    return results;
+  });
+
+
 // ----------------------------------------------------
 // 7. School Management Functions
 // ----------------------------------------------------
