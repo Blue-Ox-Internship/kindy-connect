@@ -41,7 +41,6 @@ import {
   FileText,
   AlertTriangle,
   Columns,
-  Sparkles,
   ArrowRight,
   RefreshCw,
   CheckCircle2,
@@ -453,8 +452,8 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
                             </Badge>
                           )}
                           {item.status === "auto_mapped" && (
-                            <Badge variant="outline" className="border-blue-500 text-blue-700 bg-blue-50 dark:bg-blue-950/40 text-[11px] gap-1">
-                              <Sparkles className="h-3 w-3 text-blue-600" /> Auto-Mapped
+                            <Badge variant="outline" className="border-blue-500 text-blue-700 bg-blue-50 dark:bg-blue-950/40 text-[11px]">
+                              Auto-Mapped
                             </Badge>
                           )}
                           {item.status === "merged" && (
