@@ -38,19 +38,71 @@ export interface ParseResult {
 /**
  * Generate CSV template with headers and sample data
  */
+export const EXPECTED_HEADERS = [
+  "admissionNo",
+  "firstName",
+  "lastName",
+  "gender",
+  "dob",
+  "className",
+  "parentName",
+  "parentPhone",
+  "parentEmail",
+  "parentRelationship",
+] as const;
+
+export type ExpectedHeader = (typeof EXPECTED_HEADERS)[number];
+
+export const HEADER_LABELS: Record<
+  ExpectedHeader,
+  { label: string; required: boolean; description: string }
+> = {
+  admissionNo: { label: "Admission Number", required: true, description: "Unique pupil admission/ID number" },
+  firstName: { label: "First Name", required: true, description: "Pupil's first name" },
+  lastName: { label: "Last Name", required: true, description: "Pupil's surname / last name" },
+  gender: { label: "Gender", required: true, description: "M or F" },
+  dob: { label: "Date of Birth", required: true, description: "Format: YYYY-MM-DD" },
+  className: { label: "Class Name", required: true, description: "Exact class name in school" },
+  parentName: { label: "Parent Name", required: true, description: "Full name of parent/guardian" },
+  parentPhone: { label: "Parent Phone", required: true, description: "Phone number with country code" },
+  parentEmail: { label: "Parent Email", required: true, description: "Valid email address" },
+  parentRelationship: { label: "Relationship", required: true, description: "Father, Mother, Guardian, etc." },
+};
+
+export const HEADER_ALIASES: Record<ExpectedHeader, string[]> = {
+  admissionNo: ["admissionno", "admission_no", "admission", "adm_no", "adm", "pupil_id", "student_id", "reg_no", "id"],
+  firstName: ["firstname", "first_name", "fname", "given_name", "first"],
+  lastName: ["lastname", "last_name", "lname", "surname", "family_name", "last"],
+  gender: ["gender", "sex"],
+  dob: ["dob", "dateofbirth", "date_of_birth", "birth_date", "birthdate"],
+  className: ["classname", "class_name", "class", "grade", "stream", "room"],
+  parentName: ["parentname", "parent_name", "guardian_name", "parent", "guardian"],
+  parentPhone: ["parentphone", "parent_phone", "phone", "contact", "mobile", "parent_contact", "telephone"],
+  parentEmail: ["parentemail", "parent_email", "email", "email_address"],
+  parentRelationship: ["parentrelationship", "parent_relationship", "relationship", "relation"],
+};
+
+export interface HeaderComparisonItem {
+  expectedHeader: ExpectedHeader;
+  label: string;
+  required: boolean;
+  mappedUploadedHeader: string | null;
+  status: "exact_match" | "auto_mapped" | "merged" | "missing" | "custom_mapped";
+  matchConfidence: number; // 0 to 100
+}
+
+export interface ColumnComparisonResult {
+  isMatchValid: boolean;
+  similarityScore: number;
+  items: HeaderComparisonItem[];
+  uploadedHeaders: string[];
+  unmappedUploadedHeaders: string[];
+  missingRequiredHeaders: ExpectedHeader[];
+  hasMergedNameColumn: boolean;
+}
+
 export function generateCSVTemplate(): string {
-  const headers = [
-    "admissionNo",
-    "firstName",
-    "lastName",
-    "gender",
-    "dob",
-    "className",
-    "parentName",
-    "parentPhone",
-    "parentEmail",
-    "parentRelationship",
-  ];
+  const headers = [...EXPECTED_HEADERS];
 
   const sampleData = [
     [
@@ -118,37 +170,235 @@ export function downloadCSVTemplate(): void {
 }
 
 /**
- * Parse CSV text to array of objects
+ * Clean & normalize a string header for comparison
  */
-function parseCSVText(csvText: string): Record<string, string>[] {
+function normalizeHeader(str: string): string {
+  return str.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/**
+ * Compare uploaded file headers with expected template headers
+ */
+export function compareCSVHeaders(
+  uploadedHeaders: string[],
+  customMapping: Partial<Record<ExpectedHeader, string>> = {}
+): ColumnComparisonResult {
+  const normUploadedMap = new Map<string, string>();
+  uploadedHeaders.forEach((h) => {
+    normUploadedMap.set(normalizeHeader(h), h);
+  });
+
+  // Check for combined name column (e.g. "name", "full_name", "pupil_name", "student_name")
+  let mergedNameHeader: string | null = null;
+  for (const h of uploadedHeaders) {
+    const norm = normalizeHeader(h);
+    if (["fullname", "name", "pupilname", "studentname"].includes(norm)) {
+      mergedNameHeader = h;
+      break;
+    }
+  }
+
+  const mappedUploadedHeaders = new Set<string>();
+  const items: HeaderComparisonItem[] = [];
+  const missingRequiredHeaders: ExpectedHeader[] = [];
+
+  let totalWeight = 0;
+  let matchedWeight = 0;
+
+  EXPECTED_HEADERS.forEach((expKey) => {
+    const info = HEADER_LABELS[expKey];
+    totalWeight += info.required ? 10 : 5;
+
+    // Check if custom mapped
+    const userCustom = customMapping[expKey];
+    if (userCustom && userCustom !== "__none__") {
+      if (userCustom === "__MERGE_FULL_NAME__" && mergedNameHeader) {
+        mappedUploadedHeaders.add(mergedNameHeader);
+        matchedWeight += info.required ? 10 : 5;
+        items.push({
+          expectedHeader: expKey,
+          label: info.label,
+          required: info.required,
+          mappedUploadedHeader: `[Merged from ${mergedNameHeader}]`,
+          status: "merged",
+          matchConfidence: 90,
+        });
+        return;
+      }
+
+      const uploaded = uploadedHeaders.find((h) => h === userCustom);
+      if (uploaded) {
+        mappedUploadedHeaders.add(uploaded);
+        matchedWeight += info.required ? 10 : 5;
+        items.push({
+          expectedHeader: expKey,
+          label: info.label,
+          required: info.required,
+          mappedUploadedHeader: uploaded,
+          status: "custom_mapped",
+          matchConfidence: 100,
+        });
+        return;
+      }
+    }
+
+    // Exact match
+    if (normUploadedMap.has(normalizeHeader(expKey))) {
+      const actual = normUploadedMap.get(normalizeHeader(expKey))!;
+      mappedUploadedHeaders.add(actual);
+      matchedWeight += info.required ? 10 : 5;
+      items.push({
+        expectedHeader: expKey,
+        label: info.label,
+        required: info.required,
+        mappedUploadedHeader: actual,
+        status: "exact_match",
+        matchConfidence: 100,
+      });
+      return;
+    }
+
+    // Alias match
+    const aliases = HEADER_ALIASES[expKey] || [];
+    let aliasMatchedHeader: string | null = null;
+
+    for (const alias of aliases) {
+      if (normUploadedMap.has(normalizeHeader(alias))) {
+        aliasMatchedHeader = normUploadedMap.get(normalizeHeader(alias))!;
+        break;
+      }
+    }
+
+    if (aliasMatchedHeader && !mappedUploadedHeaders.has(aliasMatchedHeader)) {
+      mappedUploadedHeaders.add(aliasMatchedHeader);
+      matchedWeight += info.required ? 10 : 5;
+      items.push({
+        expectedHeader: expKey,
+        label: info.label,
+        required: info.required,
+        mappedUploadedHeader: aliasMatchedHeader,
+        status: "auto_mapped",
+        matchConfidence: 85,
+      });
+      return;
+    }
+
+    // Auto-fallback for merged name column if firstName/lastName is missing
+    if ((expKey === "firstName" || expKey === "lastName") && mergedNameHeader) {
+      mappedUploadedHeaders.add(mergedNameHeader);
+      matchedWeight += info.required ? 8 : 4;
+      items.push({
+        expectedHeader: expKey,
+        label: info.label,
+        required: info.required,
+        mappedUploadedHeader: `[Merged from ${mergedNameHeader}]`,
+        status: "merged",
+        matchConfidence: 80,
+      });
+      return;
+    }
+
+    // Missing
+    if (info.required) {
+      missingRequiredHeaders.push(expKey);
+    }
+
+    items.push({
+      expectedHeader: expKey,
+      label: info.label,
+      required: info.required,
+      mappedUploadedHeader: null,
+      status: "missing",
+      matchConfidence: 0,
+    });
+  });
+
+  const unmappedUploadedHeaders = uploadedHeaders.filter((h) => !mappedUploadedHeaders.has(h));
+  const similarityScore = Math.round((matchedWeight / totalWeight) * 100);
+  const isMatchValid = missingRequiredHeaders.length === 0;
+
+  return {
+    isMatchValid,
+    similarityScore,
+    items,
+    uploadedHeaders,
+    unmappedUploadedHeaders,
+    missingRequiredHeaders,
+    hasMergedNameColumn: Boolean(mergedNameHeader),
+  };
+}
+
+/**
+ * Parse CSV text to raw header array and row object list
+ */
+export function parseCSVRaw(csvText: string): { headers: string[]; rawRows: Record<string, string>[] } {
   const lines = csvText.trim().split("\n");
   if (lines.length < 2) {
     throw new Error("CSV file must have at least a header row and one data row");
   }
 
-  // Parse header
   const headers = parseCSVLine(lines[0]);
+  const rawRows: Record<string, string>[] = [];
 
-  // Parse data rows
-  const data: Record<string, string>[] = [];
   for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue; // Skip empty lines
+    if (!lines[i].trim()) continue;
 
     const values = parseCSVLine(lines[i]);
-    if (values.length !== headers.length) {
-      throw new Error(
-        `Row ${i + 1} has ${values.length} columns but header has ${headers.length} columns`
-      );
-    }
-
     const row: Record<string, string> = {};
     headers.forEach((header, index) => {
-      row[header] = values[index];
+      row[header] = values[index] !== undefined ? values[index] : "";
     });
-    data.push(row);
+    rawRows.push(row);
   }
 
-  return data;
+  return { headers, rawRows };
+}
+
+/**
+ * Transform raw CSV rows into standardized PupilCSVRow objects based on column mapping/merging
+ */
+export function transformRawRows(
+  rawRows: Record<string, string>[],
+  columnComparison: ColumnComparisonResult
+): Record<string, string>[] {
+  const mappingMap = new Map<ExpectedHeader, string>();
+  columnComparison.items.forEach((item) => {
+    if (item.mappedUploadedHeader) {
+      mappingMap.set(item.expectedHeader, item.mappedUploadedHeader);
+    }
+  });
+
+  return rawRows.map((rawRow) => {
+    const row: Record<string, string> = {};
+
+    EXPECTED_HEADERS.forEach((expKey) => {
+      const mappedHeader = mappingMap.get(expKey);
+
+      if (mappedHeader && mappedHeader.startsWith("[Merged from ")) {
+        // Extract original header name
+        const match = mappedHeader.match(/\[Merged from (.+)\]/);
+        const sourceHeader = match ? match[1] : "";
+        const fullNameVal = (rawRow[sourceHeader] || "").trim();
+
+        if (fullNameVal) {
+          const parts = fullNameVal.split(/\s+/);
+          if (expKey === "firstName") {
+            row.firstName = parts[0] || "";
+          } else if (expKey === "lastName") {
+            row.lastName = parts.slice(1).join(" ") || parts[0] || "";
+          }
+        } else {
+          row[expKey] = "";
+        }
+      } else if (mappedHeader && rawRow[mappedHeader] !== undefined) {
+        row[expKey] = rawRow[mappedHeader].trim();
+      } else {
+        row[expKey] = "";
+      }
+    });
+
+    return row;
+  });
 }
 
 /**
@@ -165,15 +415,12 @@ function parseCSVLine(line: string): string[] {
 
     if (char === '"') {
       if (inQuotes && nextChar === '"') {
-        // Escaped quote
         current += '"';
-        i++; // Skip next quote
+        i++;
       } else {
-        // Toggle quotes
         inQuotes = !inQuotes;
       }
     } else if (char === "," && !inQuotes) {
-      // End of field
       result.push(current.trim());
       current = "";
     } else {
@@ -181,14 +428,12 @@ function parseCSVLine(line: string): string[] {
     }
   }
 
-  // Add last field
   result.push(current.trim());
-
   return result;
 }
 
 /**
- * Validate CSV data against schema
+ * Validate parsed & transformed CSV data against schema
  */
 export function validatePupilsCSV(data: Record<string, string>[]): ParseResult {
   const errors: ParseResult["errors"] = [];
@@ -196,14 +441,12 @@ export function validatePupilsCSV(data: Record<string, string>[]): ParseResult {
   const validData: PupilCSVRow[] = [];
 
   data.forEach((row, index) => {
-    const rowNumber = index + 2; // +2 because index is 0-based and row 1 is header
+    const rowNumber = index + 2;
 
     try {
-      // Validate with Zod
       const validated = pupilCSVSchema.parse(row);
       validData.push(validated);
 
-      // Additional warnings
       if (validated.parentPhone && !validated.parentPhone.startsWith("+")) {
         warnings.push({
           row: rowNumber,
@@ -211,7 +454,6 @@ export function validatePupilsCSV(data: Record<string, string>[]): ParseResult {
         });
       }
 
-      // Check age
       const age = calculateAge(validated.dob);
       if (age < 1 || age > 25) {
         warnings.push({
@@ -247,34 +489,43 @@ export function validatePupilsCSV(data: Record<string, string>[]): ParseResult {
 }
 
 /**
- * Calculate age from date of birth
+ * Parse CSV file, run column comparison & validation
  */
-function calculateAge(dob: string): number {
-  const birthDate = new Date(dob);
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  
-  return age;
-}
-
-/**
- * Parse CSV file and validate
- */
-export async function parseCSVFile(file: File): Promise<ParseResult> {
+export async function parseCSVFile(
+  file: File,
+  customMapping: Partial<Record<ExpectedHeader, string>> = {}
+): Promise<{
+  parseResult: ParseResult;
+  comparisonResult: ColumnComparisonResult;
+  rawHeaders: string[];
+}> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
     reader.onload = (e) => {
       try {
         const text = e.target?.result as string;
-        const data = parseCSVText(text);
-        const result = validatePupilsCSV(data);
-        resolve(result);
+        const { headers, rawRows } = parseCSVRaw(text);
+        const comparisonResult = compareCSVHeaders(headers, customMapping);
+        
+        if (!comparisonResult.isMatchValid) {
+          const transformedRows = transformRawRows(rawRows, comparisonResult);
+          const validation = validatePupilsCSV(transformedRows);
+          validation.success = false;
+          validation.errors.unshift({
+            row: 1,
+            field: "headers",
+            message: `Column mismatch: Required columns (${comparisonResult.missingRequiredHeaders.join(
+              ", "
+            )}) are missing or unmapped`,
+          });
+          resolve({ parseResult: validation, comparisonResult, rawHeaders: headers });
+          return;
+        }
+
+        const transformedRows = transformRawRows(rawRows, comparisonResult);
+        const parseResult = validatePupilsCSV(transformedRows);
+        resolve({ parseResult, comparisonResult, rawHeaders: headers });
       } catch (error) {
         reject(error);
       }
@@ -287,6 +538,7 @@ export async function parseCSVFile(file: File): Promise<ParseResult> {
     reader.readAsText(file);
   });
 }
+
 
 /**
  * Check for duplicate admission numbers
