@@ -37,7 +37,6 @@ import {
   Search,
   Pencil,
   Trash2,
-  Sparkles,
   Building,
   CheckCircle2,
   Layers,
@@ -348,7 +347,6 @@ function SubjectsPage() {
                 disabled={isSubmitting}
                 className="gap-2"
               >
-                <Sparkles className="h-4 w-4 text-amber-500" />
                 Seed Standard Subjects
               </Button>
               <Button
@@ -470,7 +468,6 @@ function SubjectsPage() {
                 {!searchTerm && isCanEdit && (
                   <div className="flex flex-wrap justify-center gap-3 pt-2">
                     <Button variant="outline" onClick={handleSeedDefaults} disabled={isSubmitting}>
-                      <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
                       Seed Standard Subjects
                     </Button>
                     <Button variant="outline" onClick={handleOpenBulkAdd} disabled={isSubmitting}>
