@@ -65,16 +65,26 @@ function SchoolsPage() {
     value instanceof Date ? value.toISOString().slice(0, 10) : value;
 
   const submitCreate = async () => {
-    if (!form.name.trim()) return toast.error("School name is required");
-    await addSchool({
-      name: form.name.trim(),
-      address: form.address.trim() || undefined,
-      phone: form.phone.trim() || undefined,
-      email: form.email.trim() || undefined,
-    });
-    toast.success("School created successfully");
-    setOpen(false);
-    setForm({ name: "", address: "", phone: "", email: "" });
+    const schoolName = form.name.trim();
+    if (!schoolName) return toast.error("School name is required");
+
+    if (schools.some((s) => s.name.trim().toLowerCase() === schoolName.toLowerCase())) {
+      return toast.error(`A school named '${schoolName}' already exists`);
+    }
+
+    try {
+      await addSchool({
+        name: schoolName,
+        address: form.address.trim() || undefined,
+        phone: form.phone.trim() || undefined,
+        email: form.email.trim() || undefined,
+      });
+      toast.success("School created successfully");
+      setOpen(false);
+      setForm({ name: "", address: "", phone: "", email: "" });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to create school");
+    }
   };
 
   const startEdit = (s: School) => {
@@ -90,18 +100,30 @@ function SchoolsPage() {
 
   const submitEdit = async () => {
     if (!editingSchool) return;
-    if (!editForm.name.trim()) return toast.error("School name is required");
+    const schoolName = editForm.name.trim();
+    if (!schoolName) return toast.error("School name is required");
 
-    await updateSchool(editingSchool.id, {
-      name: editForm.name.trim(),
-      address: editForm.address.trim() || undefined,
-      phone: editForm.phone.trim() || undefined,
-      email: editForm.email.trim() || undefined,
-    });
+    if (
+      schoolName.toLowerCase() !== editingSchool.name.trim().toLowerCase() &&
+      schools.some((s) => s.name.trim().toLowerCase() === schoolName.toLowerCase())
+    ) {
+      return toast.error(`A school named '${schoolName}' already exists`);
+    }
 
-    toast.success("School details updated");
-    setEditOpen(false);
-    setEditingSchool(null);
+    try {
+      await updateSchool(editingSchool.id, {
+        name: schoolName,
+        address: editForm.address.trim() || undefined,
+        phone: editForm.phone.trim() || undefined,
+        email: editForm.email.trim() || undefined,
+      });
+
+      toast.success("School details updated");
+      setEditOpen(false);
+      setEditingSchool(null);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update school");
+    }
   };
 
   const handleDelete = async (id: string, name: string) => {

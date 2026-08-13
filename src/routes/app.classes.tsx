@@ -140,27 +140,41 @@ function ClassesPage() {
   }, [users, isSuperAdmin, open, form.schoolId, editingClass, currentUser]);
 
   const submitCreate = async () => {
-    if (!form.name.trim()) return toast.error("Class name is required");
+    const className = form.name.trim();
+    if (!className) return toast.error("Class name is required");
     const targetSchoolId = isSuperAdmin ? form.schoolId : (currentUser?.schoolId ?? "");
     if (!targetSchoolId) return toast.error("School is required");
 
-    await addClass({
-      name: form.name.trim(),
-      schoolId: targetSchoolId,
-      teacherId: form.teacherId || undefined,
-      subjects: form.subjects,
-    });
+    // Duplicate class name check within school
+    if (
+      classes.some(
+        (c) => c.schoolId === targetSchoolId && c.name.trim().toLowerCase() === className.toLowerCase()
+      )
+    ) {
+      return toast.error(`Class '${className}' already exists in this school`);
+    }
 
-    toast.success(
-      `Classroom "${form.name.trim()}" created with ${form.subjects.length} assigned subject(s)`
-    );
-    setOpen(false);
-    setForm({
-      name: "",
-      teacherId: "",
-      schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
-      subjects: [],
-    });
+    try {
+      await addClass({
+        name: className,
+        schoolId: targetSchoolId,
+        teacherId: form.teacherId || undefined,
+        subjects: form.subjects,
+      });
+
+      toast.success(
+        `Classroom "${className}" created with ${form.subjects.length} assigned subject(s)`
+      );
+      setOpen(false);
+      setForm({
+        name: "",
+        teacherId: "",
+        schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
+        subjects: [],
+      });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to create class");
+    }
   };
 
   const startEdit = (cls: ClassRoom) => {
@@ -178,17 +192,32 @@ function ClassesPage() {
 
   const submitEdit = async () => {
     if (!editingClass) return;
-    if (!editForm.name.trim()) return toast.error("Class name is required");
+    const className = editForm.name.trim();
+    if (!className) return toast.error("Class name is required");
 
-    await updateClass(editingClass.id, {
-      name: editForm.name.trim(),
-      teacherId: editForm.teacherId || undefined,
-      subjects: editForm.subjects,
-    });
+    // Duplicate class name check within school
+    if (
+      className.toLowerCase() !== editingClass.name.trim().toLowerCase() &&
+      classes.some(
+        (c) => c.schoolId === editingClass.schoolId && c.name.trim().toLowerCase() === className.toLowerCase()
+      )
+    ) {
+      return toast.error(`Class '${className}' already exists in this school`);
+    }
 
-    toast.success("Classroom updated successfully");
-    setEditOpen(false);
-    setEditingClass(null);
+    try {
+      await updateClass(editingClass.id, {
+        name: className,
+        teacherId: editForm.teacherId || undefined,
+        subjects: editForm.subjects,
+      });
+
+      toast.success("Classroom updated successfully");
+      setEditOpen(false);
+      setEditingClass(null);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update class");
+    }
   };
 
   const startManageSubjects = (cls: ClassRoom) => {
