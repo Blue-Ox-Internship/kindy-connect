@@ -173,14 +173,7 @@ function Landing() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    doLogin();
-                  }}
-                  autoComplete="off"
-                  className="space-y-5"
-                >
+                <div className="space-y-5">
                   <div className="space-y-2">
                     <Label htmlFor="login-id">Assigned ID</Label>
                     <Input
@@ -192,6 +185,12 @@ function Landing() {
                       placeholder="e.g. KC001"
                       disabled={isLoading}
                       autoComplete="off"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      data-lpignore="true"
+                      data-bwignore="true"
+                      data-1p-ignore="true"
                     />
                   </div>
 
@@ -206,11 +205,15 @@ function Landing() {
                       onKeyDown={handleKeyDown}
                       placeholder="Enter your password"
                       disabled={isLoading}
-                      autoComplete="off"
+                      autoComplete="new-password"
+                      data-lpignore="true"
+                      data-bwignore="true"
+                      data-1p-ignore="true"
+                      data-form-type="other"
                     />
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button type="button" onClick={doLogin} className="w-full" disabled={isLoading}>
                     {isLoading ? "Signing in..." : "Sign in"}
                   </Button>
 
@@ -219,7 +222,7 @@ function Landing() {
                     <a href="tel:0786951347" className="font-medium text-foreground hover:underline">0786951347</a> or email{" "}
                     <a href="mailto:nobleahimbisibwe5@gmail.com" className="font-medium text-foreground hover:underline">nobleahimbisibwe5@gmail.com</a>
                   </p>
-                </form>
+                </div>
               </CardContent>
             </Card>
           </div>

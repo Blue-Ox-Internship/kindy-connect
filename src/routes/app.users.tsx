@@ -288,7 +288,10 @@ function UsersPage() {
                         value={form.password}
                         onChange={(e) => setForm({ ...form, password: e.target.value })}
                         placeholder="e.g. secure123"
-                        autoComplete="off"
+                        autoComplete="new-password"
+                        data-lpignore="true"
+                        data-bwignore="true"
+                        data-1p-ignore="true"
                       />
                     </div>
                   </div>

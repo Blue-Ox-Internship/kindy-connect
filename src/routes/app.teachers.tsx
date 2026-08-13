@@ -379,7 +379,10 @@ function TeachersPage() {
                       type="password"
                       value={form.password}
                       onChange={(e) => setForm({ ...form, password: e.target.value })}
-                      autoComplete="off"
+                      autoComplete="new-password"
+                      data-lpignore="true"
+                      data-bwignore="true"
+                      data-1p-ignore="true"
                     />
                   </div>
                 </div>
