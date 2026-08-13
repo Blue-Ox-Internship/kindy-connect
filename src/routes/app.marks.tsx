@@ -130,6 +130,13 @@ function MarksPage() {
     return subjects;
   }, [isTeacher, currentUser, subjects]);
 
+  // Ensure selected subject exists in available subjects
+  useEffect(() => {
+    if (availableSubjects.length > 0 && !availableSubjects.includes(subject)) {
+      setSubject(availableSubjects[0]);
+    }
+  }, [availableSubjects, subject]);
+
   const terms = ["Term 1", "Term 2", "Term 3"];
 
   const currentClass = classes.find((c) => c.id === classId);

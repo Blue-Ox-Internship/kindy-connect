@@ -66,6 +66,7 @@ function Dashboard() {
     parents,
     schools,
     audit,
+    subjects,
   } = useStore();
   const [arrivalDialogOpen, setArrivalDialogOpen] = useState(false);
   const [departureDialogOpen, setDepartureDialogOpen] = useState(false);
@@ -95,6 +96,7 @@ function Dashboard() {
         pupils={pupils}
         classes={classes}
         audit={audit}
+        subjects={subjects}
       />
     );
   }
@@ -792,7 +794,7 @@ function Dashboard() {
   );
 }
 
-function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
+function SuperAdminDashboard({ schools, users, pupils, classes, audit, subjects }: any) {
   const totalTeachers = users.filter(
     (u: any) => u.role === "teacher" && u.status === "verified",
   ).length;
@@ -839,7 +841,7 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
     { label: "Admins/Deputies", value: totalAdmins },
     { label: "Verified Teachers", value: totalTeachers },
     { label: "Pending Approvals", value: pendingTeachers, highlight: pendingTeachers > 0 },
-    { label: "Total Subjects", value: useStore.getState().subjects.length },
+    { label: "Total Subjects", value: (subjects || []).length },
     { label: "System Logs", value: audit.length },
   ];
 
@@ -1019,7 +1021,7 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
             <CardTitle>Quick Access</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <Link to="/app/schools">
                 <Card className="border hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer">
                   <CardContent className="p-4 flex items-center gap-3">
@@ -1055,6 +1057,19 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
                     <div>
                       <div className="font-semibold text-sm">All Classes</div>
                       <div className="text-xs text-muted-foreground">View across schools</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link to="/app/subjects">
+                <Card className="border hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-teal-500/15 text-teal-600 flex items-center justify-center">
+                      <BookMarked className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">School Subjects</div>
+                      <div className="text-xs text-muted-foreground">Curriculum subjects</div>
                     </div>
                   </CardContent>
                 </Card>
