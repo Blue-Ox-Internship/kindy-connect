@@ -10,6 +10,8 @@ import {
   LineChart,
   ShieldCheck,
   Users,
+  Phone,
+  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -108,7 +110,17 @@ function Landing() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-3 text-xs text-muted-foreground border-r pr-4 border-border/60">
+              <span className="font-medium text-foreground">Inquiries:</span>
+              <a href="tel:0786951347" className="flex items-center gap-1 hover:text-foreground font-medium">
+                <Phone className="h-3.5 w-3.5 text-primary" /> 0786951347
+              </a>
+              <span>•</span>
+              <a href="mailto:nobleahimbisibwe5@gmail.com" className="flex items-center gap-1 hover:text-foreground font-medium">
+                <Mail className="h-3.5 w-3.5 text-primary" /> nobleahimbisibwe5@gmail.com
+              </a>
+            </div>
             <Button variant="ghost" onClick={scrollToLogin}>
               Sign in
             </Button>
@@ -203,7 +215,9 @@ function Landing() {
                   </Button>
 
                   <p className="text-center text-xs text-muted-foreground">
-                    Don&apos;t have an ID? Ask your school administrator.
+                    For inquiries call{" "}
+                    <a href="tel:0786951347" className="font-medium text-foreground hover:underline">0786951347</a> or email{" "}
+                    <a href="mailto:nobleahimbisibwe5@gmail.com" className="font-medium text-foreground hover:underline">nobleahimbisibwe5@gmail.com</a>
                   </p>
                 </form>
               </CardContent>
@@ -259,6 +273,16 @@ function Landing() {
           <div className="flex items-center gap-2 text-sm font-medium">
             <GraduationCap className="h-4 w-4 text-primary" />
             School Connect
+          </div>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">For Inquiries:</span>
+            <a href="tel:0786951347" className="inline-flex items-center gap-1 text-foreground hover:text-primary hover:underline font-medium">
+              <Phone className="h-3.5 w-3.5 text-primary" /> 0786951347
+            </a>
+            <span>•</span>
+            <a href="mailto:nobleahimbisibwe5@gmail.com" className="inline-flex items-center gap-1 text-foreground hover:text-primary hover:underline font-medium">
+              <Mail className="h-3.5 w-3.5 text-primary" /> nobleahimbisibwe5@gmail.com
+            </a>
           </div>
           <p className="text-xs text-muted-foreground">
             {new Date().getFullYear()} School Connect. Built for schools that want clarity, not
