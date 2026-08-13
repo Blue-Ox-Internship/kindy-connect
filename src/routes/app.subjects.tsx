@@ -43,6 +43,7 @@ import {
   Layers,
   AlertTriangle,
   GraduationCap,
+  Eye,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -66,22 +67,25 @@ function SubjectsPage() {
     updateSubject,
     deleteSubject,
     seedDefaultSubjects,
+    getSchoolSubjects,
   } = useStore();
 
-  const isSuperAdmin = currentUser?.role === "super_admin";
-  const isStaff = currentUser?.role === "admin" || currentUser?.role === "deputy";
+  const userRole = (currentUser?.role || "").toLowerCase();
+  const isSuperAdmin = userRole === "super_admin";
+  const isStaff = isSuperAdmin || userRole === "admin" || userRole === "deputy" || userRole.includes("admin");
+  const isCanEdit = isSuperAdmin || isStaff;
 
   // Selected school ID for subject context
   const activeSchoolId = isSuperAdmin
-    ? selectedSchoolId || schools[0]?.id || ""
-    : currentUser?.schoolId || "";
+    ? selectedSchoolId || schools[0]?.id || currentUser?.schoolId || ""
+    : currentUser?.schoolId || schools[0]?.id || "";
 
   const currentSchool = schools.find((s) => s.id === activeSchoolId);
 
-  // Filtered subjects for current active school
+  // Filtered subjects for current active school (with fallback default subjects if empty)
   const schoolSubjects = useMemo(() => {
-    return subjects.filter((s) => s.schoolId === activeSchoolId);
-  }, [subjects, activeSchoolId]);
+    return getSchoolSubjects(activeSchoolId);
+  }, [getSchoolSubjects, activeSchoolId, subjects]);
 
   // Teachers teaching subjects in this school
   const schoolTeachers = useMemo(() => {
@@ -146,7 +150,6 @@ function SubjectsPage() {
       toast.error("Subject name is required");
       return;
     }
-    // Check duplicate name within school
     const exists = schoolSubjects.some(
       (s) => s.name.toLowerCase() === form.name.trim().toLowerCase()
     );
@@ -178,7 +181,6 @@ function SubjectsPage() {
       return;
     }
 
-    // Split by line or comma
     const rawNames = bulkInput
       .split(/[\n,]+/)
       .map((n) => n.trim())
@@ -189,7 +191,6 @@ function SubjectsPage() {
       return;
     }
 
-    // Deduplicate against existing school subjects
     const newItems: Array<{ name: string; code?: string }> = [];
     const skipped: string[] = [];
 
@@ -201,7 +202,6 @@ function SubjectsPage() {
       if (already) {
         skipped.push(name);
       } else {
-        // Auto generate simple 3-letter code
         const words = name.split(" ");
         let code = "";
         if (words.length >= 2) {
@@ -318,16 +318,6 @@ function SubjectsPage() {
     }
   };
 
-  if (!isStaff && !isSuperAdmin) {
-    return (
-      <AppShell title="Custom Subjects">
-        <div className="p-6 text-center text-muted-foreground">
-          You do not have permission to manage subjects.
-        </div>
-      </AppShell>
-    );
-  }
-
   return (
     <AppShell title="School Subjects">
       <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -337,36 +327,45 @@ function SubjectsPage() {
             <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
               <BookMarked className="h-6 w-6 text-primary" />
               {currentSchool?.name || "School"} Curriculum Subjects
+              {!isCanEdit && (
+                <Badge variant="outline" className="text-xs bg-muted gap-1">
+                  <Eye className="h-3 w-3" /> Read-Only View
+                </Badge>
+              )}
             </h2>
             <p className="text-sm text-muted-foreground">
-              Create and manage subjects offered at {currentSchool?.name || "your school"}. Assign subjects to teachers, record marks, and print report cards.
+              {isCanEdit
+                ? `Create and manage subjects offered at ${currentSchool?.name || "your school"}. Assign subjects to teachers, record marks, and print report cards.`
+                : `View subjects offered at ${currentSchool?.name || "your school"} and see teacher assignments.`}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={handleSeedDefaults}
-              disabled={isSubmitting}
-              className="gap-2"
-            >
-              <Sparkles className="h-4 w-4 text-amber-500" />
-              Seed Standard Subjects
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleOpenBulkAdd}
-              disabled={isSubmitting}
-              className="gap-2"
-            >
-              <ListPlus className="h-4 w-4 text-primary" />
-              Bulk Add
-            </Button>
-            <Button onClick={handleOpenAdd} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Subject
-            </Button>
-          </div>
+          {isCanEdit && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={handleSeedDefaults}
+                disabled={isSubmitting}
+                className="gap-2"
+              >
+                <Sparkles className="h-4 w-4 text-amber-500" />
+                Seed Standard Subjects
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleOpenBulkAdd}
+                disabled={isSubmitting}
+                className="gap-2"
+              >
+                <ListPlus className="h-4 w-4 text-primary" />
+                Bulk Add
+              </Button>
+              <Button onClick={handleOpenAdd} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add Subject
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Super Admin School Switcher */}
@@ -403,7 +402,7 @@ function SubjectsPage() {
               </div>
               <div>
                 <div className="text-2xl font-bold">{schoolSubjects.length}</div>
-                <div className="text-xs text-muted-foreground">Total Active Subjects</div>
+                <div className="text-xs text-muted-foreground">Total Curriculum Subjects</div>
               </div>
             </CardContent>
           </Card>
@@ -468,7 +467,7 @@ function SubjectsPage() {
                     ? "No subjects matched your search query."
                     : "No subjects have been configured for this school yet. Add your custom subjects or seed the standard curriculum."}
                 </p>
-                {!searchTerm && (
+                {!searchTerm && isCanEdit && (
                   <div className="flex flex-wrap justify-center gap-3 pt-2">
                     <Button variant="outline" onClick={handleSeedDefaults} disabled={isSubmitting}>
                       <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
@@ -493,7 +492,7 @@ function SubjectsPage() {
                     <TableHead>Subject Name</TableHead>
                     <TableHead>Subject Code</TableHead>
                     <TableHead>Assigned Teachers</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    {isCanEdit && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -501,8 +500,9 @@ function SubjectsPage() {
                     const assignedTeachers = schoolTeachers.filter((t) =>
                       t.subjects?.includes(sub.name)
                     );
+                    const isMySubject = currentUser?.subjects?.includes(sub.name);
                     return (
-                      <TableRow key={sub.id}>
+                      <TableRow key={sub.id} className={isMySubject ? "bg-primary/5 font-medium" : ""}>
                         <TableCell className="font-mono text-xs text-muted-foreground">
                           {idx + 1}
                         </TableCell>
@@ -510,6 +510,11 @@ function SubjectsPage() {
                           <div className="flex items-center gap-2">
                             <BookMarked className="h-4 w-4 text-primary opacity-70" />
                             <span>{sub.name}</span>
+                            {isMySubject && (
+                              <Badge variant="default" className="text-[10px] py-0 px-1.5 bg-primary/20 text-primary border-primary/30">
+                                My Subject
+                              </Badge>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -535,26 +540,28 @@ function SubjectsPage() {
                             <span className="text-xs text-muted-foreground opacity-60">Unassigned</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleOpenEdit(sub)}
-                              title="Edit subject"
-                            >
-                              <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleOpenDelete(sub)}
-                              title="Delete subject"
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive hover:text-destructive/80" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                        {isCanEdit && (
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleOpenEdit(sub)}
+                                title="Edit subject"
+                              >
+                                <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleOpenDelete(sub)}
+                                title="Delete subject"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive hover:text-destructive/80" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     );
                   })}

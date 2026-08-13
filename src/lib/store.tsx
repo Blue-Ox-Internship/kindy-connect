@@ -1249,13 +1249,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
 
       const defaultList = [
+        { name: "Mathematics", code: "MTH" },
+        { name: "English", code: "ENG" },
+        { name: "Science", code: "SCI" },
+        { name: "Social Studies", code: "SST" },
         { name: "Reading", code: "RDG" },
-        { name: "Math", code: "MTH" },
         { name: "Writing", code: "WRT" },
-        { name: "Art", code: "ART" },
+        { name: "Art & Craft", code: "ART" },
         { name: "Music", code: "MUS" },
         { name: "Physical Education", code: "PE" },
-        { name: "Science", code: "SCI" },
+        { name: "Luganda", code: "LUG" },
+        { name: "Religious Education", code: "RE" },
       ];
       return defaultList.map((item, idx) => ({
         id: `default_${idx}_${item.name.toLowerCase()}`,

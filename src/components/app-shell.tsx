@@ -68,6 +68,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         ]
       : [
           { to: "/app/dashboard", label: "My class", icon: LayoutDashboard },
+          { to: "/app/subjects", label: "Subjects", icon: BookMarked },
           { to: "/app/attendance", label: "Attendance", icon: CalendarCheck },
           { to: "/app/marks", label: "Marks", icon: ClipboardList },
         ];
