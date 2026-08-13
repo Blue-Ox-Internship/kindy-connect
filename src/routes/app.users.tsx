@@ -67,6 +67,23 @@ function UsersPage() {
     password: "",
   });
 
+  const resetForm = () => {
+    setForm({
+      id: "",
+      name: "",
+      email: "",
+      phone: "",
+      role: "teacher" as Role,
+      schoolId: schools[0]?.id ?? "",
+      password: "",
+    });
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    resetForm();
+  };
+
   const togglePasswordVisibility = (userId: string) => {
     setVisiblePasswords((prev) => ({
       ...prev,
@@ -234,7 +251,7 @@ function UsersPage() {
                 assignments.
               </CardDescription>
             </div>
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={handleOpenChange}>
               <DialogTrigger asChild>
                 <Button className="flex items-center gap-1.5">
                   <Plus className="h-4 w-4" /> Create User
@@ -244,7 +261,14 @@ function UsersPage() {
                 <DialogHeader>
                   <DialogTitle>Create New System User</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 py-2">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    submitCreateUser();
+                  }}
+                  autoComplete="off"
+                  className="space-y-4 py-2"
+                >
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="id">User ID (Login ID) *</Label>
@@ -253,6 +277,7 @@ function UsersPage() {
                         value={form.id}
                         onChange={(e) => setForm({ ...form, id: e.target.value })}
                         placeholder="e.g. KC004"
+                        autoComplete="off"
                       />
                     </div>
                     <div>
@@ -263,7 +288,7 @@ function UsersPage() {
                         value={form.password}
                         onChange={(e) => setForm({ ...form, password: e.target.value })}
                         placeholder="e.g. secure123"
-                        autoComplete="new-password"
+                        autoComplete="off"
                       />
                     </div>
                   </div>
@@ -274,6 +299,7 @@ function UsersPage() {
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                       placeholder="e.g. John Doe"
+                      autoComplete="off"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -285,6 +311,7 @@ function UsersPage() {
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
                         placeholder="john@example.com"
+                        autoComplete="off"
                       />
                     </div>
                     <div>
@@ -293,7 +320,8 @@ function UsersPage() {
                         id="phone"
                         value={form.phone}
                         onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                        placeholder="e.g. +254712345678"
+                        placeholder="+256..."
+                        autoComplete="off"
                       />
                     </div>
                   </div>
@@ -330,10 +358,10 @@ function UsersPage() {
                       </div>
                     )}
                   </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={submitCreateUser}>Create Account</Button>
-                </DialogFooter>
+                  <DialogFooter className="mt-4">
+                    <Button type="submit">Create Account</Button>
+                  </DialogFooter>
+                </form>
               </DialogContent>
             </Dialog>
           </CardHeader>
