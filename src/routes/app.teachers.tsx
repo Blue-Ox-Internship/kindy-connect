@@ -80,18 +80,24 @@ function TeachersPage() {
     reader.readAsDataURL(file);
   };
 
-  // Create User Form State
-  const [form, setForm] = useState({
-    id: "",
-    name: "",
-    email: "",
-    phone: "",
-    role: "teacher" as Role,
-    schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
-    password: "",
-    subjects: [] as string[],
-    photo: "",
-  });
+  const resetForm = () => {
+    setForm({
+      id: "",
+      name: "",
+      email: "",
+      phone: "",
+      role: "teacher" as Role,
+      schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
+      password: "",
+      subjects: [],
+      photo: "",
+    });
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    resetForm();
+  };
 
   const listToDisplay = useMemo(() => {
     // Super admin sees all users, school admin sees users in their school, others see only teachers
@@ -344,7 +350,7 @@ function TeachersPage() {
             </CardDescription>
           </div>
 
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
               <Button className="flex items-center gap-1">
                 <Plus className="h-4 w-4" /> Create User
@@ -354,7 +360,14 @@ function TeachersPage() {
               <DialogHeader>
                 <DialogTitle>Register New Account</DialogTitle>
               </DialogHeader>
-              <div className="space-y-3 py-2">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  submitCreateUser();
+                }}
+                autoComplete="off"
+                className="space-y-3 py-2"
+              >
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label htmlFor="create-id">Assigned ID (Login ID)</Label>
@@ -363,6 +376,7 @@ function TeachersPage() {
                       value={form.id}
                       onChange={(e) => setForm({ ...form, id: e.target.value })}
                       placeholder="e.g. kst-001"
+                      autoComplete="off"
                     />
                   </div>
                   <div>
@@ -372,7 +386,7 @@ function TeachersPage() {
                       type="password"
                       value={form.password}
                       onChange={(e) => setForm({ ...form, password: e.target.value })}
-                      autoComplete="new-password"
+                      autoComplete="off"
                     />
                   </div>
                 </div>
@@ -382,6 +396,7 @@ function TeachersPage() {
                     id="create-name"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    autoComplete="off"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -392,6 +407,7 @@ function TeachersPage() {
                       type="email"
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      autoComplete="off"
                     />
                   </div>
                   <div>
@@ -400,6 +416,7 @@ function TeachersPage() {
                       id="create-phone"
                       value={form.phone}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      autoComplete="off"
                     />
                   </div>
                 </div>
@@ -483,10 +500,10 @@ function TeachersPage() {
                     </div>
                   )}
                 </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={submitCreateUser}>Create Account</Button>
-              </DialogFooter>
+                <DialogFooter>
+                  <Button type="submit">Create Account</Button>
+                </DialogFooter>
+              </form>
             </DialogContent>
           </Dialog>
         </CardHeader>

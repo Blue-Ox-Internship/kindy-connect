@@ -47,6 +47,11 @@ function Landing() {
   const loginRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setAssignedId("");
+    setPassword("");
+  }, []);
+
+  useEffect(() => {
     if (currentUser) navigate({ to: "/app/dashboard" });
   }, [currentUser, navigate]);
 
@@ -155,43 +160,52 @@ function Landing() {
                   Use the ID and password from your administrator to open your dashboard.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-5 p-6">
-                {/* Removed the "Today at a glance" status chips per request */}
+              <CardContent className="p-6">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    doLogin();
+                  }}
+                  autoComplete="off"
+                  className="space-y-5"
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="login-id">Assigned ID</Label>
+                    <Input
+                      id="login-id"
+                      name="login-id"
+                      value={assignedId}
+                      onChange={(event) => setAssignedId(event.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="e.g. KC001"
+                      disabled={isLoading}
+                      autoComplete="off"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="login-id">Assigned ID</Label>
-                  <Input
-                    id="login-id"
-                    value={assignedId}
-                    onChange={(event) => setAssignedId(event.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="e.g. KC001"
-                    disabled={isLoading}
-                    autoComplete="username"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password">Password</Label>
+                    <Input
+                      id="login-password"
+                      name="login-password"
+                      type="password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Enter your password"
+                      disabled={isLoading}
+                      autoComplete="off"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Enter your password"
-                    disabled={isLoading}
-                    autoComplete="current-password"
-                  />
-                </div>
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Signing in..." : "Sign in"}
+                  </Button>
 
-                <Button className="w-full" onClick={doLogin} disabled={isLoading}>
-                  {isLoading ? "Signing in..." : "Sign in"}
-                </Button>
-
-                <p className="text-center text-xs text-muted-foreground">
-                  Don&apos;t have an ID? Ask your school administrator.
-                </p>
+                  <p className="text-center text-xs text-muted-foreground">
+                    Don&apos;t have an ID? Ask your school administrator.
+                  </p>
+                </form>
               </CardContent>
             </Card>
           </div>
