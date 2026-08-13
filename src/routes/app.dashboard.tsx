@@ -17,6 +17,7 @@ import {
   XCircle,
   Clock,
   Lock,
+  BookMarked,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -838,6 +839,7 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit }: any) {
     { label: "Admins/Deputies", value: totalAdmins },
     { label: "Verified Teachers", value: totalTeachers },
     { label: "Pending Approvals", value: pendingTeachers, highlight: pendingTeachers > 0 },
+    { label: "Total Subjects", value: useStore.getState().subjects.length },
     { label: "System Logs", value: audit.length },
   ];
 

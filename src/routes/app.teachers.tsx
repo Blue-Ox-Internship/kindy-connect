@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { useStore, type User, type Role } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -451,28 +451,37 @@ function TeachersPage() {
                 {form.role === "teacher" && (
                   <div>
                     <Label htmlFor="create-subjects">Subjects (Select at least one) *</Label>
-                    <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md">
-                      {availableSubjects.map((subject) => (
-                        <label key={subject} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={form.subjects.includes(subject)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setForm({ ...form, subjects: [...form.subjects, subject] });
-                              } else {
-                                setForm({
-                                  ...form,
-                                  subjects: form.subjects.filter((s) => s !== subject),
-                                });
-                              }
-                            }}
-                            className="h-4 w-4"
-                          />
-                          <span className="text-sm">{subject}</span>
-                        </label>
-                      ))}
-                    </div>
+                    {availableSubjects.length === 0 ? (
+                      <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-md text-xs text-amber-800 dark:text-amber-300 space-y-1">
+                        <div>No subjects have been configured for this school yet.</div>
+                        <Link to="/app/subjects" className="font-semibold underline text-primary">
+                          Click here to configure school subjects
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md max-h-48 overflow-y-auto">
+                        {availableSubjects.map((subject) => (
+                          <label key={subject} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={form.subjects.includes(subject)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setForm({ ...form, subjects: [...form.subjects, subject] });
+                                } else {
+                                  setForm({
+                                    ...form,
+                                    subjects: form.subjects.filter((s) => s !== subject),
+                                  });
+                                }
+                              }}
+                              className="h-4 w-4"
+                            />
+                            <span className="text-sm">{subject}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
                 <div>

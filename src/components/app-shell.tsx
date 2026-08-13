@@ -9,6 +9,8 @@ import {
   ScrollText,
   LogOut,
   BookOpen,
+  BookMarked,
+  ClipboardList,
   School,
   Building2,
 } from "lucide-react";
@@ -47,8 +49,8 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         { to: "/app/schools", label: "Schools", icon: School },
         { to: "/app/users", label: "Users", icon: Users },
         { to: "/app/teachers", label: "Teachers", icon: GraduationCap, badge: pendingCount },
-        { to: "/app/classes", label: "Classes", icon: GraduationCap },
-        { to: "/app/subjects", label: "Subjects", icon: BookOpen },
+        { to: "/app/classes", label: "Classes", icon: Building2 },
+        { to: "/app/subjects", label: "Subjects", icon: BookMarked },
         { to: "/app/audit", label: "Audit log", icon: ScrollText },
       ]
     : isStaff
@@ -58,16 +60,16 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
           { to: "/app/parents", label: "Parents", icon: Users },
           { to: "/app/teachers", label: "Teachers", icon: GraduationCap, badge: pendingCount },
           { to: "/app/classes", label: "Classes", icon: BookOpen },
-          { to: "/app/subjects", label: "Subjects", icon: BookOpen },
+          { to: "/app/subjects", label: "Subjects", icon: BookMarked },
           { to: "/app/attendance", label: "Attendance", icon: CalendarCheck },
-          { to: "/app/marks", label: "Marks", icon: BookOpen },
+          { to: "/app/marks", label: "Marks", icon: ClipboardList },
           { to: "/app/reports", label: "Reports", icon: BarChart3 },
           { to: "/app/audit", label: "Audit log", icon: ScrollText },
         ]
       : [
           { to: "/app/dashboard", label: "My class", icon: LayoutDashboard },
           { to: "/app/attendance", label: "Attendance", icon: CalendarCheck },
-          { to: "/app/marks", label: "Marks", icon: BookOpen },
+          { to: "/app/marks", label: "Marks", icon: ClipboardList },
         ];
 
   return (
