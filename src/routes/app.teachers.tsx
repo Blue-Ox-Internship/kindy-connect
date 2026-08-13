@@ -37,6 +37,17 @@ function TeachersPage() {
     useStore();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    id: "",
+    name: "",
+    email: "",
+    phone: "",
+    role: "teacher" as Role,
+    schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
+    password: "",
+    subjects: [],
+    photo: "",
+  });
 
   const isSuperAdmin = currentUser?.role === "super_admin";
   const isSchoolAdmin = currentUser?.role === "admin";
