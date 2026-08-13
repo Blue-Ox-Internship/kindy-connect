@@ -74,6 +74,7 @@ export interface ClassRoom {
   name: string;
   teacherId?: string;
   schoolId: string;
+  subjects?: string[];
 }
 
 export interface Attendance {
@@ -1298,7 +1299,7 @@ export const deleteSchool = createServerFn({ method: "POST" })
 // 8. Class Management Functions
 // ----------------------------------------------------
 export const addClass = createServerFn({ method: "POST" })
-  .validator((d: { id?: string; name: string; schoolId: string; teacherId?: string }) => d)
+  .validator((d: { id?: string; name: string; schoolId: string; teacherId?: string; subjects?: string[] }) => d)
   .handler(async ({ data }) => {
     const id = data.id || "c-" + Math.random().toString(36).slice(2, 10);
     const dbClass = toSnake({
@@ -1306,6 +1307,7 @@ export const addClass = createServerFn({ method: "POST" })
       name: data.name,
       schoolId: data.schoolId,
       teacherId: data.teacherId || null,
+      subjects: data.subjects || [],
     });
     try {
       await sql.begin(async (sql) => {
