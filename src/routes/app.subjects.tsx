@@ -118,8 +118,8 @@ function SubjectsPage() {
   const filteredSubjects = useMemo(() => {
     return schoolSubjects.filter(
       (sub) =>
-        sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (sub.code && sub.code.toLowerCase().includes(searchTerm.toLowerCase()))
+        (sub && sub.name && sub.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (sub && sub.code && sub.code.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [schoolSubjects, searchTerm]);
 

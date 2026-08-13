@@ -56,8 +56,8 @@ function SchoolsPage() {
   const filtered = useMemo(() => {
     return schools.filter(
       (s) =>
-        s.name.toLowerCase().includes(q.toLowerCase()) ||
-        (s.address && s.address.toLowerCase().includes(q.toLowerCase())),
+        (s && s.name && s.name.toLowerCase().includes(q.toLowerCase())) ||
+        (s && s.address && s.address.toLowerCase().includes(q.toLowerCase())),
     );
   }, [schools, q]);
 

@@ -75,7 +75,7 @@ function TeachersPage() {
 
   // Available subjects for selection
   const rawSubjects = getSchoolSubjects(schoolFilter !== "all" ? schoolFilter : undefined);
-  const availableSubjects = useMemo(() => rawSubjects.map((s) => s.name), [rawSubjects]);
+  const availableSubjects = useMemo(() => (rawSubjects || []).map((s) => s.name).filter(Boolean), [rawSubjects]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -122,28 +122,31 @@ function TeachersPage() {
 
   const listToDisplay = useMemo(() => {
     // Super admin sees all users, school admin sees users in their school, others see only teachers
-    let list = users;
+    let list = users || [];
 
     if (!isSuperAdmin && isSchoolAdmin) {
       // School admin: filter by their school
-      list = list.filter((u) => u.schoolId === currentUser?.schoolId);
+      list = list.filter((u) => u && u.schoolId === currentUser?.schoolId);
     } else if (!isSuperAdmin && !isSchoolAdmin) {
       // Deputy: see only teachers in their school
-      list = list.filter((u) => u.role === "teacher" && u.schoolId === currentUser?.schoolId);
+      list = list.filter((u) => u && u.role === "teacher" && u.schoolId === currentUser?.schoolId);
     }
 
     // Apply Super Admin school filter (only for super admin)
     if (isSuperAdmin && schoolFilter !== "all") {
-      list = list.filter((u) => u.schoolId === schoolFilter);
+      list = list.filter((u) => u && u.schoolId === schoolFilter);
     }
 
     // Apply search filter
     if (q.trim()) {
+      const search = q.toLowerCase();
       list = list.filter(
         (u) =>
-          u.name.toLowerCase().includes(q.toLowerCase()) ||
-          u.email.toLowerCase().includes(q.toLowerCase()) ||
-          u.id.toLowerCase().includes(q.toLowerCase()),
+          u &&
+          ((u.name && u.name.toLowerCase().includes(search)) ||
+            (u.email && u.email.toLowerCase().includes(search)) ||
+            (u.id && u.id.toLowerCase().includes(search)) ||
+            (u.phone && u.phone.toLowerCase().includes(search))),
       );
     }
 
@@ -151,15 +154,15 @@ function TeachersPage() {
   }, [users, isSuperAdmin, isSchoolAdmin, schoolFilter, q, currentUser]);
 
   const pending = useMemo(
-    () => listToDisplay.filter((t) => t.status === "pending"),
+    () => listToDisplay.filter((t) => t && t.status === "pending"),
     [listToDisplay],
   );
   const verified = useMemo(
-    () => listToDisplay.filter((t) => t.status === "verified"),
+    () => listToDisplay.filter((t) => t && t.status === "verified"),
     [listToDisplay],
   );
   const rejected = useMemo(
-    () => listToDisplay.filter((t) => t.status === "rejected"),
+    () => listToDisplay.filter((t) => t && t.status === "rejected"),
     [listToDisplay],
   );
 
@@ -178,13 +181,13 @@ function TeachersPage() {
     }
 
     // Duplicate user checks
-    if (users.some((u) => u.id.trim().toLowerCase() === userId.toLowerCase())) {
+    if (users.some((u) => u && u.id && u.id.trim().toLowerCase() === userId.toLowerCase())) {
       return toast.error(`User ID '${userId}' is already assigned`);
     }
-    if (users.some((u) => u.email.trim().toLowerCase() === email.toLowerCase())) {
+    if (users.some((u) => u && u.email && u.email.trim().toLowerCase() === email.toLowerCase())) {
       return toast.error(`Email address '${email}' is already registered`);
     }
-    if (users.some((u) => u.phone && u.phone.trim() === phone)) {
+    if (users.some((u) => u && u.phone && u.phone.trim() === phone)) {
       return toast.error(`Phone number '${phone}' is already registered`);
     }
 
@@ -267,14 +270,14 @@ function TeachersPage() {
               {(isSuperAdmin || isSchoolAdmin) && (
                 <TableCell className="capitalize">
                   <Badge variant="outline" className="capitalize font-normal">
-                    {t.role.replace("_", " ")}
+                    {t.role ? t.role.replace("_", " ") : "N/A"}
                   </Badge>
                 </TableCell>
               )}
               {(isSuperAdmin || isSchoolAdmin) && (
                 <TableCell className="font-mono text-xs">{t.password || "N/A"}</TableCell>
               )}
-              <TableCell>{formatRegisteredAt(t.registeredAt)}</TableCell>
+              <TableCell>{t.registeredAt ? formatRegisteredAt(t.registeredAt) : "N/A"}</TableCell>
               <TableCell>
                 <Badge
                   variant={
@@ -286,7 +289,7 @@ function TeachersPage() {
                   }
                   className="capitalize"
                 >
-                  {t.status}
+                  {t.status || "pending"}
                 </Badge>
               </TableCell>
               {(withActions || showDelete) && (

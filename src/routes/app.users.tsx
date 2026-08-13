@@ -126,13 +126,13 @@ function UsersPage() {
     }
 
     // Duplicate user checks
-    if (users.some((u) => u.id.trim().toLowerCase() === userId.toLowerCase())) {
+    if (users.some((u) => u && u.id && u.id.trim().toLowerCase() === userId.toLowerCase())) {
       return toast.error(`User ID '${userId}' is already assigned`);
     }
-    if (users.some((u) => u.email.trim().toLowerCase() === email.toLowerCase())) {
+    if (users.some((u) => u && u.email && u.email.trim().toLowerCase() === email.toLowerCase())) {
       return toast.error(`Email address '${email}' is already registered`);
     }
-    if (users.some((u) => u.phone && u.phone.trim() === phone)) {
+    if (users.some((u) => u && u.phone && u.phone.trim() === phone)) {
       return toast.error(`Phone number '${phone}' is already registered`);
     }
 
@@ -535,7 +535,7 @@ function UsersPage() {
                             variant="outline"
                             className={`capitalize font-medium ${roleBadgeClass}`}
                           >
-                            {u.role.replace("_", " ")}
+                            {u.role ? u.role.replace("_", " ") : "N/A"}
                           </Badge>
                         </TableCell>
 

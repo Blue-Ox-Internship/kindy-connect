@@ -124,7 +124,7 @@ function ClassesPage() {
     if (isSuperAdmin) {
       list = list.filter((c) => c.schoolId === superSchoolId);
     }
-    return list.filter((c) => c.name.toLowerCase().includes(q.toLowerCase()));
+    return list.filter((c) => c && c.name && c.name.toLowerCase().includes(q.toLowerCase()));
   }, [classes, isSuperAdmin, superSchoolId, q]);
 
   // List of teachers for the selected school
