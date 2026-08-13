@@ -1494,6 +1494,63 @@ export const deleteUser = createServerFn({ method: "POST" })
     }
   });
 
+export const updateUser = createServerFn({ method: "POST" })
+  .validator(
+    (d: {
+      id: string;
+      actorId?: string;
+      actorName?: string;
+      data: Partial<Omit<User, "id" | "registeredAt">> & { password?: string };
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    const { id, actorId, actorName, data: updates } = data;
+    try {
+      await sql.begin(async (sql) => {
+        const existing = await sql`SELECT * FROM users WHERE id = ${id}`;
+        if (existing.length === 0) {
+          throw new Error("User not found");
+        }
+
+        const dbUpdates: Record<string, any> = {};
+        if (updates.name !== undefined) dbUpdates.name = updates.name.trim();
+        if (updates.email !== undefined) dbUpdates.email = updates.email.trim();
+        if (updates.phone !== undefined) dbUpdates.phone = updates.phone.trim();
+        if (updates.role !== undefined) dbUpdates.role = updates.role;
+        if (updates.status !== undefined) dbUpdates.status = updates.status;
+        if (updates.schoolId !== undefined) dbUpdates.school_id = updates.schoolId || null;
+        if (updates.classId !== undefined) dbUpdates.class_id = updates.classId || null;
+        if (updates.subjects !== undefined) dbUpdates.subjects = updates.subjects;
+        if (updates.photo !== undefined) dbUpdates.photo = updates.photo;
+        if (updates.password !== undefined && updates.password.trim() !== "") {
+          dbUpdates.password = updates.password.trim();
+        }
+
+        if (Object.keys(dbUpdates).length > 0) {
+          await sql`UPDATE users SET ${sql(dbUpdates)} WHERE id = ${id}`;
+        }
+
+        if (actorId && actorName) {
+          const logId = Math.random().toString(36).slice(2, 10);
+          await safeInsertAuditLog(
+            sql,
+            logId,
+            actorId,
+            actorName,
+            "Updated user profile",
+            updates.name || existing[0].name,
+          );
+        }
+      });
+
+      serverCache.invalidateTags(["users", "audit"]);
+      return { id };
+    } catch (error) {
+      console.error("Error in updateUser:", error);
+      throw error;
+    }
+  });
+
 // ----------------------------------------------------
 // 10. Subject Management Functions
 // ----------------------------------------------------

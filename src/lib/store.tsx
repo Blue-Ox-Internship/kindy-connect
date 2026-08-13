@@ -15,6 +15,7 @@ import {
   approveTeacher as approveTeacherDb,
   rejectTeacher as rejectTeacherDb,
   deleteUser as deleteUserDb,
+  updateUser as updateUserDb,
   addPupil as addPupilDb,
   bulkAddPupils as bulkAddPupilsDb,
   updatePupil as updatePupilDb,
@@ -100,6 +101,10 @@ interface Store {
   approveTeacher: (id: string) => Promise<void>;
   rejectTeacher: (id: string) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
+  updateUser: (
+    id: string,
+    data: Partial<Omit<User, "id" | "registeredAt">> & { password?: string },
+  ) => Promise<void>;
   addPupil: (data: Omit<Pupil, "id" | "active"> & { parent?: Omit<Parent, "id"> }) => Promise<void>;
   bulkAddPupils: (pupils: Array<{
     pupil: Omit<Pupil, "id" | "active">;
@@ -700,6 +705,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
     },
 
+    updateUser: async (id, data) => {
+      if (!currentUser) return;
+      await updateUserDb({
+        data: {
+          id,
+          actorId: currentUser.id,
+          actorName: currentUser.name,
+          data,
+        },
+      });
+      setState((s) => {
+        const existing = (s.users || []).find((u) => u.id === id);
+        return {
+          ...s,
+          users: (s.users || []).map((u) => (u.id === id ? { ...u, ...data } : u)),
+          audit: [
+            {
+              id: Math.random().toString(36).slice(2, 10),
+              actorId: currentUser.id,
+              actorName: currentUser.name,
+              action: "Updated user profile",
+              target: data.name || existing?.name || id,
+              timestamp: new Date().toISOString(),
+            },
+            ...(s.audit || []),
+          ],
+        };
+      });
+    },
+
     addPupil: async (pupilData) => {
       if (!currentUser) return;
       const { parent, ...pupil } = pupilData as Omit<Pupil, "id" | "active"> & {
@@ -1217,9 +1252,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     getSchoolSubjects: (targetSchoolId?: string) => {
       const effectiveSchoolId = targetSchoolId || state.selectedSchoolId || currentUser?.schoolId;
+      const subjectsList = state.subjects || [];
       const schoolSubjects = effectiveSchoolId
-        ? state.subjects.filter((s) => s.schoolId === effectiveSchoolId)
-        : state.subjects;
+        ? subjectsList.filter((s) => s && s.schoolId === effectiveSchoolId)
+        : subjectsList;
 
       if (schoolSubjects.length > 0) {
         return schoolSubjects;
