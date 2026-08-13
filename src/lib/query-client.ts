@@ -39,5 +39,4 @@ export const queryKeys = {
   attendance: (schoolId?: string | null) => ["nobleEdu", "attendance", schoolId || "all"] as const,
   audit: (schoolId?: string | null) => ["nobleEdu", "audit", schoolId || "all"] as const,
   notifications: () => ["nobleEdu", "notifications"] as const,
-  cacheStats: () => ["nobleEdu", "cacheStats"] as const,
 };

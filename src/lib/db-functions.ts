@@ -253,16 +253,7 @@ export const getInitialData = createServerFn({ method: "GET" })
     }
   });
 
-// Server cache stats helper
-export const getServerCacheStats = createServerFn({ method: "GET" }).handler(async () => {
-  return serverCache.getStats();
-});
 
-// Purge server cache helper
-export const purgeServerCache = createServerFn({ method: "POST" }).handler(async () => {
-  serverCache.purgeAll();
-  return { success: true, timestamp: new Date().toISOString() };
-});
 
 // ----------------------------------------------------
 // 2. Authentication Functions

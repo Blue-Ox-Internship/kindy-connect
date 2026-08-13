@@ -10,8 +10,6 @@ import {
 } from "react";
 import {
   getInitialData,
-  purgeServerCache,
-  getServerCacheStats,
   loginUser,
   registerUser as registerUserDb,
   approveTeacher as approveTeacherDb,
@@ -178,8 +176,6 @@ interface Store {
   getSchoolSubjects: (schoolId?: string) => Subject[];
   refreshData: () => Promise<void>;
   lastSyncTime: string | null;
-  purgeCache: () => Promise<void>;
-  getServerStats: () => Promise<any>;
   isLocked: boolean;
   lock: () => void;
   unlock: (password: string) => Promise<boolean>;
@@ -366,24 +362,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [state.currentUserId]);
 
-  const purgeCache = useCallback(async () => {
-    try {
-      await purgeServerCache();
-      queryClient.clear();
-      await attemptLoad();
-    } catch (err) {
-      console.error("Failed to purge cache:", err);
-    }
-  }, [attemptLoad]);
 
-  const getServerStats = useCallback(async () => {
-    try {
-      return await getServerCacheStats();
-    } catch (err) {
-      console.error("Failed to get server cache stats:", err);
-      return null;
-    }
-  }, []);
 
   // Sync user session to local storage
   useEffect(() => {
@@ -606,8 +585,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     marks: filteredMarks,
     schools: state.schools,
     lastSyncTime,
-    purgeCache,
-    getServerStats,
 
     login: async (id, password) => {
       const u = await loginUser({ data: { id, password } });
