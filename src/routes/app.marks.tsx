@@ -32,11 +32,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
-<<<<<<< HEAD
-import { Plus, Pencil, Trash2, FileSpreadsheet, Printer, Save, Check, Loader2, RotateCcw } from "lucide-react";
-=======
-import { Plus, Pencil, Trash2, FileSpreadsheet, Printer, Search, User, ChevronRight, CheckCircle2 } from "lucide-react";
->>>>>>> noble
+import { Plus, Pencil, Trash2, FileSpreadsheet, Printer, Save, Check, Loader2, RotateCcw, Search, User, ChevronRight, CheckCircle2 } from "lucide-react";
 import { downloadCSV } from "@/lib/export-utils";
 
 export const Route = createFileRoute("/app/marks")({
@@ -140,8 +136,6 @@ function MarksPage() {
   const currentSchool = schools.find(
     (s) => s.id === (currentClass?.schoolId || currentUser?.schoolId),
   );
-
-<<<<<<< HEAD
   // State for Class-Wide Inline Marks Entry
   const [inlineMarks, setInlineMarks] = useState<
     Record<
@@ -288,7 +282,8 @@ function MarksPage() {
         (prevInput as HTMLInputElement).focus();
         (prevInput as HTMLInputElement).select();
       }
-=======
+    }
+  };
   const selectedPupil = useMemo(
     () => classPupils.find((p) => p.id === selectedPupilId),
     [classPupils, selectedPupilId],
@@ -333,7 +328,6 @@ function MarksPage() {
         maxScore: prev.maxScore || "100",
         teacherComment: "",
       }));
->>>>>>> noble
     }
   };
 
@@ -850,8 +844,7 @@ function MarksPage() {
               </Dialog>
             </div>
           </div>
-        </div>
-      </CardHeader>
+        </CardHeader>
       <CardContent>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4 p-3 bg-muted/30 rounded-lg border">
             <div className="flex flex-wrap items-center gap-3">

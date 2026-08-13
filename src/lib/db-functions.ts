@@ -1481,21 +1481,73 @@ export const deleteSubject = createServerFn({ method: "POST" })
     }
   });
 
+export const addSubjectsBulk = createServerFn({ method: "POST" })
+  .validator(
+    (d: {
+      schoolId: string;
+      subjects: Array<{ name: string; code?: string }>;
+      actorId?: string;
+      actorName?: string;
+    }) => d
+  )
+  .handler(async ({ data }) => {
+    try {
+      const inserted: Subject[] = [];
+      for (const item of data.subjects) {
+        if (!item.name.trim()) continue;
+        const id = `subj_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const name = item.name.trim();
+        const code = item.code?.trim().toUpperCase() || undefined;
+        await sql`
+          INSERT INTO subjects (id, school_id, name, code)
+          VALUES (${id}, ${data.schoolId}, ${name}, ${code || null})
+          ON CONFLICT (school_id, name) DO NOTHING
+        `;
+        inserted.push({
+          id,
+          schoolId: data.schoolId,
+          name,
+          code,
+        });
+      }
+      if (data.actorId && data.actorName) {
+        const logId = Math.random().toString(36).slice(2, 10);
+        await safeInsertAuditLog(
+          sql,
+          logId,
+          data.actorId,
+          data.actorName,
+          "Bulk added subjects",
+          `${inserted.length} subjects`
+        );
+      }
+      serverCache.invalidateTags(["subjects", "audit"]);
+      return { count: inserted.length, subjects: inserted };
+    } catch (error) {
+      console.error("Error in addSubjectsBulk:", error);
+      throw error;
+    }
+  });
+
 export const seedDefaultSubjects = createServerFn({ method: "POST" })
   .validator((d: { schoolId: string; actorId?: string; actorName?: string }) => d)
   .handler(async ({ data }) => {
     const defaultList = [
+      { name: "Mathematics", code: "MTH" },
+      { name: "English", code: "ENG" },
+      { name: "Science", code: "SCI" },
+      { name: "Social Studies", code: "SST" },
       { name: "Reading", code: "RDG" },
-      { name: "Math", code: "MTH" },
       { name: "Writing", code: "WRT" },
-      { name: "Art", code: "ART" },
+      { name: "Art & Craft", code: "ART" },
       { name: "Music", code: "MUS" },
       { name: "Physical Education", code: "PE" },
-      { name: "Science", code: "SCI" },
+      { name: "Luganda", code: "LUG" },
+      { name: "Religious Education", code: "RE" },
     ];
     try {
       for (const sub of defaultList) {
-        const id = `subj_${data.schoolId}_${sub.name.toLowerCase().replace(/\s+/g, "_")}`;
+        const id = `subj_${data.schoolId}_${sub.name.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
         await sql`
           INSERT INTO subjects (id, school_id, name, code)
           VALUES (${id}, ${data.schoolId}, ${sub.name}, ${sub.code})

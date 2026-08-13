@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -29,23 +30,39 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BookOpen, Plus, Search, Pencil, Trash2, Sparkles, Building } from "lucide-react";
+import {
+  BookMarked,
+  Plus,
+  ListPlus,
+  Search,
+  Pencil,
+  Trash2,
+  Sparkles,
+  Building,
+  CheckCircle2,
+  Layers,
+  AlertTriangle,
+  GraduationCap,
+} from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/subjects")({
-  head: () => ({ meta: [{ title: "Custom Subjects - Kindy Connect" }] }),
+  head: () => ({ meta: [{ title: "School Subjects - Kindy Connect" }] }),
   component: SubjectsPage,
 });
 
 function SubjectsPage() {
   const {
     currentUser,
+    users,
     schools,
     selectedSchoolId,
     setSchoolContext,
     subjects,
+    marks,
     addSubject,
+    addSubjectsBulk,
     updateSubject,
     deleteSubject,
     seedDefaultSubjects,
@@ -66,9 +83,22 @@ function SubjectsPage() {
     return subjects.filter((s) => s.schoolId === activeSchoolId);
   }, [subjects, activeSchoolId]);
 
+  // Teachers teaching subjects in this school
+  const schoolTeachers = useMemo(() => {
+    return users.filter(
+      (u) => u.role === "teacher" && (isSuperAdmin ? true : u.schoolId === activeSchoolId)
+    );
+  }, [users, activeSchoolId, isSuperAdmin]);
+
+  // Count coded subjects
+  const codedSubjectsCount = useMemo(() => {
+    return schoolSubjects.filter((s) => s.code && s.code.trim().length > 0).length;
+  }, [schoolSubjects]);
+
   // Local UI states
   const [searchTerm, setSearchTerm] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
@@ -78,6 +108,7 @@ function SubjectsPage() {
     code: "",
   });
 
+  const [bulkInput, setBulkInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Search filtered subjects list
@@ -89,7 +120,7 @@ function SubjectsPage() {
     );
   }, [schoolSubjects, searchTerm]);
 
-  // Open add dialog
+  // Open single add dialog
   const handleOpenAdd = () => {
     if (!activeSchoolId) {
       toast.error("Please select a school first");
@@ -99,7 +130,17 @@ function SubjectsPage() {
     setAddDialogOpen(true);
   };
 
-  // Submit add subject
+  // Open bulk add dialog
+  const handleOpenBulkAdd = () => {
+    if (!activeSchoolId) {
+      toast.error("Please select a school first");
+      return;
+    }
+    setBulkInput("");
+    setBulkDialogOpen(true);
+  };
+
+  // Submit single add subject
   const handleAddSubject = async () => {
     if (!form.name.trim()) {
       toast.error("Subject name is required");
@@ -125,6 +166,71 @@ function SubjectsPage() {
       setAddDialogOpen(false);
     } catch (err: any) {
       toast.error(err?.message || "Failed to add subject");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Submit bulk add subjects
+  const handleBulkAddSubjects = async () => {
+    if (!bulkInput.trim()) {
+      toast.error("Please enter at least one subject name");
+      return;
+    }
+
+    // Split by line or comma
+    const rawNames = bulkInput
+      .split(/[\n,]+/)
+      .map((n) => n.trim())
+      .filter((n) => n.length > 0);
+
+    if (rawNames.length === 0) {
+      toast.error("No valid subject names entered");
+      return;
+    }
+
+    // Deduplicate against existing school subjects
+    const newItems: Array<{ name: string; code?: string }> = [];
+    const skipped: string[] = [];
+
+    for (const name of rawNames) {
+      const already = schoolSubjects.some(
+        (s) => s.name.toLowerCase() === name.toLowerCase()
+      ) || newItems.some((i) => i.name.toLowerCase() === name.toLowerCase());
+
+      if (already) {
+        skipped.push(name);
+      } else {
+        // Auto generate simple 3-letter code
+        const words = name.split(" ");
+        let code = "";
+        if (words.length >= 2) {
+          code = (words[0][0] + words[1][0] + (words[2]?.[0] || words[1][1] || "")).toUpperCase();
+        } else {
+          code = name.slice(0, 3).toUpperCase();
+        }
+        newItems.push({ name, code });
+      }
+    }
+
+    if (newItems.length === 0) {
+      toast.error("All entered subjects already exist in this school");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await addSubjectsBulk({
+        schoolId: activeSchoolId,
+        subjects: newItems,
+      });
+      toast.success(`Successfully added ${newItems.length} subjects!`);
+      if (skipped.length > 0) {
+        toast.info(`Skipped ${skipped.length} duplicate(s): ${skipped.join(", ")}`);
+      }
+      setBulkDialogOpen(false);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to add subjects in bulk");
     } finally {
       setIsSubmitting(false);
     }
@@ -174,6 +280,14 @@ function SubjectsPage() {
     setDeleteDialogOpen(true);
   };
 
+  // Check if subject has marks recorded or assigned teachers
+  const subjectUsageInfo = useMemo(() => {
+    if (!selectedSubject) return { marksCount: 0, teachersCount: 0 };
+    const marksCount = marks.filter((m) => m.subject.toLowerCase() === selectedSubject.name.toLowerCase()).length;
+    const teachersCount = schoolTeachers.filter((t) => t.subjects?.includes(selectedSubject.name)).length;
+    return { marksCount, teachersCount };
+  }, [selectedSubject, marks, schoolTeachers]);
+
   // Submit delete subject
   const handleDeleteSubject = async () => {
     if (!selectedSubject) return;
@@ -221,26 +335,33 @@ function SubjectsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
-              <BookOpen className="h-6 w-6 text-primary" />
-              {currentSchool?.name || "School"} Subjects
+              <BookMarked className="h-6 w-6 text-primary" />
+              {currentSchool?.name || "School"} Curriculum Subjects
             </h2>
             <p className="text-sm text-muted-foreground">
-              Manage custom subjects offered by {currentSchool?.name || "your school"}. Teachers can enter marks and generate report cards for these subjects.
+              Create and manage subjects offered at {currentSchool?.name || "your school"}. Assign subjects to teachers, record marks, and print report cards.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            {schoolSubjects.length === 0 && (
-              <Button
-                variant="outline"
-                onClick={handleSeedDefaults}
-                disabled={isSubmitting}
-                className="gap-2"
-              >
-                <Sparkles className="h-4 w-4 text-amber-500" />
-                Seed Standard Subjects
-              </Button>
-            )}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleSeedDefaults}
+              disabled={isSubmitting}
+              className="gap-2"
+            >
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              Seed Standard Subjects
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleOpenBulkAdd}
+              disabled={isSubmitting}
+              className="gap-2"
+            >
+              <ListPlus className="h-4 w-4 text-primary" />
+              Bulk Add
+            </Button>
             <Button onClick={handleOpenAdd} className="gap-2">
               <Plus className="h-4 w-4" />
               Add Subject
@@ -248,7 +369,7 @@ function SubjectsPage() {
           </div>
         </div>
 
-        {/* Super Admin School Switcher if applicable */}
+        {/* Super Admin School Switcher */}
         {isSuperAdmin && (
           <Card className="bg-muted/40 border-dashed">
             <CardContent className="py-4 flex items-center gap-4">
@@ -273,16 +394,55 @@ function SubjectsPage() {
           </Card>
         )}
 
+        {/* Stats Grid Overview */}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-primary/15 text-primary flex items-center justify-center">
+                <BookMarked className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold">{schoolSubjects.length}</div>
+                <div className="text-xs text-muted-foreground">Total Active Subjects</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-green-500/15 text-green-600 flex items-center justify-center">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold">{codedSubjectsCount}</div>
+                <div className="text-xs text-muted-foreground">Subjects with Subject Codes</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-blue-500/15 text-blue-600 flex items-center justify-center">
+                <GraduationCap className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold">{schoolTeachers.length}</div>
+                <div className="text-xs text-muted-foreground">Teaching Staff Assigned</div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Search & Subject Table */}
         <Card>
           <CardHeader className="pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-base font-semibold">
-                  Subjects ({filteredSubjects.length})
+                  Subjects Directory ({filteredSubjects.length})
                 </CardTitle>
                 <CardDescription>
-                  Active customized subject curriculum list
+                  List of customized subjects configured for this school
                 </CardDescription>
               </div>
 
@@ -301,18 +461,22 @@ function SubjectsPage() {
           <CardContent className="p-0">
             {filteredSubjects.length === 0 ? (
               <div className="p-12 text-center space-y-3">
-                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto opacity-50" />
+                <Layers className="h-12 w-12 text-muted-foreground mx-auto opacity-50" />
                 <h3 className="text-base font-medium">No subjects found</h3>
-                <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
                   {searchTerm
                     ? "No subjects matched your search query."
-                    : "No subjects have been configured for this school yet. Add your first subject or load standard defaults."}
+                    : "No subjects have been configured for this school yet. Add your custom subjects or seed the standard curriculum."}
                 </p>
                 {!searchTerm && (
-                  <div className="flex justify-center gap-3 pt-2">
+                  <div className="flex flex-wrap justify-center gap-3 pt-2">
                     <Button variant="outline" onClick={handleSeedDefaults} disabled={isSubmitting}>
                       <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
-                      Add Standard Defaults
+                      Seed Standard Subjects
+                    </Button>
+                    <Button variant="outline" onClick={handleOpenBulkAdd} disabled={isSubmitting}>
+                      <ListPlus className="h-4 w-4 mr-2" />
+                      Bulk Add Subjects
                     </Button>
                     <Button onClick={handleOpenAdd}>
                       <Plus className="h-4 w-4 mr-2" />
@@ -328,49 +492,72 @@ function SubjectsPage() {
                     <TableHead className="w-12">#</TableHead>
                     <TableHead>Subject Name</TableHead>
                     <TableHead>Subject Code</TableHead>
+                    <TableHead>Assigned Teachers</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredSubjects.map((sub, idx) => (
-                    <TableRow key={sub.id}>
-                      <TableCell className="font-mono text-xs text-muted-foreground">
-                        {idx + 1}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <span>{sub.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {sub.code ? (
-                          <Badge variant="outline" className="font-mono uppercase">
-                            {sub.code}
-                          </Badge>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleOpenEdit(sub)}
-                          >
-                            <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleOpenDelete(sub)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive hover:text-destructive/80" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredSubjects.map((sub, idx) => {
+                    const assignedTeachers = schoolTeachers.filter((t) =>
+                      t.subjects?.includes(sub.name)
+                    );
+                    return (
+                      <TableRow key={sub.id}>
+                        <TableCell className="font-mono text-xs text-muted-foreground">
+                          {idx + 1}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <BookMarked className="h-4 w-4 text-primary opacity-70" />
+                            <span>{sub.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {sub.code ? (
+                            <Badge variant="outline" className="font-mono uppercase bg-primary/5">
+                              {sub.code}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {assignedTeachers.length > 0 ? (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <Badge variant="secondary" className="text-xs">
+                                {assignedTeachers.length} teacher{assignedTeachers.length > 1 ? "s" : ""}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                                ({assignedTeachers.map((t) => t.name).join(", ")})
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground opacity-60">Unassigned</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleOpenEdit(sub)}
+                              title="Edit subject"
+                            >
+                              <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleOpenDelete(sub)}
+                              title="Delete subject"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive hover:text-destructive/80" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}
@@ -378,7 +565,7 @@ function SubjectsPage() {
         </Card>
       </div>
 
-      {/* Add Subject Dialog */}
+      {/* Add Single Subject Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -409,6 +596,9 @@ function SubjectsPage() {
                 onChange={(e) => setForm({ ...form, code: e.target.value })}
                 onKeyDown={(e) => e.key === "Enter" && handleAddSubject()}
               />
+              <p className="text-xs text-muted-foreground">
+                Short abbreviation used on report cards and summary tables.
+              </p>
             </div>
           </div>
 
@@ -418,6 +608,47 @@ function SubjectsPage() {
             </Button>
             <Button onClick={handleAddSubject} disabled={isSubmitting}>
               {isSubmitting ? "Adding..." : "Add Subject"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Add Subjects Dialog */}
+      <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListPlus className="h-5 w-5 text-primary" />
+              Bulk Add Subjects
+            </DialogTitle>
+            <DialogDescription>
+              Enter or paste multiple subject names below (one per line or separated by commas).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-3">
+            <div className="space-y-2">
+              <Label htmlFor="bulk-input">Subject Names *</Label>
+              <Textarea
+                id="bulk-input"
+                rows={6}
+                placeholder={`Mathematics\nEnglish\nScience\nSocial Studies\nLuganda\nArt & Craft`}
+                value={bulkInput}
+                onChange={(e) => setBulkInput(e.target.value)}
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                Tip: Standard 3-letter codes will be automatically generated for each subject (you can edit them later).
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleBulkAddSubjects} disabled={isSubmitting}>
+              {isSubmitting ? "Adding..." : "Add All Subjects"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -468,13 +699,30 @@ function SubjectsPage() {
 
       {/* Delete Subject Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Delete Subject</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Delete Subject
+            </DialogTitle>
             <DialogDescription>
               Are you sure you want to delete <strong className="text-foreground">{selectedSubject?.name}</strong>?
             </DialogDescription>
           </DialogHeader>
+
+          {selectedSubject && (subjectUsageInfo.marksCount > 0 || subjectUsageInfo.teachersCount > 0) && (
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs space-y-1 text-amber-800 dark:text-amber-300">
+              <div className="font-semibold flex items-center gap-1">
+                <AlertTriangle className="h-3.5 w-3.5" /> Notice:
+              </div>
+              {subjectUsageInfo.marksCount > 0 && (
+                <div>• {subjectUsageInfo.marksCount} mark entries exist for this subject.</div>
+              )}
+              {subjectUsageInfo.teachersCount > 0 && (
+                <div>• {subjectUsageInfo.teachersCount} teacher(s) currently assigned to teach this subject.</div>
+              )}
+            </div>
+          )}
 
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>

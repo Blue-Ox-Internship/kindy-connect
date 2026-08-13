@@ -35,6 +35,7 @@ import {
   updateClass as updateClassDb,
   deleteClass as deleteClassDb,
   addSubject as addSubjectDb,
+  addSubjectsBulk as addSubjectsBulkDb,
   updateSubject as updateSubjectDb,
   deleteSubject as deleteSubjectDb,
   seedDefaultSubjects as seedDefaultSubjectsDb,
@@ -170,6 +171,7 @@ interface Store {
   updateClass: (id: string, data: Partial<Omit<ClassRoom, "id">>) => Promise<void>;
   deleteClass: (id: string) => Promise<void>;
   addSubject: (data: { schoolId: string; name: string; code?: string }) => Promise<void>;
+  addSubjectsBulk: (data: { schoolId: string; subjects: Array<{ name: string; code?: string }> }) => Promise<void>;
   updateSubject: (id: string, name: string, code?: string) => Promise<void>;
   deleteSubject: (id: string) => Promise<void>;
   seedDefaultSubjects: (schoolId: string) => Promise<void>;
@@ -1194,6 +1196,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         ...s,
         subjects: [...s.subjects, newSubj],
       }));
+    },
+
+    addSubjectsBulk: async (data) => {
+      if (!currentUser) return;
+      await addSubjectsBulkDb({
+        data: { ...data, actorId: currentUser.id, actorName: currentUser.name },
+      });
+      await refreshData();
     },
 
     updateSubject: async (id, name, code) => {
