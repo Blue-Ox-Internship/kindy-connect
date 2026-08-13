@@ -24,7 +24,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Check, X, Plus, Search, Trash2 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/teachers")({
@@ -52,6 +52,23 @@ function TeachersPage() {
   const isSuperAdmin = currentUser?.role === "super_admin";
   const isSchoolAdmin = currentUser?.role === "admin";
   const isAuthorized = isSuperAdmin || isSchoolAdmin || currentUser?.role === "deputy";
+
+  // Debug logging - check browser console for this info
+  useEffect(() => {
+    console.log("🔍 Teachers Page Debug Info:", {
+      currentUser: currentUser ? {
+        id: currentUser.id,
+        name: currentUser.name,
+        role: currentUser.role,
+        schoolId: currentUser.schoolId,
+      } : null,
+      usersCount: users.length,
+      schoolsCount: schools.length,
+      isAuthorized,
+      isSuperAdmin,
+      isSchoolAdmin,
+    });
+  }, [currentUser, users, schools, isAuthorized, isSuperAdmin, isSchoolAdmin]);
 
   // Super Admin School filtering
   const [schoolFilter, setSchoolFilter] = useState<string>("all");
@@ -345,9 +362,28 @@ function TeachersPage() {
   if (!isAuthorized) {
     return (
       <AppShell title="Unauthorized">
-        <div className="text-center py-12 text-muted-foreground">
-          You do not have permission to view this page.
-        </div>
+        <Card className="border-destructive/50">
+          <CardHeader>
+            <CardTitle className="text-destructive">Access Denied</CardTitle>
+            <CardDescription>
+              You do not have permission to view this page.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm">
+              <strong>Current user:</strong> {currentUser?.name || "Unknown"}
+            </div>
+            <div className="text-sm">
+              <strong>Current role:</strong>{" "}
+              <Badge variant="outline" className="capitalize">
+                {currentUser?.role?.replace("_", " ") || "none"}
+              </Badge>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <strong>Required roles:</strong> Admin, Super Admin, or Deputy
+            </div>
+          </CardContent>
+        </Card>
       </AppShell>
     );
   }
