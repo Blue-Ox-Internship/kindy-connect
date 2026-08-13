@@ -1,6 +1,6 @@
 /**
  * Server-Side High-Performance Cache & SWR Engine
- * Provides memory caching, tag-based invalidation, and metrics for KindyConnect
+ * Provides memory caching, tag-based invalidation, and metrics for Noble Edu
  */
 
 export interface CacheEntry<T = any> {

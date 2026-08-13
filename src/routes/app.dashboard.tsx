@@ -49,7 +49,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/app/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard - School Connect" }] }),
+  head: () => ({ meta: [{ title: "Dashboard - Noble Edu" }] }),
   component: Dashboard,
 });
 

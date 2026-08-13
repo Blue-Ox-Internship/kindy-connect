@@ -24,13 +24,13 @@ import { useStore } from "@/lib/store";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "School Connect - School Management Platform" },
+      { title: "Noble Edu - School Management Platform" },
       {
         name: "description",
         content:
           "Streamline attendance tracking, parent communication, and school management for all institutions.",
       },
-      { property: "og:title", content: "School Connect" },
+      { property: "og:title", content: "Noble Edu" },
       {
         property: "og:description",
         content: "School management and parent communication platform.",
@@ -104,7 +104,7 @@ function Landing() {
             </div>
             <div>
               <div className="text-sm font-semibold tracking-wide text-foreground">
-                School Connect
+                Noble Edu
               </div>
               <div className="text-xs text-muted-foreground">School operations, without the noise</div>
             </div>
@@ -145,7 +145,7 @@ function Landing() {
 
             <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
               Track arrivals, send parent updates, manage classes, and keep reports in one clean
-              workflow. School Connect stays out of the way while the day keeps moving.
+              workflow. Noble Edu stays out of the way while the day keeps moving.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -275,7 +275,7 @@ function Landing() {
         <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 px-6 py-8 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2 text-sm font-medium">
             <GraduationCap className="h-4 w-4 text-primary" />
-            School Connect
+            Noble Edu
           </div>
           <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">For Inquiries:</span>
@@ -288,7 +288,7 @@ function Landing() {
             </a>
           </div>
           <p className="text-xs text-muted-foreground">
-            {new Date().getFullYear()} School Connect. Built for schools that want clarity, not
+            {new Date().getFullYear()} Noble Edu. Built for schools that want clarity, not
             clutter.
           </p>
         </div>

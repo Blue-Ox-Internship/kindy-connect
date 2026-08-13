@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/app/audit")({
-  head: () => ({ meta: [{ title: "Audit log - School Connect" }] }),
+  head: () => ({ meta: [{ title: "Audit log - Noble Edu" }] }),
   component: AuditPage,
 });
 

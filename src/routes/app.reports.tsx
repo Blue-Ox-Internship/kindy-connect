@@ -48,7 +48,7 @@ import { useState, useMemo, useEffect } from "react";
 import { downloadCSV } from "@/lib/export-utils";
 
 export const Route = createFileRoute("/app/reports")({
-  head: () => ({ meta: [{ title: "Reports - School Connect" }] }),
+  head: () => ({ meta: [{ title: "Reports - Noble Edu" }] }),
   component: ReportsPage,
 });
 
@@ -66,9 +66,9 @@ interface ReportFormatConfig {
 }
 
 const DEFAULT_REPORT_FORMAT: ReportFormatConfig = {
-  headerTitle: "School Connect",
+  headerTitle: "Noble Edu",
   subtitle: "Academic Performance Report Card",
-  schoolAddress: "P.O. Box 1234, Kampala, Uganda | Tel: +256 700 000 000 | info@schoolconnect.com",
+  schoolAddress: "P.O. Box 1234, Kampala, Uganda | Tel: +256 700 000 000 | info@nobleedu.com",
   showAttendance: false,
   showTeacherComments: true,
   showPrincipalSignature: true,
@@ -88,7 +88,7 @@ function ReportsPage() {
   const [formatConfig, setFormatConfig] = useState<ReportFormatConfig>(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = localStorage.getItem("kindy_report_format_config");
+        const saved = localStorage.getItem("noble_report_format_config") || localStorage.getItem("kindy_report_format_config");
         if (saved) return { ...DEFAULT_REPORT_FORMAT, ...JSON.parse(saved) };
       } catch {}
     }
@@ -101,7 +101,7 @@ function ReportsPage() {
   const handleSaveFormat = () => {
     setFormatConfig(editFormat);
     try {
-      localStorage.setItem("kindy_report_format_config", JSON.stringify(editFormat));
+      localStorage.setItem("noble_report_format_config", JSON.stringify(editFormat));
     } catch {}
     toast.success("Report format settings saved successfully!");
     setFormatDialogOpen(false);
@@ -111,6 +111,7 @@ function ReportsPage() {
     setEditFormat(DEFAULT_REPORT_FORMAT);
     setFormatConfig(DEFAULT_REPORT_FORMAT);
     try {
+      localStorage.removeItem("noble_report_format_config");
       localStorage.removeItem("kindy_report_format_config");
     } catch {}
     toast.success("Reset report format to default settings");

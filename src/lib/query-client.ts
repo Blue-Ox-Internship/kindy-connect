@@ -1,7 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 
 /**
- * Global TanStack React Query Client configured for KindyConnect.
+ * Global TanStack React Query Client configured for Noble Edu.
  * Optimizes network requests via smart staleness, caching, and retry policies.
  */
 export const queryClient = new QueryClient({
@@ -29,15 +29,15 @@ export const queryClient = new QueryClient({
  * Type-safe query key factory for centralized cache key management
  */
 export const queryKeys = {
-  all: ["kindyConnect"] as const,
-  initialData: (userId?: string | null) => ["kindyConnect", "initialData", userId || "all"] as const,
-  schools: () => ["kindyConnect", "schools"] as const,
-  users: (schoolId?: string | null) => ["kindyConnect", "users", schoolId || "all"] as const,
-  pupils: (schoolId?: string | null) => ["kindyConnect", "pupils", schoolId || "all"] as const,
-  classes: (schoolId?: string | null) => ["kindyConnect", "classes", schoolId || "all"] as const,
-  marks: (schoolId?: string | null) => ["kindyConnect", "marks", schoolId || "all"] as const,
-  attendance: (schoolId?: string | null) => ["kindyConnect", "attendance", schoolId || "all"] as const,
-  audit: (schoolId?: string | null) => ["kindyConnect", "audit", schoolId || "all"] as const,
-  notifications: () => ["kindyConnect", "notifications"] as const,
-  cacheStats: () => ["kindyConnect", "cacheStats"] as const,
+  all: ["nobleEdu"] as const,
+  initialData: (userId?: string | null) => ["nobleEdu", "initialData", userId || "all"] as const,
+  schools: () => ["nobleEdu", "schools"] as const,
+  users: (schoolId?: string | null) => ["nobleEdu", "users", schoolId || "all"] as const,
+  pupils: (schoolId?: string | null) => ["nobleEdu", "pupils", schoolId || "all"] as const,
+  classes: (schoolId?: string | null) => ["nobleEdu", "classes", schoolId || "all"] as const,
+  marks: (schoolId?: string | null) => ["nobleEdu", "marks", schoolId || "all"] as const,
+  attendance: (schoolId?: string | null) => ["nobleEdu", "attendance", schoolId || "all"] as const,
+  audit: (schoolId?: string | null) => ["nobleEdu", "audit", schoolId || "all"] as const,
+  notifications: () => ["nobleEdu", "notifications"] as const,
+  cacheStats: () => ["nobleEdu", "cacheStats"] as const,
 };

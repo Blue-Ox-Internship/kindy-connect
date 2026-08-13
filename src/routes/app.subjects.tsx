@@ -49,7 +49,7 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/subjects")({
-  head: () => ({ meta: [{ title: "School Subjects - Kindy Connect" }] }),
+  head: () => ({ meta: [{ title: "School Subjects - Noble Edu" }] }),
   component: SubjectsPage,
 });
 

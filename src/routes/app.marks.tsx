@@ -36,7 +36,7 @@ import { Plus, Pencil, Trash2, FileSpreadsheet, Printer, Save, Check, Loader2, R
 import { downloadCSV } from "@/lib/export-utils";
 
 export const Route = createFileRoute("/app/marks")({
-  head: () => ({ meta: [{ title: "Marks & Grades - School Connect" }] }),
+  head: () => ({ meta: [{ title: "Marks & Grades - Noble Edu" }] }),
   component: MarksPage,
 });
 
@@ -1159,7 +1159,7 @@ function MarksPage() {
           <DialogHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b gap-3">
             <div>
               <DialogTitle className="text-xl font-bold">
-                {currentSchool?.name || "School Connect"} - Pupil Marks Sheet
+                {currentSchool?.name || "Noble Edu"} - Pupil Marks Sheet
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-1">
                 Class: <span className="font-semibold text-foreground">{currentClass?.name || "All Classes"}</span> | Term: <span className="font-semibold text-foreground">{term}</span> | Year: <span className="font-semibold text-foreground">{year}</span>
