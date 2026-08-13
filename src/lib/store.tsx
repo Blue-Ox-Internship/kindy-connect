@@ -167,7 +167,7 @@ interface Store {
   }) => Promise<void>;
   updateSchool: (id: string, data: Partial<Omit<School, "id" | "registeredAt">>) => Promise<void>;
   deleteSchool: (id: string) => Promise<void>;
-  addClass: (data: { name: string; schoolId: string; teacherId?: string }) => Promise<void>;
+  addClass: (data: { name: string; schoolId: string; teacherId?: string; subjects?: string[] }) => Promise<void>;
   updateClass: (id: string, data: Partial<Omit<ClassRoom, "id">>) => Promise<void>;
   deleteClass: (id: string) => Promise<void>;
   addSubject: (data: { schoolId: string; name: string; code?: string }) => Promise<void>;

@@ -122,17 +122,29 @@ function MarksPage() {
   const rawSchoolSubjects = getSchoolSubjects(activeSchoolId);
   const subjects = useMemo(() => rawSchoolSubjects.map((s) => s.name), [rawSchoolSubjects]);
 
-  // Filter subjects for teachers - they can only see their assigned subjects
+  const currentClass = classes.find((c) => c.id === classId);
+
+  // Filter subjects for selected class and teachers (assigned subjects)
   const availableSubjects = useMemo(() => {
-    if (isTeacher && currentUser?.subjects && currentUser.subjects.length > 0) {
-      return subjects.filter((s) => currentUser.subjects?.includes(s));
+    let list = subjects;
+    if (currentClass?.subjects && currentClass.subjects.length > 0) {
+      list = list.filter((s) => currentClass.subjects?.includes(s));
     }
-    return subjects;
-  }, [isTeacher, currentUser, subjects]);
+    if (isTeacher && currentUser?.subjects && currentUser.subjects.length > 0) {
+      list = list.filter((s) => currentUser.subjects?.includes(s));
+    }
+    return list;
+  }, [isTeacher, currentUser, subjects, currentClass]);
+
+  // Ensure selected subject exists in available subjects
+  useEffect(() => {
+    if (availableSubjects.length > 0 && !availableSubjects.includes(subject)) {
+      setSubject(availableSubjects[0]);
+    }
+  }, [availableSubjects, subject]);
 
   const terms = ["Term 1", "Term 2", "Term 3"];
 
-  const currentClass = classes.find((c) => c.id === classId);
   const currentSchool = schools.find(
     (s) => s.id === (currentClass?.schoolId || currentUser?.schoolId),
   );

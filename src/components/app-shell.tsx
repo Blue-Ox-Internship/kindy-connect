@@ -13,6 +13,8 @@ import {
   ClipboardList,
   School,
   Building2,
+  Phone,
+  Mail,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Badge } from "@/components/ui/badge";
@@ -111,32 +113,45 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
             );
           })}
         </nav>
-        <div className="border-t p-3 flex items-center gap-3">
-          <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-secondary text-secondary-foreground">
-              {currentUser.name
-                .split(" ")
-                .map((p) => p[0])
-                .join("")
-                .slice(0, 2)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">{currentUser.name}</div>
-            <div className="text-xs text-muted-foreground capitalize">
-              {currentUser.role.replace("_", " ")}
-            </div>
+        <div className="border-t p-3 space-y-3">
+          <div className="rounded-lg bg-muted/40 p-2.5 text-xs space-y-1">
+            <div className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider">For Inquiries</div>
+            <a href="tel:0786951347" className="flex items-center gap-1.5 font-medium text-foreground hover:underline">
+              <Phone className="h-3 w-3 text-primary shrink-0" />
+              <span>0786951347</span>
+            </a>
+            <a href="mailto:nobleahimbisibwe5@gmail.com" className="flex items-center gap-1.5 text-muted-foreground hover:underline truncate" title="nobleahimbisibwe5@gmail.com">
+              <Mail className="h-3 w-3 text-primary shrink-0" />
+              <span className="truncate">nobleahimbisibwe5@gmail.com</span>
+            </a>
           </div>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => {
-              logout();
-              navigate({ to: "/" });
-            }}
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-3">
+            <Avatar className="h-9 w-9">
+              <AvatarFallback className="bg-secondary text-secondary-foreground">
+                {currentUser.name
+                  .split(" ")
+                  .map((p) => p[0])
+                  .join("")
+                  .slice(0, 2)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium truncate">{currentUser.name}</div>
+              <div className="text-xs text-muted-foreground capitalize">
+                {currentUser.role.replace("_", " ")}
+              </div>
+            </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => {
+                logout();
+                navigate({ to: "/" });
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </aside>
 
@@ -148,9 +163,17 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
             <Badge variant="outline" className="capitalize">
               {currentUser.role.replace("_", " ")}
             </Badge>
-            <div className="hidden md:flex flex-col items-end text-right text-sm text-muted-foreground">
-              <a href="tel:0786951347" className="hover:underline">0786951347</a>
-              <a href="mailto:nobleahimbisibwe5@gmail.com" className="hover:underline">nobleahimbisibwe5@gmail.com</a>
+            <div className="hidden lg:flex items-center gap-3 rounded-lg border bg-card/60 px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
+              <span className="font-semibold text-foreground">Inquiries:</span>
+              <a href="tel:0786951347" className="flex items-center gap-1 font-medium text-foreground hover:text-primary hover:underline">
+                <Phone className="h-3.5 w-3.5 text-primary" />
+                0786951347
+              </a>
+              <span className="text-border">•</span>
+              <a href="mailto:nobleahimbisibwe5@gmail.com" className="flex items-center gap-1 font-medium text-foreground hover:text-primary hover:underline">
+                <Mail className="h-3.5 w-3.5 text-primary" />
+                nobleahimbisibwe5@gmail.com
+              </a>
             </div>
           </div>
         </header>
