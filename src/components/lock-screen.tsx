@@ -23,21 +23,29 @@ export function LockScreen() {
       <div className="w-full max-w-md rounded-xl bg-card p-6 shadow-lg">
         <h2 className="text-lg font-semibold">Session locked</h2>
         <p className="text-sm text-muted-foreground mt-1">Enter your password to continue.</p>
-        <form className="mt-4" onSubmit={submit}>
+        <div className="mt-4">
           <Input
             autoFocus
             type="password"
             value={password}
             onChange={(e: any) => setPassword(e.target.value)}
+            onKeyDown={(e: any) => {
+              if (e.key === "Enter" && !loading) submit(e);
+            }}
             placeholder="Password"
+            autoComplete="new-password"
+            data-lpignore="true"
+            data-bwignore="true"
+            data-1p-ignore="true"
+            data-form-type="other"
           />
           {error && <div className="text-destructive text-sm mt-2">{error}</div>}
           <div className="mt-4 flex justify-end">
-            <Button type="submit" loading={loading}>
+            <Button type="button" onClick={submit} loading={loading}>
               Unlock
             </Button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
