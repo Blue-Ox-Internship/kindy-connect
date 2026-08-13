@@ -77,10 +77,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "School Connect" },
+      { title: "Noble Edu" },
       { name: "description", content: "School Management and Communication Platform" },
-      { name: "author", content: "School Connect" },
-      { property: "og:title", content: "School Connect" },
+      { name: "author", content: "Noble Edu" },
+      { property: "og:title", content: "Noble Edu" },
       { property: "og:description", content: "School Management and Communication Platform" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -28,7 +28,7 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/teachers")({
-  head: () => ({ meta: [{ title: "Users - School Connect Admin" }] }),
+  head: () => ({ meta: [{ title: "Users - Noble Edu Admin" }] }),
   component: TeachersPage,
 });
 

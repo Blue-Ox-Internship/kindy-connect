@@ -35,7 +35,7 @@ import { toast } from "sonner";
 import { BulkUploadPupilsDialog } from "@/components/bulk-upload-pupils-dialog";
 
 export const Route = createFileRoute("/app/pupils")({
-  head: () => ({ meta: [{ title: "Pupils - School Connect" }] }),
+  head: () => ({ meta: [{ title: "Pupils - Noble Edu" }] }),
   component: PupilsPage,
 });
 
