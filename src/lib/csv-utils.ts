@@ -548,28 +548,30 @@ export function checkDuplicates(
   existingAdmissionNos: string[]
 ): Array<{ row: number; admissionNo: string }> {
   const duplicates: Array<{ row: number; admissionNo: string }> = [];
+  const existingSet = new Set(existingAdmissionNos.map((a) => a.trim().toLowerCase()));
   const seenInFile = new Set<string>();
 
   data.forEach((row, index) => {
-    const admissionNo = row.admissionNo;
+    const admissionNo = (row.admissionNo || "").trim();
+    const admLower = admissionNo.toLowerCase();
+
+    if (!admissionNo) return;
 
     // Check against existing database records
-    if (existingAdmissionNos.includes(admissionNo)) {
+    if (existingSet.has(admLower)) {
+      duplicates.push({
+        row: index + 2,
+        admissionNo,
+      });
+    } else if (seenInFile.has(admLower)) {
+      // Check for duplicates within the file
       duplicates.push({
         row: index + 2,
         admissionNo,
       });
     }
 
-    // Check for duplicates within the file
-    if (seenInFile.has(admissionNo)) {
-      duplicates.push({
-        row: index + 2,
-        admissionNo,
-      });
-    }
-
-    seenInFile.add(admissionNo);
+    seenInFile.add(admLower);
   });
 
   return duplicates;

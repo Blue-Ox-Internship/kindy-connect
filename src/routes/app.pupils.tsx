@@ -140,28 +140,45 @@ function PupilsPage() {
   };
 
   const submit = async () => {
-    if (!form.admissionNo || !form.firstName || !form.lastName)
+    const admNo = form.admissionNo.trim();
+    const fName = form.firstName.trim();
+    const lName = form.lastName.trim();
+
+    if (!admNo || !fName || !lName)
       return toast.error("Fill required fields");
-    if (pupils.some((p) => p.admissionNo === form.admissionNo))
-      return toast.error("Admission number already exists");
+    if (pupils.some((p) => p.admissionNo.trim().toLowerCase() === admNo.toLowerCase()))
+      return toast.error(`Admission number '${admNo}' already exists`);
+
+    // Check duplicate pupil in class
+    if (
+      pupils.some(
+        (p) =>
+          p.classId === form.classId &&
+          p.firstName.trim().toLowerCase() === fName.toLowerCase() &&
+          p.lastName.trim().toLowerCase() === lName.toLowerCase()
+      )
+    ) {
+      return toast.error(`Pupil '${fName} ${lName}' already exists in this class`);
+    }
+
     if (!form.parentName || !form.parentPhone || !form.parentEmail) {
       return toast.error("Parent / guardian details are required");
     }
 
     try {
       await addPupil({
-        admissionNo: form.admissionNo,
-        firstName: form.firstName,
-        lastName: form.lastName,
+        admissionNo: admNo,
+        firstName: fName,
+        lastName: lName,
         gender: form.gender,
         dob: form.dob,
         classId: form.classId,
         photo: form.photo || undefined,
         parentIds: [],
         parent: {
-          name: form.parentName,
-          phone: form.parentPhone,
-          email: form.parentEmail,
+          name: form.parentName.trim(),
+          phone: form.parentPhone.trim(),
+          email: form.parentEmail.trim(),
           relationship: form.parentRelationship,
         },
       } as any);
@@ -202,29 +219,46 @@ function PupilsPage() {
 
   const submitEdit = async () => {
     if (!editingPupil) return;
-    if (!editForm.admissionNo || !editForm.firstName || !editForm.lastName) {
+    const admNo = editForm.admissionNo.trim();
+    const fName = editForm.firstName.trim();
+    const lName = editForm.lastName.trim();
+
+    if (!admNo || !fName || !lName) {
       return toast.error("Fill required fields");
     }
 
     // Check if admission number changed and is already taken
     if (
-      editForm.admissionNo !== editingPupil.admissionNo &&
-      pupils.some((p) => p.admissionNo === editForm.admissionNo)
+      admNo.toLowerCase() !== editingPupil.admissionNo.trim().toLowerCase() &&
+      pupils.some((p) => p.admissionNo.trim().toLowerCase() === admNo.toLowerCase())
     ) {
-      return toast.error("Admission number already exists");
+      return toast.error(`Admission number '${admNo}' already exists`);
+    }
+
+    // Check duplicate pupil in class
+    if (
+      pupils.some(
+        (p) =>
+          p.id !== editingPupil.id &&
+          p.classId === editForm.classId &&
+          p.firstName.trim().toLowerCase() === fName.toLowerCase() &&
+          p.lastName.trim().toLowerCase() === lName.toLowerCase()
+      )
+    ) {
+      return toast.error(`Pupil '${fName} ${lName}' already exists in this class`);
     }
 
     await updatePupil(editingPupil.id, {
-      admissionNo: editForm.admissionNo,
-      firstName: editForm.firstName,
-      lastName: editForm.lastName,
+      admissionNo: admNo,
+      firstName: fName,
+      lastName: lName,
       gender: editForm.gender,
       dob: editForm.dob,
       classId: editForm.classId,
       photo: editForm.photo || undefined,
     });
 
-    toast.success(`${editForm.firstName} ${editForm.lastName} updated successfully`);
+    toast.success(`${fName} ${lName} updated successfully`);
     setEditOpen(false);
     setEditingPupil(null);
   };

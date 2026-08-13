@@ -115,14 +115,25 @@ function UsersPage() {
   }, [users, q, roleFilter]);
 
   const submitCreateUser = async () => {
-    if (
-      !form.id.trim() ||
-      !form.name.trim() ||
-      !form.email.trim() ||
-      !form.phone.trim() ||
-      !form.password.trim()
-    ) {
+    const userId = form.id.trim();
+    const name = form.name.trim();
+    const email = form.email.trim();
+    const phone = form.phone.trim();
+    const password = form.password.trim();
+
+    if (!userId || !name || !email || !phone || !password) {
       return toast.error("Please fill in all fields");
+    }
+
+    // Duplicate user checks
+    if (users.some((u) => u.id.trim().toLowerCase() === userId.toLowerCase())) {
+      return toast.error(`User ID '${userId}' is already assigned`);
+    }
+    if (users.some((u) => u.email.trim().toLowerCase() === email.toLowerCase())) {
+      return toast.error(`Email address '${email}' is already registered`);
+    }
+    if (users.some((u) => u.phone && u.phone.trim() === phone)) {
+      return toast.error(`Phone number '${phone}' is already registered`);
     }
 
     const targetSchoolId = form.role === "super_admin" ? undefined : form.schoolId;

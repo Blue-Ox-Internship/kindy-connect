@@ -462,15 +462,23 @@ export const addPupil = createServerFn({ method: "POST" })
       throw new Error("Parent / guardian details are required");
     }
 
+    // Server-side duplicate check for admission_no
+    const existingAdmission = await sql`
+      SELECT id FROM pupils WHERE LOWER(admission_no) = LOWER(${pupil.admissionNo.trim()})
+    `;
+    if (existingAdmission.length > 0) {
+      throw new Error(`Admission number '${pupil.admissionNo}' already exists`);
+    }
+
     const id = Math.random().toString(36).slice(2, 10);
     const logId = Math.random().toString(36).slice(2, 10);
     const parentId = Math.random().toString(36).slice(2, 10);
 
     const dbPupil = toSnake({
       id,
-      admissionNo: pupil.admissionNo,
-      firstName: pupil.firstName,
-      lastName: pupil.lastName,
+      admissionNo: pupil.admissionNo.trim(),
+      firstName: pupil.firstName.trim(),
+      lastName: pupil.lastName.trim(),
       gender: pupil.gender,
       dob: pupil.dob,
       classId: pupil.classId,
@@ -506,8 +514,11 @@ export const addPupil = createServerFn({ method: "POST" })
         active: true,
         parentIds: [parentId, ...(pupil.parentIds || [])],
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in addPupil:", error);
+      if (error.code === "23505" || error.message?.includes("admission_no") || error.message?.includes("pupils_pkey")) {
+        throw new Error(`Admission number '${pupil.admissionNo}' already exists`);
+      }
       throw error;
     }
   });
@@ -540,33 +551,60 @@ export const bulkAddPupils = createServerFn({ method: "POST" })
     }> = [];
 
     try {
-      await sql.begin(async (sql) => {
-        for (const item of pupils) {
-          const { pupil, parent } = item;
-          const pupilId = Math.random().toString(36).slice(2, 10);
-          const parentId = Math.random().toString(36).slice(2, 10);
-          const logId = Math.random().toString(36).slice(2, 10);
+      const schoolId = pupils[0]?.pupil.schoolId || "";
+      const existingDbPupils = await sql`
+        SELECT LOWER(admission_no) as adm FROM pupils WHERE school_id = ${schoolId}
+      `;
+      const existingAdmSet = new Set(existingDbPupils.map((p: any) => p.adm));
+      const payloadAdmSet = new Set<string>();
 
-          try {
-            // Validate parent info
-            if (!parent.name || !parent.phone || !parent.email || !parent.relationship) {
-              throw new Error("Parent details are incomplete");
-            }
+      for (const item of pupils) {
+        const { pupil, parent } = item;
+        const admLower = pupil.admissionNo.trim().toLowerCase();
 
-            // Insert parent
+        if (payloadAdmSet.has(admLower)) {
+          results.push({
+            success: false,
+            admissionNo: pupil.admissionNo,
+            name: `${pupil.firstName} ${pupil.lastName}`,
+            error: "Duplicate admission number within upload file",
+          });
+          continue;
+        }
+        payloadAdmSet.add(admLower);
+
+        if (existingAdmSet.has(admLower)) {
+          results.push({
+            success: false,
+            admissionNo: pupil.admissionNo,
+            name: `${pupil.firstName} ${pupil.lastName}`,
+            error: "Admission number already exists in system",
+          });
+          continue;
+        }
+
+        const pupilId = Math.random().toString(36).slice(2, 10);
+        const parentId = Math.random().toString(36).slice(2, 10);
+        const logId = Math.random().toString(36).slice(2, 10);
+
+        try {
+          if (!parent.name || !parent.phone || !parent.email || !parent.relationship) {
+            throw new Error("Parent details are incomplete");
+          }
+
+          await sql.begin(async (tx) => {
             const dbParent = toSnake({
               id: parentId,
               ...parent,
               schoolId: pupil.schoolId,
             });
-            await sql`INSERT INTO parents ${sql(dbParent)}`;
+            await tx`INSERT INTO parents ${tx(dbParent)}`;
 
-            // Insert pupil
             const dbPupil = toSnake({
               id: pupilId,
-              admissionNo: pupil.admissionNo,
-              firstName: pupil.firstName,
-              lastName: pupil.lastName,
+              admissionNo: pupil.admissionNo.trim(),
+              firstName: pupil.firstName.trim(),
+              lastName: pupil.lastName.trim(),
               gender: pupil.gender,
               dob: pupil.dob,
               classId: pupil.classId,
@@ -574,37 +612,35 @@ export const bulkAddPupils = createServerFn({ method: "POST" })
               active: true,
               schoolId: pupil.schoolId,
             });
-            await sql`INSERT INTO pupils ${sql(dbPupil)}`;
+            await tx`INSERT INTO pupils ${tx(dbPupil)}`;
 
-            // Link pupil to parent
-            await sql`INSERT INTO pupil_parents ${sql(
+            await tx`INSERT INTO pupil_parents ${tx(
               [{ pupil_id: pupilId, parent_id: parentId }],
               "pupil_id",
               "parent_id"
             )}`;
 
-            // Log the action
             const targetDesc = `${pupil.firstName} ${pupil.lastName} (${pupil.admissionNo})`;
-            await safeInsertAuditLog(sql, logId, actorId, actorName, 'Bulk created pupil', targetDesc);
+            await safeInsertAuditLog(tx, logId, actorId, actorName, 'Bulk created pupil', targetDesc);
+          });
 
-            results.push({
-              success: true,
-              pupilId,
-              admissionNo: pupil.admissionNo,
-              name: `${pupil.firstName} ${pupil.lastName}`,
-            });
-          } catch (error: any) {
-            // Log individual error but continue with other pupils
-            console.error(`Error adding pupil ${pupil.admissionNo}:`, error);
-            results.push({
-              success: false,
-              admissionNo: pupil.admissionNo,
-              name: `${pupil.firstName} ${pupil.lastName}`,
-              error: error.message || "Unknown error",
-            });
-          }
+          existingAdmSet.add(admLower);
+          results.push({
+            success: true,
+            pupilId,
+            admissionNo: pupil.admissionNo,
+            name: `${pupil.firstName} ${pupil.lastName}`,
+          });
+        } catch (error: any) {
+          console.error(`Error adding pupil ${pupil.admissionNo}:`, error);
+          results.push({
+            success: false,
+            admissionNo: pupil.admissionNo,
+            name: `${pupil.firstName} ${pupil.lastName}`,
+            error: error.message || "Failed to add pupil",
+          });
         }
-      });
+      }
 
       const successCount = results.filter((r) => r.success).length;
       const failCount = results.filter((r) => !r.success).length;
@@ -680,12 +716,24 @@ export const addParent = createServerFn({ method: "POST" })
   .validator((d: { parent: Omit<Parent, "id">; actorId: string; actorName: string }) => d)
   .handler(async ({ data }) => {
     const { parent, actorId, actorName } = data;
+
+    // Duplicate check for phone number within school
+    const existingPhone = await sql`
+      SELECT id FROM parents WHERE school_id = ${parent.schoolId} AND phone = ${parent.phone.trim()}
+    `;
+    if (existingPhone.length > 0) {
+      throw new Error(`A parent with phone number '${parent.phone}' already exists in this school`);
+    }
+
     const id = Math.random().toString(36).slice(2, 10);
     const logId = Math.random().toString(36).slice(2, 10);
 
     const dbParent = toSnake({
       id,
       ...parent,
+      phone: parent.phone.trim(),
+      email: parent.email.trim(),
+      name: parent.name.trim(),
     });
 
     try {
@@ -696,8 +744,11 @@ export const addParent = createServerFn({ method: "POST" })
       serverCache.invalidateTags(["parents", "audit"]);
 
       return { id, ...parent };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in addParent:", error);
+      if (error.code === "23505" || error.message?.includes("unq_parents_school_phone")) {
+        throw new Error(`A parent with phone number '${parent.phone}' already exists in this school`);
+      }
       throw error;
     }
   });
@@ -1250,19 +1301,31 @@ export const saveBulkMarks = createServerFn({ method: "POST" })
 export const addSchool = createServerFn({ method: "POST" })
   .validator((d: { name: string; address?: string; phone?: string; email?: string }) => d)
   .handler(async ({ data }) => {
+    const trimmedName = data.name.trim();
+    const existingSchool = await sql`
+      SELECT id FROM schools WHERE LOWER(name) = LOWER(${trimmedName})
+    `;
+    if (existingSchool.length > 0) {
+      throw new Error(`A school named '${trimmedName}' already exists`);
+    }
+
     const id = "s-" + Math.random().toString(36).slice(2, 10);
     const registeredAt = new Date().toISOString().slice(0, 10);
     const dbSchool = toSnake({
       id,
       ...data,
+      name: trimmedName,
       registeredAt,
     });
     try {
       await sql`INSERT INTO schools ${sql(dbSchool)}`;
       serverCache.invalidateTags(["schools", "audit"]);
       return toCamel<School>(dbSchool);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in addSchool:", error);
+      if (error.code === "23505" || error.message?.includes("unq_schools_name")) {
+        throw new Error(`A school named '${trimmedName}' already exists`);
+      }
       throw error;
     }
   });
@@ -1271,13 +1334,26 @@ export const updateSchool = createServerFn({ method: "POST" })
   .validator((d: { id: string; data: Partial<Omit<School, "id" | "registeredAt">> }) => d)
   .handler(async ({ data }) => {
     const { id, data: schoolData } = data;
+    if (schoolData.name) {
+      const trimmedName = schoolData.name.trim();
+      const existingSchool = await sql`
+        SELECT id FROM schools WHERE LOWER(name) = LOWER(${trimmedName}) AND id != ${id}
+      `;
+      if (existingSchool.length > 0) {
+        throw new Error(`A school named '${trimmedName}' already exists`);
+      }
+      schoolData.name = trimmedName;
+    }
     const dbFields = toSnake(schoolData);
     try {
       await sql`UPDATE schools SET ${sql(dbFields)} WHERE id = ${id}`;
       serverCache.invalidateTags(["schools", "audit"]);
       return { id, data: schoolData };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in updateSchool:", error);
+      if (error.code === "23505" || error.message?.includes("unq_schools_name")) {
+        throw new Error(`A school named '${schoolData.name}' already exists`);
+      }
       throw error;
     }
   });
@@ -1301,10 +1377,18 @@ export const deleteSchool = createServerFn({ method: "POST" })
 export const addClass = createServerFn({ method: "POST" })
   .validator((d: { id?: string; name: string; schoolId: string; teacherId?: string; subjects?: string[] }) => d)
   .handler(async ({ data }) => {
+    const trimmedName = data.name.trim();
+    const existingClass = await sql`
+      SELECT id FROM classes WHERE school_id = ${data.schoolId} AND LOWER(name) = LOWER(${trimmedName})
+    `;
+    if (existingClass.length > 0) {
+      throw new Error(`Class '${trimmedName}' already exists in this school`);
+    }
+
     const id = data.id || "c-" + Math.random().toString(36).slice(2, 10);
     const dbClass = toSnake({
       id,
-      name: data.name,
+      name: trimmedName,
       schoolId: data.schoolId,
       teacherId: data.teacherId || null,
       subjects: data.subjects || [],
@@ -1318,8 +1402,11 @@ export const addClass = createServerFn({ method: "POST" })
       });
       serverCache.invalidateTags(["classes", "users", "audit"]);
       return toCamel<ClassRoom>(dbClass);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in addClass:", error);
+      if (error.code === "23505" || error.message?.includes("unq_classes_school_name")) {
+        throw new Error(`Class '${trimmedName}' already exists in this school`);
+      }
       throw error;
     }
   });

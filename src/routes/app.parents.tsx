@@ -40,12 +40,34 @@ function ParentsPage() {
     `${p.name} ${p.phone} ${p.email}`.toLowerCase().includes(q.toLowerCase()),
   );
 
-  const submit = () => {
-    if (!form.name || !form.phone || !form.email) return toast.error("Fill all fields");
-    addParent(form as any);
-    toast.success("Parent registered");
-    setOpen(false);
-    setForm({ name: "", phone: "", email: "", relationship: "Mother" });
+  const submit = async () => {
+    const name = form.name.trim();
+    const phone = form.phone.trim();
+    const email = form.email.trim();
+
+    if (!name || !phone || !email) return toast.error("Fill all required fields");
+
+    // Duplicate check for phone and email
+    if (parents.some((p) => p.phone.trim() === phone)) {
+      return toast.error(`A parent with phone number '${phone}' already exists`);
+    }
+    if (parents.some((p) => p.email.trim().toLowerCase() === email.toLowerCase())) {
+      return toast.error(`A parent with email '${email}' already exists`);
+    }
+
+    try {
+      await addParent({
+        name,
+        phone,
+        email,
+        relationship: form.relationship,
+      } as any);
+      toast.success("Parent registered successfully");
+      setOpen(false);
+      setForm({ name: "", phone: "", email: "", relationship: "Mother" });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to register parent");
+    }
   };
 
   return (

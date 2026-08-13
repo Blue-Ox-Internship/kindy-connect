@@ -16,7 +16,7 @@ DROP TABLE IF EXISTS schools CASCADE;
 -- 0. Schools Table
 CREATE TABLE schools (
     id VARCHAR(50) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL UNIQUE,
     address VARCHAR(255),
     phone VARCHAR(50),
     email VARCHAR(255),
@@ -28,7 +28,8 @@ CREATE TABLE classes (
     id VARCHAR(50) PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     teacher_id VARCHAR(50),
-    school_id VARCHAR(50) NOT NULL
+    school_id VARCHAR(50) NOT NULL,
+    CONSTRAINT unq_classes_school_name UNIQUE (school_id, name)
 );
 
 -- 2. Users Table
@@ -54,7 +55,8 @@ CREATE TABLE parents (
     phone VARCHAR(50) NOT NULL,
     email VARCHAR(255) NOT NULL,
     relationship VARCHAR(100) NOT NULL,
-    school_id VARCHAR(50) NOT NULL
+    school_id VARCHAR(50) NOT NULL,
+    CONSTRAINT unq_parents_school_phone UNIQUE (school_id, phone)
 );
 
 -- 4. Pupils Table
@@ -94,7 +96,8 @@ CREATE TABLE attendance (
     departure_vehicle_reg VARCHAR(50),
     departure_person_name VARCHAR(255),
     departure_person_relation VARCHAR(100),
-    departure_phone VARCHAR(50)
+    departure_phone VARCHAR(50),
+    CONSTRAINT unq_attendance_pupil_date UNIQUE (pupil_id, date)
 );
 
 -- 7. Notifications Table
@@ -133,7 +136,8 @@ CREATE TABLE marks (
     teacher_comment TEXT,
     recorded_by VARCHAR(50) NOT NULL,
     recorded_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chk_score_limit CHECK (score <= max_score)
+    CONSTRAINT chk_score_limit CHECK (score <= max_score),
+    CONSTRAINT unq_marks_pupil_subject_term_year UNIQUE (pupil_id, subject, term, year)
 );
 
 -- 10. Subjects Table
