@@ -21,11 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SchoolSelector } from "@/components/school-selector";
-import { CacheStatusModal } from "@/components/cache-status-modal";
 import { useEffect, type ReactNode } from "react";
-
-// Only render debug tools in development
-const isDevelopment = import.meta.env.DEV;
 
 export function AppShell({ children, title }: { children: ReactNode; title: string }) {
   const { currentUser, users, logout, schools } = useStore();
@@ -162,7 +158,6 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/80 backdrop-blur px-6 py-4 print:hidden">
           <h1 className="text-2xl font-semibold">{title}</h1>
           <div className="flex items-center gap-3">
-            {isDevelopment && <CacheStatusModal />}
             <Badge variant="outline" className="capitalize">
               {currentUser.role.replace("_", " ")}
             </Badge>
