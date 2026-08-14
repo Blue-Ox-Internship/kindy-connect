@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 // Ensure process.env.DATABASE_URL is populated in local development
-if (!process.env.DATABASE_URL && typeof process !== "undefined") {
+if (typeof process !== "undefined" && !process.env.DATABASE_URL) {
   if (typeof process.loadEnvFile === "function") {
     try {
       process.loadEnvFile(".env");
@@ -23,7 +23,7 @@ if (!process.env.DATABASE_URL && typeof process !== "undefined") {
   }
 }
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString = typeof process !== "undefined" ? process.env.DATABASE_URL : undefined;
 
 if (!connectionString) {
   console.error(
@@ -45,7 +45,8 @@ export const sql = postgres(connectionString || "", {
   // Without this, prepared statements fail on pooled connections
   prepare: false,
   ssl:
-    process.env.NODE_ENV === "production" || process.env.VERCEL === "1"
+    typeof process !== "undefined" &&
+    (process.env.NODE_ENV === "production" || process.env.VERCEL === "1")
       ? { rejectUnauthorized: false }
       : false,
   // Suppress notices

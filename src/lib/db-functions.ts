@@ -138,7 +138,7 @@ async function safeInsertAuditLog(
   actorId: string,
   actorName: string,
   action: string,
-  target: string
+  target: string,
 ) {
   let validActorId = actorId;
   const userCheck = await tx`SELECT id FROM users WHERE id = ${actorId}`;
@@ -168,20 +168,31 @@ export const getInitialData = createServerFn({ method: "GET" })
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
       const cutoffDate = ninetyDaysAgo.toISOString().slice(0, 10);
 
-      const [schools, users, classes, parents, pupilsRaw, pupilParents, attendance, notifications, audit, marks, subjects] =
-        await Promise.all([
-          client`SELECT * FROM schools ORDER BY name ASC`,
-          client`SELECT * FROM users ORDER BY registered_at DESC`,
-          client`SELECT * FROM classes ORDER BY name ASC`,
-          client`SELECT * FROM parents ORDER BY name ASC`,
-          client`SELECT * FROM pupils ORDER BY first_name ASC, last_name ASC`,
-          client`SELECT * FROM pupil_parents`,
-          client`SELECT * FROM attendance WHERE date >= ${cutoffDate} ORDER BY date DESC, arrival DESC`,
-          client`SELECT * FROM notifications ORDER BY timestamp DESC LIMIT 200`,
-          client`SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 200`,
-          client`SELECT * FROM marks ORDER BY recorded_at DESC LIMIT 2000`,
-          client`SELECT * FROM subjects ORDER BY name ASC`,
-        ]);
+      const [
+        schools,
+        users,
+        classes,
+        parents,
+        pupilsRaw,
+        pupilParents,
+        attendance,
+        notifications,
+        audit,
+        marks,
+        subjects,
+      ] = await Promise.all([
+        client`SELECT * FROM schools ORDER BY name ASC`,
+        client`SELECT * FROM users ORDER BY registered_at DESC`,
+        client`SELECT * FROM classes ORDER BY name ASC`,
+        client`SELECT * FROM parents ORDER BY name ASC`,
+        client`SELECT * FROM pupils ORDER BY first_name ASC, last_name ASC`,
+        client`SELECT * FROM pupil_parents`,
+        client`SELECT * FROM attendance WHERE date >= ${cutoffDate} ORDER BY date DESC, arrival DESC`,
+        client`SELECT * FROM notifications ORDER BY timestamp DESC LIMIT 200`,
+        client`SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 200`,
+        client`SELECT * FROM marks ORDER BY recorded_at DESC LIMIT 2000`,
+        client`SELECT * FROM subjects ORDER BY name ASC`,
+      ]);
 
       const parentMap: Record<string, string[]> = {};
       for (const link of pupilParents as any[]) {
@@ -253,8 +264,6 @@ export const getInitialData = createServerFn({ method: "GET" })
       };
     }
   });
-
-
 
 // ----------------------------------------------------
 // 2. Authentication Functions
@@ -375,7 +384,11 @@ export const registerUser = createServerFn({ method: "POST" })
       }
       // Check for PostgreSQL unique constraint violations
       if (error.code === "23505") {
-        if (error.constraint === "users_pkey" || error.message?.includes("id") || error.message?.includes("pkey")) {
+        if (
+          error.constraint === "users_pkey" ||
+          error.message?.includes("id") ||
+          error.message?.includes("pkey")
+        ) {
           throw new Error("Assigned ID already used");
         }
         if (error.constraint === "users_email_key" || error.message?.includes("email")) {
@@ -402,7 +415,7 @@ export const approveTeacher = createServerFn({ method: "POST" })
         `;
         if (users.length > 0) {
           const teacherName = users[0].name;
-          await safeInsertAuditLog(sql, logId, actorId, actorName, 'Approved teacher', teacherName);
+          await safeInsertAuditLog(sql, logId, actorId, actorName, "Approved teacher", teacherName);
         }
       });
       serverCache.invalidateTags(["users", "audit"]);
@@ -426,7 +439,7 @@ export const rejectTeacher = createServerFn({ method: "POST" })
         `;
         if (users.length > 0) {
           const teacherName = users[0].name;
-          await safeInsertAuditLog(sql, logId, actorId, actorName, 'Rejected teacher', teacherName);
+          await safeInsertAuditLog(sql, logId, actorId, actorName, "Rejected teacher", teacherName);
         }
       });
       return { id };
@@ -498,7 +511,7 @@ export const addPupil = createServerFn({ method: "POST" })
         }
 
         const targetDesc = `${pupil.firstName} ${pupil.lastName} (${pupil.admissionNo})`;
-        await safeInsertAuditLog(sql, logId, actorId, actorName, 'Created pupil', targetDesc);
+        await safeInsertAuditLog(sql, logId, actorId, actorName, "Created pupil", targetDesc);
       });
       serverCache.invalidateTags(["pupils", "parents", "audit"]);
 
@@ -510,7 +523,11 @@ export const addPupil = createServerFn({ method: "POST" })
       };
     } catch (error: any) {
       console.error("Error in addPupil:", error);
-      if (error.code === "23505" || error.message?.includes("admission_no") || error.message?.includes("pupils_pkey")) {
+      if (
+        error.code === "23505" ||
+        error.message?.includes("admission_no") ||
+        error.message?.includes("pupils_pkey")
+      ) {
         throw new Error(`Admission number '${pupil.admissionNo}' already exists`);
       }
       throw error;
@@ -611,11 +628,18 @@ export const bulkAddPupils = createServerFn({ method: "POST" })
             await tx`INSERT INTO pupil_parents ${tx(
               [{ pupil_id: pupilId, parent_id: parentId }],
               "pupil_id",
-              "parent_id"
+              "parent_id",
             )}`;
 
             const targetDesc = `${pupil.firstName} ${pupil.lastName} (${pupil.admissionNo})`;
-            await safeInsertAuditLog(tx, logId, actorId, actorName, 'Bulk created pupil', targetDesc);
+            await safeInsertAuditLog(
+              tx,
+              logId,
+              actorId,
+              actorName,
+              "Bulk created pupil",
+              targetDesc,
+            );
           });
 
           existingAdmSet.add(admLower);
@@ -733,7 +757,7 @@ export const addParent = createServerFn({ method: "POST" })
     try {
       await sql.begin(async (sql) => {
         await sql`INSERT INTO parents ${sql(dbParent)}`;
-        await safeInsertAuditLog(sql, logId, actorId, actorName, 'Registered parent', parent.name);
+        await safeInsertAuditLog(sql, logId, actorId, actorName, "Registered parent", parent.name);
       });
       serverCache.invalidateTags(["parents", "audit"]);
 
@@ -741,7 +765,9 @@ export const addParent = createServerFn({ method: "POST" })
     } catch (error: any) {
       console.error("Error in addParent:", error);
       if (error.code === "23505" || error.message?.includes("unq_parents_school_phone")) {
-        throw new Error(`A parent with phone number '${parent.phone}' already exists in this school`);
+        throw new Error(
+          `A parent with phone number '${parent.phone}' already exists in this school`,
+        );
       }
       throw error;
     }
@@ -867,7 +893,7 @@ export const markArrival = createServerFn({ method: "POST" })
 
         // Log action
         const targetDesc = `${pupil.first_name} ${pupil.last_name}`;
-        await safeInsertAuditLog(sql, logId, actorId, actorName, 'Marked arrival', targetDesc);
+        await safeInsertAuditLog(sql, logId, actorId, actorName, "Marked arrival", targetDesc);
 
         const addedAudit = {
           id: logId,
@@ -1010,7 +1036,7 @@ export const markDeparture = createServerFn({ method: "POST" })
 
         // Log action
         const targetDesc = `${pupil.first_name} ${pupil.last_name}`;
-        await safeInsertAuditLog(sql, logId, actorId, actorName, 'Marked departure', targetDesc);
+        await safeInsertAuditLog(sql, logId, actorId, actorName, "Marked departure", targetDesc);
 
         const addedAudit = {
           id: logId,
@@ -1288,7 +1314,6 @@ export const saveBulkMarks = createServerFn({ method: "POST" })
     return results;
   });
 
-
 // ----------------------------------------------------
 // 7. School Management Functions
 // ----------------------------------------------------
@@ -1369,7 +1394,10 @@ export const deleteSchool = createServerFn({ method: "POST" })
 // 8. Class Management Functions
 // ----------------------------------------------------
 export const addClass = createServerFn({ method: "POST" })
-  .validator((d: { id?: string; name: string; schoolId: string; teacherId?: string; subjects?: string[] }) => d)
+  .validator(
+    (d: { id?: string; name: string; schoolId: string; teacherId?: string; subjects?: string[] }) =>
+      d,
+  )
   .handler(async ({ data }) => {
     const trimmedName = data.name.trim();
     const existingClass = await sql`
@@ -1486,7 +1514,14 @@ export const deleteUser = createServerFn({ method: "POST" })
         await sql`DELETE FROM users WHERE id = ${id}`;
 
         // Log the deletion
-        await safeInsertAuditLog(sql, logId, actorId, actorName, 'Deleted user', deletedUser.name + " (" + deletedUser.role + ")");
+        await safeInsertAuditLog(
+          sql,
+          logId,
+          actorId,
+          actorName,
+          "Deleted user",
+          deletedUser.name + " (" + deletedUser.role + ")",
+        );
       });
       serverCache.invalidateTags(["users", "audit"]);
 
@@ -1558,7 +1593,10 @@ export const updateUser = createServerFn({ method: "POST" })
 // 10. Subject Management Functions
 // ----------------------------------------------------
 export const addSubject = createServerFn({ method: "POST" })
-  .validator((d: { schoolId: string; name: string; code?: string; actorId?: string; actorName?: string }) => d)
+  .validator(
+    (d: { schoolId: string; name: string; code?: string; actorId?: string; actorName?: string }) =>
+      d,
+  )
   .handler(async ({ data }) => {
     const id = `subj_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const dbSubject = toSnake({
@@ -1571,7 +1609,14 @@ export const addSubject = createServerFn({ method: "POST" })
       await sql`INSERT INTO subjects ${sql(dbSubject)}`;
       if (data.actorId && data.actorName) {
         const logId = Math.random().toString(36).slice(2, 10);
-        await safeInsertAuditLog(sql, logId, data.actorId, data.actorName, "Added subject", data.name);
+        await safeInsertAuditLog(
+          sql,
+          logId,
+          data.actorId,
+          data.actorName,
+          "Added subject",
+          data.name,
+        );
       }
       serverCache.invalidateTags(["subjects", "audit"]);
       return toCamel<Subject>(dbSubject);
@@ -1582,7 +1627,9 @@ export const addSubject = createServerFn({ method: "POST" })
   });
 
 export const updateSubject = createServerFn({ method: "POST" })
-  .validator((d: { id: string; name: string; code?: string; actorId?: string; actorName?: string }) => d)
+  .validator(
+    (d: { id: string; name: string; code?: string; actorId?: string; actorName?: string }) => d,
+  )
   .handler(async ({ data }) => {
     try {
       const dbFields = toSnake({
@@ -1592,7 +1639,14 @@ export const updateSubject = createServerFn({ method: "POST" })
       await sql`UPDATE subjects SET ${sql(dbFields)} WHERE id = ${data.id}`;
       if (data.actorId && data.actorName) {
         const logId = Math.random().toString(36).slice(2, 10);
-        await safeInsertAuditLog(sql, logId, data.actorId, data.actorName, "Updated subject", data.name);
+        await safeInsertAuditLog(
+          sql,
+          logId,
+          data.actorId,
+          data.actorName,
+          "Updated subject",
+          data.name,
+        );
       }
       serverCache.invalidateTags(["subjects", "audit"]);
       return { id: data.id, name: data.name, code: data.code };
@@ -1611,7 +1665,14 @@ export const deleteSubject = createServerFn({ method: "POST" })
       await sql`DELETE FROM subjects WHERE id = ${data.id}`;
       if (data.actorId && data.actorName) {
         const logId = Math.random().toString(36).slice(2, 10);
-        await safeInsertAuditLog(sql, logId, data.actorId, data.actorName, "Deleted subject", subjectName);
+        await safeInsertAuditLog(
+          sql,
+          logId,
+          data.actorId,
+          data.actorName,
+          "Deleted subject",
+          subjectName,
+        );
       }
       serverCache.invalidateTags(["subjects", "audit"]);
       return { id: data.id };
@@ -1628,7 +1689,7 @@ export const addSubjectsBulk = createServerFn({ method: "POST" })
       subjects: Array<{ name: string; code?: string }>;
       actorId?: string;
       actorName?: string;
-    }) => d
+    }) => d,
   )
   .handler(async ({ data }) => {
     try {
@@ -1658,7 +1719,7 @@ export const addSubjectsBulk = createServerFn({ method: "POST" })
           data.actorId,
           data.actorName,
           "Bulk added subjects",
-          `${inserted.length} subjects`
+          `${inserted.length} subjects`,
         );
       }
       serverCache.invalidateTags(["subjects", "audit"]);
@@ -1696,7 +1757,14 @@ export const seedDefaultSubjects = createServerFn({ method: "POST" })
       }
       if (data.actorId && data.actorName) {
         const logId = Math.random().toString(36).slice(2, 10);
-        await safeInsertAuditLog(sql, logId, data.actorId, data.actorName, "Seeded default subjects", `School ${data.schoolId}`);
+        await safeInsertAuditLog(
+          sql,
+          logId,
+          data.actorId,
+          data.actorName,
+          "Seeded default subjects",
+          `School ${data.schoolId}`,
+        );
       }
       serverCache.invalidateTags(["subjects", "audit"]);
       return { success: true };
@@ -1705,4 +1773,3 @@ export const seedDefaultSubjects = createServerFn({ method: "POST" })
       throw error;
     }
   });
-

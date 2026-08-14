@@ -40,7 +40,8 @@ export const Route = createFileRoute("/app/pupils")({
 });
 
 function PupilsPage() {
-  const { currentUser, pupils, classes, parents, addPupil, updatePupil, deactivatePupil, schools } = useStore();
+  const { currentUser, pupils, classes, parents, addPupil, updatePupil, deactivatePupil, schools } =
+    useStore();
   const isAdmin = currentUser?.role === "super_admin" || currentUser?.role === "admin";
   const [q, setQ] = useState("");
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>("all");
@@ -144,8 +145,7 @@ function PupilsPage() {
     const fName = form.firstName.trim();
     const lName = form.lastName.trim();
 
-    if (!admNo || !fName || !lName)
-      return toast.error("Fill required fields");
+    if (!admNo || !fName || !lName) return toast.error("Fill required fields");
     if (pupils.some((p) => p.admissionNo.trim().toLowerCase() === admNo.toLowerCase()))
       return toast.error(`Admission number '${admNo}' already exists`);
 
@@ -155,7 +155,7 @@ function PupilsPage() {
         (p) =>
           p.classId === form.classId &&
           p.firstName.trim().toLowerCase() === fName.toLowerCase() &&
-          p.lastName.trim().toLowerCase() === lName.toLowerCase()
+          p.lastName.trim().toLowerCase() === lName.toLowerCase(),
       )
     ) {
       return toast.error(`Pupil '${fName} ${lName}' already exists in this class`);
@@ -242,7 +242,7 @@ function PupilsPage() {
           p.id !== editingPupil.id &&
           p.classId === editForm.classId &&
           p.firstName.trim().toLowerCase() === fName.toLowerCase() &&
-          p.lastName.trim().toLowerCase() === lName.toLowerCase()
+          p.lastName.trim().toLowerCase() === lName.toLowerCase(),
       )
     ) {
       return toast.error(`Pupil '${fName} ${lName}' already exists in this class`);
@@ -609,10 +609,7 @@ function PupilsPage() {
       </Dialog>
 
       {/* Bulk Upload Dialog */}
-      <BulkUploadPupilsDialog 
-        open={bulkUploadOpen} 
-        onOpenChange={setBulkUploadOpen} 
-      />
+      <BulkUploadPupilsDialog open={bulkUploadOpen} onOpenChange={setBulkUploadOpen} />
     </AppShell>
   );
 }

@@ -85,6 +85,7 @@ function Dashboard() {
     personRelation: "",
     phone: "",
   });
+  const [teacherFilter, setTeacherFilter] = useState<"all" | "present" | "absent">("all");
 
   if (!currentUser) return null;
 
@@ -189,7 +190,7 @@ function Dashboard() {
       transport: "Car",
       vehicleReg: "",
       personName: parent ? parent.name : "",
-      personRelation: parent ? (parent.relationship || "Parent") : "Parent",
+      personRelation: parent ? parent.relationship || "Parent" : "Parent",
       phone: parent ? parent.phone : "",
     });
     setArrivalDialogOpen(true);
@@ -207,7 +208,7 @@ function Dashboard() {
       transport: "Car",
       vehicleReg: "",
       personName: parent ? parent.name : "",
-      personRelation: parent ? (parent.relationship || "Parent") : "Parent",
+      personRelation: parent ? parent.relationship || "Parent" : "Parent",
       phone: parent ? parent.phone : "",
     });
     setDepartureDialogOpen(true);
@@ -247,7 +248,6 @@ function Dashboard() {
       ]
     : [];
 
-  const [teacherFilter, setTeacherFilter] = useState<"all" | "present" | "absent">("all");
   const myClassPupils = pupils.filter((p) => p.classId === currentUser.classId && p.active);
 
   const teacherTotalCount = myClassPupils.length;
@@ -505,7 +505,10 @@ function Dashboard() {
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span>Arrived {att.arrival}</span>
                               {att.arrivalTransport && (
-                                <Badge variant="outline" className="text-[10px] font-normal px-1.5 py-0">
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] font-normal px-1.5 py-0"
+                                >
                                   {att.arrivalTransport} ({att.arrivalPersonName || "Operator"})
                                 </Badge>
                               )}
@@ -517,7 +520,10 @@ function Dashboard() {
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span>Left {att.departure}</span>
                               {att.departureTransport && (
-                                <Badge variant="outline" className="text-[10px] font-normal px-1.5 py-0 border-secondary">
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] font-normal px-1.5 py-0 border-secondary"
+                                >
                                   {att.departureTransport} ({att.departurePersonName || "Operator"})
                                 </Badge>
                               )}

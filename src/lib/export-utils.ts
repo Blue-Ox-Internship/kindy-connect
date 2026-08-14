@@ -1,12 +1,12 @@
 export function downloadCSV(
   filename: string,
   headers: string[],
-  rows: (string | number | boolean | null | undefined)[][]
+  rows: (string | number | boolean | null | undefined)[][],
 ) {
   const csvContent = [
     headers.map((h) => `"${String(h ?? "").replace(/"/g, '""')}"`).join(","),
     ...rows.map((row) =>
-      row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")
+      row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(","),
     ),
   ].join("\r\n");
 
@@ -14,10 +14,7 @@ export function downloadCSV(
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.setAttribute("href", url);
-  link.setAttribute(
-    "download",
-    filename.endsWith(".csv") ? filename : `${filename}.csv`
-  );
+  link.setAttribute("download", filename.endsWith(".csv") ? filename : `${filename}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

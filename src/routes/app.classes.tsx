@@ -109,7 +109,7 @@ function ClassesPage() {
   useEffect(() => {
     if (open) {
       const subjs = getSchoolSubjects(
-        isSuperAdmin ? form.schoolId || schools[0]?.id : currentUser?.schoolId
+        isSuperAdmin ? form.schoolId || schools[0]?.id : currentUser?.schoolId,
       ).map((s) => s.name);
       setForm((prev) => ({
         ...prev,
@@ -148,7 +148,8 @@ function ClassesPage() {
     // Duplicate class name check within school
     if (
       classes.some(
-        (c) => c.schoolId === targetSchoolId && c.name.trim().toLowerCase() === className.toLowerCase()
+        (c) =>
+          c.schoolId === targetSchoolId && c.name.trim().toLowerCase() === className.toLowerCase(),
       )
     ) {
       return toast.error(`Class '${className}' already exists in this school`);
@@ -163,7 +164,7 @@ function ClassesPage() {
       });
 
       toast.success(
-        `Classroom "${className}" created with ${form.subjects.length} assigned subject(s)`
+        `Classroom "${className}" created with ${form.subjects.length} assigned subject(s)`,
       );
       setOpen(false);
       setForm({
@@ -199,7 +200,9 @@ function ClassesPage() {
     if (
       className.toLowerCase() !== editingClass.name.trim().toLowerCase() &&
       classes.some(
-        (c) => c.schoolId === editingClass.schoolId && c.name.trim().toLowerCase() === className.toLowerCase()
+        (c) =>
+          c.schoolId === editingClass.schoolId &&
+          c.name.trim().toLowerCase() === className.toLowerCase(),
       )
     ) {
       return toast.error(`Class '${className}' already exists in this school`);
@@ -311,7 +314,12 @@ function ClassesPage() {
                         id="school"
                         value={form.schoolId}
                         onChange={(e) =>
-                          setForm({ ...form, schoolId: e.target.value, teacherId: "", subjects: [] })
+                          setForm({
+                            ...form,
+                            schoolId: e.target.value,
+                            teacherId: "",
+                            subjects: [],
+                          })
                         }
                         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1"
                       >
@@ -436,7 +444,7 @@ function ClassesPage() {
                 const schoolName = schools.find((s) => s.id === c.schoolId)?.name || "N/A";
                 const teacherName = users.find((u) => u.id === c.teacherId)?.name || "Unassigned";
                 const classPupilsCount = pupils.filter(
-                  (p) => p.classId === c.id && p.active
+                  (p) => p.classId === c.id && p.active,
                 ).length;
                 const schoolSubjs = getSchoolSubjects(c.schoolId).map((s) => s.name);
                 const classSubjs = c.subjects && c.subjects.length > 0 ? c.subjects : schoolSubjs;
@@ -453,12 +461,19 @@ function ClassesPage() {
                         {classSubjs.length > 0 ? (
                           <>
                             {classSubjs.slice(0, 3).map((sub) => (
-                              <Badge key={sub} variant="secondary" className="text-[11px] font-normal py-0 px-1.5">
+                              <Badge
+                                key={sub}
+                                variant="secondary"
+                                className="text-[11px] font-normal py-0 px-1.5"
+                              >
                                 {sub}
                               </Badge>
                             ))}
                             {classSubjs.length > 3 && (
-                              <Badge variant="outline" className="text-[11px] font-normal py-0 px-1 text-muted-foreground">
+                              <Badge
+                                variant="outline"
+                                className="text-[11px] font-normal py-0 px-1 text-muted-foreground"
+                              >
                                 +{classSubjs.length - 3} more
                               </Badge>
                             )}
@@ -482,7 +497,12 @@ function ClassesPage() {
                         <BookMarked className="h-3.5 w-3.5 text-primary" />
                         <span className="hidden sm:inline">Subjects</span>
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEdit(c)}>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => startEdit(c)}
+                      >
                         <Edit2 className="h-4 w-4 text-muted-foreground" />
                       </Button>
                       <Button
@@ -554,7 +574,9 @@ function ClassesPage() {
                         onClick={() =>
                           setEditForm({
                             ...editForm,
-                            subjects: [...getSchoolSubjects(editingClass?.schoolId).map((s) => s.name)],
+                            subjects: [
+                              ...getSchoolSubjects(editingClass?.schoolId).map((s) => s.name),
+                            ],
                           })
                         }
                         className="text-primary hover:underline font-medium"
@@ -633,7 +655,7 @@ function ClassesPage() {
                       type="button"
                       onClick={() =>
                         setClassSubjectsForm(
-                          getSchoolSubjects(managingClass?.schoolId).map((s) => s.name)
+                          getSchoolSubjects(managingClass?.schoolId).map((s) => s.name),
                         )
                       }
                       className="text-primary hover:underline font-medium"
@@ -668,7 +690,7 @@ function ClassesPage() {
                               setClassSubjectsForm([...classSubjectsForm, subjName]);
                             } else {
                               setClassSubjectsForm(
-                                classSubjectsForm.filter((item) => item !== subjName)
+                                classSubjectsForm.filter((item) => item !== subjName),
                               );
                             }
                           }}

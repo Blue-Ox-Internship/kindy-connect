@@ -24,7 +24,19 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Check, X, Plus, Search, Trash2, Edit, RefreshCw, Eye, EyeOff, UserPlus, BookOpen } from "lucide-react";
+import {
+  Check,
+  X,
+  Plus,
+  Search,
+  Trash2,
+  Edit,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  UserPlus,
+  BookOpen,
+} from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -39,7 +51,15 @@ export function TeachersPage() {
   const users = useMemo(() => store?.users ?? [], [store?.users]);
   const schools = useMemo(() => store?.schools ?? [], [store?.schools]);
   const classes = useMemo(() => store?.classes ?? [], [store?.classes]);
-  const { approveTeacher, rejectTeacher, registerUser, updateUser, deleteUser, getSchoolSubjects, updateClass } = store ?? {};
+  const {
+    approveTeacher,
+    rejectTeacher,
+    registerUser,
+    updateUser,
+    deleteUser,
+    getSchoolSubjects,
+    updateClass,
+  } = store ?? {};
 
   const isSuperAdmin = currentUser?.role === "super_admin";
   const isSchoolAdmin = currentUser?.role === "admin";
@@ -97,7 +117,7 @@ export function TeachersPage() {
   const availableSubjects = useMemo(() => {
     const raw = getSchoolSubjects ? getSchoolSubjects(activeSchoolForForm) : [];
     return (raw || []).map((s) => s.name).filter(Boolean);
-  }, [getSchoolSubjects, activeSchoolForForm, store?.subjects]);
+  }, [getSchoolSubjects, activeSchoolForForm]);
 
   const availableClasses = useMemo(() => {
     if (!activeSchoolForForm) return classes;
@@ -109,7 +129,7 @@ export function TeachersPage() {
   const editAvailableSubjects = useMemo(() => {
     const raw = getSchoolSubjects ? getSchoolSubjects(activeSchoolForEdit) : [];
     return (raw || []).map((s) => s.name).filter(Boolean);
-  }, [getSchoolSubjects, activeSchoolForEdit, store?.subjects]);
+  }, [getSchoolSubjects, activeSchoolForEdit]);
 
   const editAvailableClasses = useMemo(() => {
     if (!activeSchoolForEdit) return classes;
@@ -265,7 +285,9 @@ export function TeachersPage() {
       return toast.error(`Phone number '${phone}' is already registered`);
     }
 
-    const targetSchoolId = isSuperAdmin ? form.schoolId : (currentUser?.schoolId ?? defaultSchoolId);
+    const targetSchoolId = isSuperAdmin
+      ? form.schoolId
+      : (currentUser?.schoolId ?? defaultSchoolId);
     if (form.role !== "super_admin" && !targetSchoolId) {
       return toast.error("Please select an assigned school for this teacher");
     }
@@ -292,6 +314,7 @@ export function TeachersPage() {
       toast.success(`Teacher account for ${name} created successfully!`);
       setOpen(false);
       resetForm();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Error creating teacher:", error);
       toast.error(error.message || "Failed to create teacher account");
@@ -320,11 +343,7 @@ export function TeachersPage() {
       return toast.error(`Email address '${email}' is already registered to another user`);
     }
 
-    if (
-      users.some(
-        (u) => u && u.id !== editingUser.id && u.phone && u.phone.trim() === phone,
-      )
-    ) {
+    if (users.some((u) => u && u.id !== editingUser.id && u.phone && u.phone.trim() === phone)) {
       return toast.error(`Phone number '${phone}' is already registered to another user`);
     }
 
@@ -353,6 +372,7 @@ export function TeachersPage() {
       toast.success(`Updated details for ${name}`);
       setEditOpen(false);
       setEditingUser(null);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Error updating user:", error);
       toast.error(error.message || "Failed to update user");
@@ -518,6 +538,7 @@ export function TeachersPage() {
                             try {
                               await deleteUser(t.id);
                               toast.success(`${t.name} has been deleted`);
+                              // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             } catch (error: any) {
                               toast.error(error.message || "Failed to delete user");
                             }
@@ -634,7 +655,9 @@ export function TeachersPage() {
                       </Label>
                       <button
                         type="button"
-                        onClick={() => setForm((prev) => ({ ...prev, id: generateRandomTeacherId() }))}
+                        onClick={() =>
+                          setForm((prev) => ({ ...prev, id: generateRandomTeacherId() }))
+                        }
                         className="text-xs text-primary flex items-center gap-1 hover:underline"
                       >
                         <RefreshCw className="h-3 w-3" /> Auto-ID
@@ -704,7 +727,9 @@ export function TeachersPage() {
                       </Label>
                       <button
                         type="button"
-                        onClick={() => setForm((prev) => ({ ...prev, password: generateDefaultPassword() }))}
+                        onClick={() =>
+                          setForm((prev) => ({ ...prev, password: generateDefaultPassword() }))
+                        }
                         className="text-xs text-primary hover:underline"
                       >
                         Reset Default
@@ -724,7 +749,11 @@ export function TeachersPage() {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -736,12 +765,16 @@ export function TeachersPage() {
                     <select
                       id="create-role"
                       value={form.role}
-                      onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value as Role }))}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, role: e.target.value as Role }))
+                      }
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mt-1"
                     >
                       <option value="teacher">Teacher</option>
                       <option value="deputy">Deputy Headteacher</option>
-                      {(isSuperAdmin || isSchoolAdmin) && <option value="admin">School Admin</option>}
+                      {(isSuperAdmin || isSchoolAdmin) && (
+                        <option value="admin">School Admin</option>
+                      )}
                       {isSuperAdmin && <option value="super_admin">Super Admin</option>}
                     </select>
                   </div>
@@ -790,14 +823,14 @@ export function TeachersPage() {
 
                     <div>
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-semibold">
-                          Subjects Taught (Optional)
-                        </Label>
+                        <Label className="text-xs font-semibold">Subjects Taught (Optional)</Label>
                         {availableSubjects.length > 0 && (
                           <div className="flex items-center gap-2 text-xs">
                             <button
                               type="button"
-                              onClick={() => setForm((prev) => ({ ...prev, subjects: [...availableSubjects] }))}
+                              onClick={() =>
+                                setForm((prev) => ({ ...prev, subjects: [...availableSubjects] }))
+                              }
                               className="text-primary hover:underline"
                             >
                               Select All
@@ -816,7 +849,8 @@ export function TeachersPage() {
 
                       {availableSubjects.length === 0 ? (
                         <div className="mt-1.5 p-3 bg-amber-500/10 border border-amber-500/30 rounded-md text-xs text-amber-800 dark:text-amber-300">
-                          No custom subjects configured for this school yet. You can add the teacher now and assign subjects later in{" "}
+                          No custom subjects configured for this school yet. You can add the teacher
+                          now and assign subjects later in{" "}
                           <Link to="/app/subjects" className="font-semibold underline text-primary">
                             Subject Settings
                           </Link>
@@ -834,7 +868,10 @@ export function TeachersPage() {
                                 checked={form.subjects.includes(subject)}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    setForm((prev) => ({ ...prev, subjects: [...prev.subjects, subject] }));
+                                    setForm((prev) => ({
+                                      ...prev,
+                                      subjects: [...prev.subjects, subject],
+                                    }));
                                   } else {
                                     setForm((prev) => ({
                                       ...prev,
@@ -979,7 +1016,10 @@ export function TeachersPage() {
                       id="edit-status"
                       value={editForm.status}
                       onChange={(e) =>
-                        setEditForm((prev) => ({ ...prev, status: e.target.value as TeacherStatus }))
+                        setEditForm((prev) => ({
+                          ...prev,
+                          status: e.target.value as TeacherStatus,
+                        }))
                       }
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mt-1"
                     >
@@ -996,12 +1036,16 @@ export function TeachersPage() {
                     <select
                       id="edit-role"
                       value={editForm.role}
-                      onChange={(e) => setEditForm((prev) => ({ ...prev, role: e.target.value as Role }))}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({ ...prev, role: e.target.value as Role }))
+                      }
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mt-1"
                     >
                       <option value="teacher">Teacher</option>
                       <option value="deputy">Deputy Headteacher</option>
-                      {(isSuperAdmin || isSchoolAdmin) && <option value="admin">School Admin</option>}
+                      {(isSuperAdmin || isSchoolAdmin) && (
+                        <option value="admin">School Admin</option>
+                      )}
                       {isSuperAdmin && <option value="super_admin">Super Admin</option>}
                     </select>
                   </div>
@@ -1015,7 +1059,9 @@ export function TeachersPage() {
                         id="edit-pwd"
                         type={editShowPassword ? "text" : "password"}
                         value={editForm.password}
-                        onChange={(e) => setEditForm((prev) => ({ ...prev, password: e.target.value }))}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({ ...prev, password: e.target.value }))
+                        }
                         placeholder="Leave blank to keep"
                         className="pr-10"
                       />
@@ -1024,7 +1070,11 @@ export function TeachersPage() {
                         onClick={() => setEditShowPassword(!editShowPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       >
-                        {editShowPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {editShowPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -1039,7 +1089,9 @@ export function TeachersPage() {
                       <select
                         id="edit-class"
                         value={editForm.classId}
-                        onChange={(e) => setEditForm((prev) => ({ ...prev, classId: e.target.value }))}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({ ...prev, classId: e.target.value }))
+                        }
                         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mt-1"
                       >
                         <option value="">-- No Class Assigned --</option>
@@ -1059,7 +1111,10 @@ export function TeachersPage() {
                             <button
                               type="button"
                               onClick={() =>
-                                setEditForm((prev) => ({ ...prev, subjects: [...editAvailableSubjects] }))
+                                setEditForm((prev) => ({
+                                  ...prev,
+                                  subjects: [...editAvailableSubjects],
+                                }))
                               }
                               className="text-primary hover:underline"
                             >

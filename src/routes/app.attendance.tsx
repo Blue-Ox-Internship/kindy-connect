@@ -212,7 +212,7 @@ function AttendancePage() {
       transport: "Car",
       vehicleReg: "",
       personName: parent ? parent.name : "",
-      personRelation: parent ? (parent.relationship || "Parent") : "Parent",
+      personRelation: parent ? parent.relationship || "Parent" : "Parent",
       phone: parent ? parent.phone : "",
     });
     setArrivalDialogOpen(true);
@@ -225,7 +225,7 @@ function AttendancePage() {
       transport: "Car",
       vehicleReg: "",
       personName: parent ? parent.name : "",
-      personRelation: parent ? (parent.relationship || "Parent") : "Parent",
+      personRelation: parent ? parent.relationship || "Parent" : "Parent",
       phone: parent ? parent.phone : "",
     });
     setDepartureDialogOpen(true);
@@ -246,12 +246,14 @@ function AttendancePage() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="border shadow-sm bg-card hover:bg-accent/10 transition-colors">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Present</p>
-              <h3 className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{presentCount}</h3>
+              <h3 className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                {presentCount}
+              </h3>
             </div>
             <div className="p-2 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-full">
               <CheckCircle className="h-6 w-6" />
@@ -331,7 +333,9 @@ function AttendancePage() {
 
             {/* Quick Filters */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1">Filter:</span>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1">
+                Filter:
+              </span>
               <Button
                 variant={filter === "all" ? "default" : "outline"}
                 size="sm"
@@ -345,8 +349,8 @@ function AttendancePage() {
                 size="sm"
                 onClick={() => setFilter("present")}
                 className={`h-8 text-xs font-medium ${
-                  filter === "present" 
-                    ? "bg-emerald-600 hover:bg-emerald-700 text-white" 
+                  filter === "present"
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
                     : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
                 }`}
               >
@@ -357,8 +361,8 @@ function AttendancePage() {
                 size="sm"
                 onClick={() => setFilter("absent")}
                 className={`h-8 text-xs font-medium ${
-                  filter === "absent" 
-                    ? "bg-rose-600 hover:bg-rose-700 text-white" 
+                  filter === "absent"
+                    ? "bg-rose-600 hover:bg-rose-700 text-white"
                     : "text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20"
                 }`}
               >
@@ -468,9 +472,16 @@ function AttendancePage() {
                     </TableCell>
                     <TableCell>
                       {att?.arrival ? (
-                        <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 hover:bg-emerald-200">Present</Badge>
+                        <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 hover:bg-emerald-200">
+                          Present
+                        </Badge>
                       ) : (
-                        <Badge variant="secondary" className="bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200 hover:bg-rose-200">Absent</Badge>
+                        <Badge
+                          variant="secondary"
+                          className="bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200 hover:bg-rose-200"
+                        >
+                          Absent
+                        </Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-right space-x-2">

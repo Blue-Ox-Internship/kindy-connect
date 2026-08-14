@@ -9,7 +9,7 @@ if (!process.env.DATABASE_URL) {
       const envContent = fs.readFileSync(envPath, "utf-8");
       const match = envContent.match(/^DATABASE_URL=(.+)$/m);
       if (match) {
-        process.env.DATABASE_URL = match[1].trim().replace(/^["']|["']$/g, '');
+        process.env.DATABASE_URL = match[1].trim().replace(/^["']|["']$/g, "");
       }
     }
   } catch (err) {
@@ -45,7 +45,7 @@ async function main() {
       await sql`DELETE FROM schools`;
     });
     console.log("Database mock data cleared successfully!");
-    
+
     // Check remaining row counts
     const schoolsCount = await sql`SELECT COUNT(*) FROM schools`;
     const usersCount = await sql`SELECT COUNT(*) FROM users`;
@@ -54,7 +54,7 @@ async function main() {
     const classesCount = await sql`SELECT COUNT(*) FROM classes`;
     const marksCount = await sql`SELECT COUNT(*) FROM marks`;
     const attendanceCount = await sql`SELECT COUNT(*) FROM attendance`;
-    
+
     console.log("Remaining counts:");
     console.log(`- Schools: ${schoolsCount[0].count}`);
     console.log(`- Users: ${usersCount[0].count}`);

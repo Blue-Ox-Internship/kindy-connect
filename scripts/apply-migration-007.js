@@ -13,15 +13,15 @@ async function run() {
   try {
     const migrationSql = fs.readFileSync(
       path.join(process.cwd(), "database", "migrations", "007_school_custom_subjects.sql"),
-      "utf-8"
+      "utf-8",
     );
     console.log("Running migration 007_school_custom_subjects.sql...");
     await sql.unsafe(migrationSql);
     console.log("Migration 007 applied successfully!");
-    
+
     const count = await sql`SELECT count(*) FROM subjects`;
     console.log("Total seeded subjects in DB:", count[0].count);
-    
+
     process.exit(0);
   } catch (err) {
     console.error("Migration failed:", err);

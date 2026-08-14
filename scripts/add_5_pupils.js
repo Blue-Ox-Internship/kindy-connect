@@ -18,28 +18,103 @@ if (!dbUrl) {
 
 const sql = postgres(dbUrl, {
   prepare: false,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
 });
 
 const FIRST_NAMES_M = [
-  "Ethan", "Noah", "Liam", "Lucas", "Oliver", "Mason", "Elijah", "Logan",
-  "Aiden", "James", "Benjamin", "Jacob", "Jackson", "Daniel", "Henry",
-  "Samuel", "David", "Joseph", "Wyatt", "Gabriel", "Julian", "Carter",
-  "Kevin", "Brian", "Victor", "Ian", "Felix", "Oscar", "Marcus", "Trevor"
+  "Ethan",
+  "Noah",
+  "Liam",
+  "Lucas",
+  "Oliver",
+  "Mason",
+  "Elijah",
+  "Logan",
+  "Aiden",
+  "James",
+  "Benjamin",
+  "Jacob",
+  "Jackson",
+  "Daniel",
+  "Henry",
+  "Samuel",
+  "David",
+  "Joseph",
+  "Wyatt",
+  "Gabriel",
+  "Julian",
+  "Carter",
+  "Kevin",
+  "Brian",
+  "Victor",
+  "Ian",
+  "Felix",
+  "Oscar",
+  "Marcus",
+  "Trevor",
 ];
 
 const FIRST_NAMES_F = [
-  "Emma", "Olivia", "Ava", "Sophia", "Isabella", "Mia", "Charlotte", "Amelia",
-  "Harper", "Evelyn", "Abigail", "Emily", "Ella", "Elizabeth", "Camila",
-  "Luna", "Sofia", "Avery", "Mila", "Aria", "Scarlett", "Grace", "Chloe",
-  "Victoria", "Riley", "Penelope", "Layla", "Zoey", "Nora", "Lily"
+  "Emma",
+  "Olivia",
+  "Ava",
+  "Sophia",
+  "Isabella",
+  "Mia",
+  "Charlotte",
+  "Amelia",
+  "Harper",
+  "Evelyn",
+  "Abigail",
+  "Emily",
+  "Ella",
+  "Elizabeth",
+  "Camila",
+  "Luna",
+  "Sofia",
+  "Avery",
+  "Mila",
+  "Aria",
+  "Scarlett",
+  "Grace",
+  "Chloe",
+  "Victoria",
+  "Riley",
+  "Penelope",
+  "Layla",
+  "Zoey",
+  "Nora",
+  "Lily",
 ];
 
 const LAST_NAMES = [
-  "Kipkorir", "Mwangi", "Otieno", "Wanjiku", "Ochieng", "Mutua", "Wambui",
-  "Kipchoge", "Auma", "Njeri", "Wangari", "Njenga", "Atieno", "Kamau",
-  "Odhiambo", "Maina", "Njuguna", "Kiprop", "Omondi", "Chebet", "Karanja",
-  "Kipchirchir", "Wekesa", "Simiyu", "Nyangweso", "Cherono", "Rotich"
+  "Kipkorir",
+  "Mwangi",
+  "Otieno",
+  "Wanjiku",
+  "Ochieng",
+  "Mutua",
+  "Wambui",
+  "Kipchoge",
+  "Auma",
+  "Njeri",
+  "Wangari",
+  "Njenga",
+  "Atieno",
+  "Kamau",
+  "Odhiambo",
+  "Maina",
+  "Njuguna",
+  "Kiprop",
+  "Omondi",
+  "Chebet",
+  "Karanja",
+  "Kipchirchir",
+  "Wekesa",
+  "Simiyu",
+  "Nyangweso",
+  "Cherono",
+  "Rotich",
 ];
 
 const PARENT_RELATIONS = ["Mother", "Father", "Guardian"];
@@ -62,8 +137,8 @@ async function run() {
 
     // 2. Fetch maximum pupil admission number or existing pupils to avoid duplicate IDs/admission numbers
     const existingPupils = await sql`SELECT id, admission_no FROM pupils`;
-    const existingIds = new Set(existingPupils.map(p => p.id));
-    const existingAdmNos = new Set(existingPupils.map(p => p.admission_no));
+    const existingIds = new Set(existingPupils.map((p) => p.id));
+    const existingAdmNos = new Set(existingPupils.map((p) => p.admission_no));
 
     console.log(`Existing pupils count: ${existingPupils.length}`);
 
@@ -79,7 +154,7 @@ async function run() {
         counter++;
         let pupilId = `p_auto_${cls.id}_${i}_${counter}`;
         let admNo = `ADM-${cls.id.toUpperCase()}-${counter}`;
-        
+
         while (existingIds.has(pupilId)) {
           counter++;
           pupilId = `p_auto_${cls.id}_${i}_${counter}`;
@@ -94,11 +169,11 @@ async function run() {
 
         const isMale = Math.random() > 0.5;
         const gender = isMale ? "M" : "F";
-        const firstName = isMale 
+        const firstName = isMale
           ? FIRST_NAMES_M[Math.floor(Math.random() * FIRST_NAMES_M.length)]
           : FIRST_NAMES_F[Math.floor(Math.random() * FIRST_NAMES_F.length)];
         const lastName = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
-        
+
         // Random DOB between 2019 and 2021
         const year = 2019 + Math.floor(Math.random() * 3);
         const month = String(Math.floor(Math.random() * 12) + 1).padStart(2, "0");
@@ -115,7 +190,8 @@ async function run() {
 
         // Create Parent
         const parentId = `parent_${pupilId}`;
-        const parentRelation = PARENT_RELATIONS[Math.floor(Math.random() * PARENT_RELATIONS.length)];
+        const parentRelation =
+          PARENT_RELATIONS[Math.floor(Math.random() * PARENT_RELATIONS.length)];
         const parentName = `${parentRelation === "Mother" ? "Mary" : parentRelation === "Father" ? "John" : "Grace"} ${lastName}`;
         const phone = `+2547${Math.floor(10000000 + Math.random() * 90000000)}`;
         const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${counter}@parent.kindy.app`;
@@ -134,11 +210,15 @@ async function run() {
           ON CONFLICT (pupil_id, parent_id) DO NOTHING
         `;
 
-        console.log(`   + Added Pupil: ${firstName} ${lastName} (${admNo}) [ID: ${pupilId}] with Parent: ${parentName}`);
+        console.log(
+          `   + Added Pupil: ${firstName} ${lastName} (${admNo}) [ID: ${pupilId}] with Parent: ${parentName}`,
+        );
       }
     }
 
-    console.log(`\nSuccessfully added ${totalPupilsAdded} pupils and ${totalParentsAdded} parents across ${classes.length} classes!`);
+    console.log(
+      `\nSuccessfully added ${totalPupilsAdded} pupils and ${totalParentsAdded} parents across ${classes.length} classes!`,
+    );
     process.exit(0);
   } catch (err) {
     console.error("Error executing script:", err);

@@ -71,7 +71,8 @@ function SubjectsPage() {
 
   const userRole = (currentUser?.role || "").toLowerCase();
   const isSuperAdmin = userRole === "super_admin";
-  const isStaff = isSuperAdmin || userRole === "admin" || userRole === "deputy" || userRole.includes("admin");
+  const isStaff =
+    isSuperAdmin || userRole === "admin" || userRole === "deputy" || userRole.includes("admin");
   const isCanEdit = isSuperAdmin || isStaff;
 
   // Selected school ID for subject context
@@ -84,12 +85,12 @@ function SubjectsPage() {
   // Filtered subjects for current active school (with fallback default subjects if empty)
   const schoolSubjects = useMemo(() => {
     return getSchoolSubjects(activeSchoolId);
-  }, [getSchoolSubjects, activeSchoolId, subjects]);
+  }, [getSchoolSubjects, activeSchoolId]);
 
   // Teachers teaching subjects in this school
   const schoolTeachers = useMemo(() => {
     return users.filter(
-      (u) => u.role === "teacher" && (isSuperAdmin ? true : u.schoolId === activeSchoolId)
+      (u) => u.role === "teacher" && (isSuperAdmin ? true : u.schoolId === activeSchoolId),
     );
   }, [users, activeSchoolId, isSuperAdmin]);
 
@@ -119,7 +120,7 @@ function SubjectsPage() {
     return schoolSubjects.filter(
       (sub) =>
         (sub && sub.name && sub.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (sub && sub.code && sub.code.toLowerCase().includes(searchTerm.toLowerCase()))
+        (sub && sub.code && sub.code.toLowerCase().includes(searchTerm.toLowerCase())),
     );
   }, [schoolSubjects, searchTerm]);
 
@@ -150,7 +151,7 @@ function SubjectsPage() {
       return;
     }
     const exists = schoolSubjects.some(
-      (s) => s.name.toLowerCase() === form.name.trim().toLowerCase()
+      (s) => s.name.toLowerCase() === form.name.trim().toLowerCase(),
     );
     if (exists) {
       toast.error(`Subject "${form.name.trim()}" already exists in this school`);
@@ -194,9 +195,9 @@ function SubjectsPage() {
     const skipped: string[] = [];
 
     for (const name of rawNames) {
-      const already = schoolSubjects.some(
-        (s) => s.name.toLowerCase() === name.toLowerCase()
-      ) || newItems.some((i) => i.name.toLowerCase() === name.toLowerCase());
+      const already =
+        schoolSubjects.some((s) => s.name.toLowerCase() === name.toLowerCase()) ||
+        newItems.some((i) => i.name.toLowerCase() === name.toLowerCase());
 
       if (already) {
         skipped.push(name);
@@ -253,7 +254,7 @@ function SubjectsPage() {
       return;
     }
     const exists = schoolSubjects.some(
-      (s) => s.id !== selectedSubject.id && s.name.toLowerCase() === form.name.trim().toLowerCase()
+      (s) => s.id !== selectedSubject.id && s.name.toLowerCase() === form.name.trim().toLowerCase(),
     );
     if (exists) {
       toast.error(`Subject "${form.name.trim()}" already exists in this school`);
@@ -282,8 +283,12 @@ function SubjectsPage() {
   // Check if subject has marks recorded or assigned teachers
   const subjectUsageInfo = useMemo(() => {
     if (!selectedSubject) return { marksCount: 0, teachersCount: 0 };
-    const marksCount = marks.filter((m) => m.subject.toLowerCase() === selectedSubject.name.toLowerCase()).length;
-    const teachersCount = schoolTeachers.filter((t) => t.subjects?.includes(selectedSubject.name)).length;
+    const marksCount = marks.filter(
+      (m) => m.subject.toLowerCase() === selectedSubject.name.toLowerCase(),
+    ).length;
+    const teachersCount = schoolTeachers.filter((t) =>
+      t.subjects?.includes(selectedSubject.name),
+    ).length;
     return { marksCount, teachersCount };
   }, [selectedSubject, marks, schoolTeachers]);
 
@@ -372,10 +377,7 @@ function SubjectsPage() {
             <CardContent className="py-4 flex items-center gap-4">
               <Building className="h-5 w-5 text-muted-foreground" />
               <div className="flex-1 text-sm font-medium">Managing Subjects For:</div>
-              <Select
-                value={activeSchoolId}
-                onValueChange={(val) => setSchoolContext(val)}
-              >
+              <Select value={activeSchoolId} onValueChange={(val) => setSchoolContext(val)}>
                 <SelectTrigger className="w-[260px] bg-background">
                   <SelectValue placeholder="Select School" />
                 </SelectTrigger>
@@ -495,11 +497,14 @@ function SubjectsPage() {
                 <TableBody>
                   {filteredSubjects.map((sub, idx) => {
                     const assignedTeachers = schoolTeachers.filter((t) =>
-                      t.subjects?.includes(sub.name)
+                      t.subjects?.includes(sub.name),
                     );
                     const isMySubject = currentUser?.subjects?.includes(sub.name);
                     return (
-                      <TableRow key={sub.id} className={isMySubject ? "bg-primary/5 font-medium" : ""}>
+                      <TableRow
+                        key={sub.id}
+                        className={isMySubject ? "bg-primary/5 font-medium" : ""}
+                      >
                         <TableCell className="font-mono text-xs text-muted-foreground">
                           {idx + 1}
                         </TableCell>
@@ -508,7 +513,10 @@ function SubjectsPage() {
                             <BookMarked className="h-4 w-4 text-primary opacity-70" />
                             <span>{sub.name}</span>
                             {isMySubject && (
-                              <Badge variant="default" className="text-[10px] py-0 px-1.5 bg-primary/20 text-primary border-primary/30">
+                              <Badge
+                                variant="default"
+                                className="text-[10px] py-0 px-1.5 bg-primary/20 text-primary border-primary/30"
+                              >
                                 My Subject
                               </Badge>
                             )}
@@ -527,14 +535,17 @@ function SubjectsPage() {
                           {assignedTeachers.length > 0 ? (
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <Badge variant="secondary" className="text-xs">
-                                {assignedTeachers.length} teacher{assignedTeachers.length > 1 ? "s" : ""}
+                                {assignedTeachers.length} teacher
+                                {assignedTeachers.length > 1 ? "s" : ""}
                               </Badge>
                               <span className="text-xs text-muted-foreground truncate max-w-[200px]">
                                 ({assignedTeachers.map((t) => t.name).join(", ")})
                               </span>
                             </div>
                           ) : (
-                            <span className="text-xs text-muted-foreground opacity-60">Unassigned</span>
+                            <span className="text-xs text-muted-foreground opacity-60">
+                              Unassigned
+                            </span>
                           )}
                         </TableCell>
                         {isCanEdit && (
@@ -642,7 +653,8 @@ function SubjectsPage() {
                 className="font-mono text-sm"
               />
               <p className="text-xs text-muted-foreground">
-                Tip: Standard 3-letter codes will be automatically generated for each subject (you can edit them later).
+                Tip: Standard 3-letter codes will be automatically generated for each subject (you
+                can edit them later).
               </p>
             </div>
           </div>
@@ -710,23 +722,28 @@ function SubjectsPage() {
               Delete Subject
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete <strong className="text-foreground">{selectedSubject?.name}</strong>?
+              Are you sure you want to delete{" "}
+              <strong className="text-foreground">{selectedSubject?.name}</strong>?
             </DialogDescription>
           </DialogHeader>
 
-          {selectedSubject && (subjectUsageInfo.marksCount > 0 || subjectUsageInfo.teachersCount > 0) && (
-            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs space-y-1 text-amber-800 dark:text-amber-300">
-              <div className="font-semibold flex items-center gap-1">
-                <AlertTriangle className="h-3.5 w-3.5" /> Notice:
+          {selectedSubject &&
+            (subjectUsageInfo.marksCount > 0 || subjectUsageInfo.teachersCount > 0) && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs space-y-1 text-amber-800 dark:text-amber-300">
+                <div className="font-semibold flex items-center gap-1">
+                  <AlertTriangle className="h-3.5 w-3.5" /> Notice:
+                </div>
+                {subjectUsageInfo.marksCount > 0 && (
+                  <div>• {subjectUsageInfo.marksCount} mark entries exist for this subject.</div>
+                )}
+                {subjectUsageInfo.teachersCount > 0 && (
+                  <div>
+                    • {subjectUsageInfo.teachersCount} teacher(s) currently assigned to teach this
+                    subject.
+                  </div>
+                )}
               </div>
-              {subjectUsageInfo.marksCount > 0 && (
-                <div>• {subjectUsageInfo.marksCount} mark entries exist for this subject.</div>
-              )}
-              {subjectUsageInfo.teachersCount > 0 && (
-                <div>• {subjectUsageInfo.teachersCount} teacher(s) currently assigned to teach this subject.</div>
-              )}
-            </div>
-          )}
+            )}
 
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>

@@ -32,7 +32,21 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, FileSpreadsheet, Printer, Save, Check, Loader2, RotateCcw, Search, User, ChevronRight, CheckCircle2 } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  FileSpreadsheet,
+  Printer,
+  Save,
+  Check,
+  Loader2,
+  RotateCcw,
+  Search,
+  User,
+  ChevronRight,
+  CheckCircle2,
+} from "lucide-react";
 import { downloadCSV } from "@/lib/export-utils";
 
 export const Route = createFileRoute("/app/marks")({
@@ -96,7 +110,9 @@ function MarksPage() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [sheetDialogOpen, setSheetDialogOpen] = useState(false);
-  const [sheetDisplayMode, setSheetDisplayMode] = useState<"score" | "percentage" | "grade">("score");
+  const [sheetDisplayMode, setSheetDisplayMode] = useState<"score" | "percentage" | "grade">(
+    "score",
+  );
   const [selectedPupilId, setSelectedPupilId] = useState("");
   const [pupilSearch, setPupilSearch] = useState("");
   const [editingMark, setEditingMark] = useState<any>(null);
@@ -113,12 +129,11 @@ function MarksPage() {
   }, [pupils, classId]);
 
   const filteredMarks = useMemo(() => {
-    return marks.filter(
-      (m) => m.term === term && m.year === year && m.subject === subject,
-    );
+    return marks.filter((m) => m.term === term && m.year === year && m.subject === subject);
   }, [marks, term, year, subject]);
 
-  const activeSchoolId = currentUser?.role === "super_admin" ? superSchoolId : currentUser?.schoolId;
+  const activeSchoolId =
+    currentUser?.role === "super_admin" ? superSchoolId : currentUser?.schoolId;
   const rawSchoolSubjects = getSchoolSubjects(activeSchoolId);
   const subjects = useMemo(() => rawSchoolSubjects.map((s) => s.name), [rawSchoolSubjects]);
 
@@ -152,7 +167,13 @@ function MarksPage() {
   const [inlineMarks, setInlineMarks] = useState<
     Record<
       string,
-      { score: string; maxScore: string; teacherComment: string; markId?: string; isDirty?: boolean }
+      {
+        score: string;
+        maxScore: string;
+        teacherComment: string;
+        markId?: string;
+        isDirty?: boolean;
+      }
     >
   >({});
   const [defaultMaxScore, setDefaultMaxScore] = useState("100");
@@ -162,7 +183,13 @@ function MarksPage() {
   useEffect(() => {
     const initialMap: Record<
       string,
-      { score: string; maxScore: string; teacherComment: string; markId?: string; isDirty?: boolean }
+      {
+        score: string;
+        maxScore: string;
+        teacherComment: string;
+        markId?: string;
+        isDirty?: boolean;
+      }
     > = {};
 
     classPupils.forEach((p) => {
@@ -187,7 +214,7 @@ function MarksPage() {
     });
 
     setInlineMarks(initialMap);
-  }, [classPupils, filteredMarks, term, year, subject, classId]);
+  }, [classPupils, filteredMarks, term, year, subject, classId, defaultMaxScore]);
 
   const handleInlineChange = (
     pupilId: string,
@@ -315,16 +342,13 @@ function MarksPage() {
         selectPupilForEntry(selectedPupilId);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addDialogOpen]);
 
   const selectPupilForEntry = (pupilId: string) => {
     setSelectedPupilId(pupilId);
     const existingMark = marks.find(
-      (m) =>
-        m.pupilId === pupilId &&
-        m.subject === subject &&
-        m.term === term &&
-        m.year === year,
+      (m) => m.pupilId === pupilId && m.subject === subject && m.term === term && m.year === year,
     );
     if (existingMark) {
       setEditingMark(existingMark);
@@ -499,10 +523,13 @@ function MarksPage() {
     return "E";
   };
 
-  const handleKeyDownForm = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>, isEditMode: boolean = false) => {
+  const handleKeyDownForm = (
+    e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+    isEditMode: boolean = false,
+  ) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
-      
+
       const currentPupilId = selectedPupilId;
       if (!currentPupilId) return;
 
@@ -536,10 +563,11 @@ function MarksPage() {
 
       const currentIndex = classPupils.findIndex((p) => p.id === currentPupilId);
       if (currentIndex !== -1) {
-        const nextIndex = e.key === "ArrowDown" 
-          ? (currentIndex + 1) % classPupils.length 
-          : (currentIndex - 1 + classPupils.length) % classPupils.length;
-        
+        const nextIndex =
+          e.key === "ArrowDown"
+            ? (currentIndex + 1) % classPupils.length
+            : (currentIndex - 1 + classPupils.length) % classPupils.length;
+
         const nextPupil = classPupils[nextIndex];
         selectPupilForEntry(nextPupil.id);
       }
@@ -584,15 +612,12 @@ function MarksPage() {
             <div>
               <CardTitle className="text-xl">Class Marks Entry</CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Enter scores directly for all pupils in the class sequentially without individual lookup.
+                Enter scores directly for all pupils in the class sequentially without individual
+                lookup.
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setSheetDialogOpen(true)}
-              >
+              <Button size="sm" variant="outline" onClick={() => setSheetDialogOpen(true)}>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 Preview Broadsheet
               </Button>
@@ -629,10 +654,13 @@ function MarksPage() {
                       <div>
                         <DialogTitle className="text-xl font-bold">Enter / Add Marks</DialogTitle>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Subject: <span className="font-semibold text-foreground">{subject}</span> | Class:{" "}
-                          <span className="font-semibold text-foreground">{currentClass?.name || "Selected Class"}</span> |{" "}
-                          Term: <span className="font-semibold text-foreground">{term}</span> | Year:{" "}
-                          <span className="font-semibold text-foreground">{year}</span>
+                          Subject: <span className="font-semibold text-foreground">{subject}</span>{" "}
+                          | Class:{" "}
+                          <span className="font-semibold text-foreground">
+                            {currentClass?.name || "Selected Class"}
+                          </span>{" "}
+                          | Term: <span className="font-semibold text-foreground">{term}</span> |
+                          Year: <span className="font-semibold text-foreground">{year}</span>
                         </p>
                       </div>
                     </div>
@@ -653,10 +681,12 @@ function MarksPage() {
                         </div>
                         <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
                           <span>
-                            All Students (<strong className="text-foreground">{classPupils.length}</strong>)
+                            All Students (
+                            <strong className="text-foreground">{classPupils.length}</strong>)
                           </span>
                           <span>
-                            <strong className="text-green-600">{filteredMarks.length}</strong> / {classPupils.length} marked
+                            <strong className="text-green-600">{filteredMarks.length}</strong> /{" "}
+                            {classPupils.length} marked
                           </span>
                         </div>
                       </div>
@@ -706,11 +736,16 @@ function MarksPage() {
                                 </div>
                                 <div className="shrink-0 ml-2">
                                   {m ? (
-                                    <Badge className={`${getGradeColor(m.grade || "")} text-[10px] px-1.5 py-0.5`}>
+                                    <Badge
+                                      className={`${getGradeColor(m.grade || "")} text-[10px] px-1.5 py-0.5`}
+                                    >
                                       {m.score}/{m.maxScore} ({m.grade})
                                     </Badge>
                                   ) : (
-                                    <Badge variant="outline" className="text-[10px] text-muted-foreground px-1.5 py-0.5">
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] text-muted-foreground px-1.5 py-0.5"
+                                    >
                                       No mark
                                     </Badge>
                                   )}
@@ -747,8 +782,12 @@ function MarksPage() {
                                 </div>
                               </div>
                               {existingMarkForSelected ? (
-                                <Badge className={`${getGradeColor(existingMarkForSelected.grade || "")} px-2.5 py-1 text-xs font-semibold`}>
-                                  Saved: {existingMarkForSelected.score}/{existingMarkForSelected.maxScore} ({existingMarkForSelected.grade})
+                                <Badge
+                                  className={`${getGradeColor(existingMarkForSelected.grade || "")} px-2.5 py-1 text-xs font-semibold`}
+                                >
+                                  Saved: {existingMarkForSelected.score}/
+                                  {existingMarkForSelected.maxScore} (
+                                  {existingMarkForSelected.grade})
                                 </Badge>
                               ) : (
                                 <Badge variant="secondary" className="px-2.5 py-1 text-xs">
@@ -767,7 +806,9 @@ function MarksPage() {
                                   type="number"
                                   min="0"
                                   value={formData.score}
-                                  onChange={(e) => setFormData({ ...formData, score: e.target.value })}
+                                  onChange={(e) =>
+                                    setFormData({ ...formData, score: e.target.value })
+                                  }
                                   onKeyDown={(e) => handleKeyDownForm(e, !!existingMarkForSelected)}
                                   placeholder="e.g. 85"
                                   className="text-sm font-semibold"
@@ -783,7 +824,9 @@ function MarksPage() {
                                   type="number"
                                   min="1"
                                   value={formData.maxScore}
-                                  onChange={(e) => setFormData({ ...formData, maxScore: e.target.value })}
+                                  onChange={(e) =>
+                                    setFormData({ ...formData, maxScore: e.target.value })
+                                  }
                                   onKeyDown={(e) => handleKeyDownForm(e, !!existingMarkForSelected)}
                                   className="text-sm"
                                 />
@@ -792,10 +835,16 @@ function MarksPage() {
 
                             {gradePreview && (
                               <div className="p-3 bg-accent/30 rounded-lg border text-xs flex items-center justify-between">
-                                <span className="text-muted-foreground font-medium">Calculated Percentage & Grade:</span>
+                                <span className="text-muted-foreground font-medium">
+                                  Calculated Percentage & Grade:
+                                </span>
                                 <div className="flex items-center gap-2">
-                                  <span className="font-mono font-bold text-sm">{gradePreview.pct.toFixed(1)}%</span>
-                                  <Badge className={`${getGradeColor(gradePreview.grade)} px-2 py-0.5 text-xs font-bold`}>
+                                  <span className="font-mono font-bold text-sm">
+                                    {gradePreview.pct.toFixed(1)}%
+                                  </span>
+                                  <Badge
+                                    className={`${getGradeColor(gradePreview.grade)} px-2 py-0.5 text-xs font-bold`}
+                                  >
                                     Grade {gradePreview.grade}
                                   </Badge>
                                 </div>
@@ -809,7 +858,9 @@ function MarksPage() {
                               <Textarea
                                 id="add-comment"
                                 value={formData.teacherComment}
-                                onChange={(e) => setFormData({ ...formData, teacherComment: e.target.value })}
+                                onChange={(e) =>
+                                  setFormData({ ...formData, teacherComment: e.target.value })
+                                }
                                 onKeyDown={(e) => handleKeyDownForm(e, !!existingMarkForSelected)}
                                 placeholder="e.g., Excellent performance, shown good understanding."
                                 rows={3}
@@ -823,14 +874,23 @@ function MarksPage() {
                               <span>Tip: Use ↑ ↓ arrow keys to navigate</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(false)}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setAddDialogOpen(false)}
+                              >
                                 Close
                               </Button>
                               {existingMarkForSelected && (
                                 <Button
                                   variant="destructive"
                                   size="sm"
-                                  onClick={() => handleDelete(existingMarkForSelected.id, `${selectedPupil.firstName} ${selectedPupil.lastName}`)}
+                                  onClick={() =>
+                                    handleDelete(
+                                      existingMarkForSelected.id,
+                                      `${selectedPupil.firstName} ${selectedPupil.lastName}`,
+                                    )
+                                  }
                                 >
                                   Delete
                                 </Button>
@@ -838,7 +898,11 @@ function MarksPage() {
                               <Button size="sm" onClick={() => handleSaveMark(false)}>
                                 {existingMarkForSelected ? "Update Mark" : "Save Mark"}
                               </Button>
-                              <Button size="sm" variant="secondary" onClick={() => handleSaveMark(true)}>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => handleSaveMark(true)}
+                              >
                                 Save & Next <ChevronRight className="h-4 w-4 ml-1" />
                               </Button>
                             </div>
@@ -847,7 +911,9 @@ function MarksPage() {
                       ) : (
                         <div className="flex flex-col items-center justify-center h-full py-12 text-muted-foreground">
                           <User className="h-10 w-10 mb-2 opacity-40" />
-                          <p className="text-xs">Click on a student from the list on the left to enter marks.</p>
+                          <p className="text-xs">
+                            Click on a student from the list on the left to enter marks.
+                          </p>
                         </div>
                       )}
                     </div>
@@ -857,7 +923,7 @@ function MarksPage() {
             </div>
           </div>
         </CardHeader>
-      <CardContent>
+        <CardContent>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4 p-3 bg-muted/30 rounded-lg border">
             <div className="flex flex-wrap items-center gap-3">
               {currentUser?.role === "super_admin" && (
@@ -934,7 +1000,9 @@ function MarksPage() {
 
             {canEditMarks && (
               <div className="flex items-center gap-2 border-l pl-3">
-                <Label className="text-xs font-semibold text-muted-foreground">Default Max Score:</Label>
+                <Label className="text-xs font-semibold text-muted-foreground">
+                  Default Max Score:
+                </Label>
                 <Input
                   type="number"
                   className="w-20 h-9 text-xs bg-background"
@@ -1029,7 +1097,9 @@ function MarksPage() {
                           placeholder="Optional comment..."
                           disabled={!canEditMarks}
                           value={item.teacherComment}
-                          onChange={(e) => handleInlineChange(p.id, "teacherComment", e.target.value)}
+                          onChange={(e) =>
+                            handleInlineChange(p.id, "teacherComment", e.target.value)
+                          }
                           onKeyDown={(e) => handleKeyDown(e, idx, "teacherComment")}
                           className="h-8 text-xs bg-background"
                         />
@@ -1037,11 +1107,17 @@ function MarksPage() {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {item.isDirty ? (
-                            <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-300 text-[10px]">
+                            <Badge
+                              variant="secondary"
+                              className="bg-amber-100 text-amber-800 border-amber-300 text-[10px]"
+                            >
                               Modified
                             </Badge>
                           ) : item.markId ? (
-                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px] gap-1">
+                            <Badge
+                              variant="outline"
+                              className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px] gap-1"
+                            >
                               <Check className="h-3 w-3" /> Saved
                             </Badge>
                           ) : (
@@ -1054,7 +1130,9 @@ function MarksPage() {
                               size="sm"
                               variant="ghost"
                               className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
-                              onClick={() => handleDelete(item.markId!, `${p.firstName} ${p.lastName}`)}
+                              onClick={() =>
+                                handleDelete(item.markId!, `${p.firstName} ${p.lastName}`)
+                              }
                               title="Delete mark"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -1067,7 +1145,10 @@ function MarksPage() {
                 })}
                 {classPupils.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={isAdmin ? 8 : 7}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       No pupils in this class. Select a class to enter marks.
                     </TableCell>
                   </TableRow>
@@ -1079,7 +1160,13 @@ function MarksPage() {
           {canEditMarks && classPupils.length > 0 && (
             <div className="flex items-center justify-between pt-4 mt-2 border-t">
               <div className="text-xs text-muted-foreground">
-                Tip: Press <kbd className="px-1.5 py-0.5 bg-muted rounded border text-[10px] font-mono">Enter</kbd> or <kbd className="px-1.5 py-0.5 bg-muted rounded border text-[10px] font-mono">↓</kbd> in the score box to jump quickly to the next student.
+                Tip: Press{" "}
+                <kbd className="px-1.5 py-0.5 bg-muted rounded border text-[10px] font-mono">
+                  Enter
+                </kbd>{" "}
+                or{" "}
+                <kbd className="px-1.5 py-0.5 bg-muted rounded border text-[10px] font-mono">↓</kbd>{" "}
+                in the score box to jump quickly to the next student.
               </div>
               <Button
                 size="sm"
@@ -1162,7 +1249,12 @@ function MarksPage() {
                 {currentSchool?.name || "Noble Edu"} - Pupil Marks Sheet
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-1">
-                Class: <span className="font-semibold text-foreground">{currentClass?.name || "All Classes"}</span> | Term: <span className="font-semibold text-foreground">{term}</span> | Year: <span className="font-semibold text-foreground">{year}</span>
+                Class:{" "}
+                <span className="font-semibold text-foreground">
+                  {currentClass?.name || "All Classes"}
+                </span>{" "}
+                | Term: <span className="font-semibold text-foreground">{term}</span> | Year:{" "}
+                <span className="font-semibold text-foreground">{year}</span>
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -1181,19 +1273,21 @@ function MarksPage() {
                     "Average (%)",
                     "Overall Grade",
                   ];
-                  const rows = broadsheetData.map(({ pupil, subjectMarks, avgPct, overallGrade }) => [
-                    pupil.admissionNo,
-                    `${pupil.firstName} ${pupil.lastName}`,
-                    ...subjects.map((s) => {
-                      const item = subjectMarks[s];
-                      if (!item) return "-";
-                      if (sheetDisplayMode === "score") return `${item.score}/${item.maxScore}`;
-                      if (sheetDisplayMode === "percentage") return `${item.pct.toFixed(0)}%`;
-                      return item.grade || "-";
-                    }),
-                    avgPct !== null ? `${avgPct.toFixed(1)}%` : "-",
-                    overallGrade,
-                  ]);
+                  const rows = broadsheetData.map(
+                    ({ pupil, subjectMarks, avgPct, overallGrade }) => [
+                      pupil.admissionNo,
+                      `${pupil.firstName} ${pupil.lastName}`,
+                      ...subjects.map((s) => {
+                        const item = subjectMarks[s];
+                        if (!item) return "-";
+                        if (sheetDisplayMode === "score") return `${item.score}/${item.maxScore}`;
+                        if (sheetDisplayMode === "percentage") return `${item.pct.toFixed(0)}%`;
+                        return item.grade || "-";
+                      }),
+                      avgPct !== null ? `${avgPct.toFixed(1)}%` : "-",
+                      overallGrade,
+                    ],
+                  );
                   const classNameStr = currentClass?.name || "All_Classes";
                   downloadCSV(
                     `Marks_Sheet_${classNameStr.replace(/\s+/g, "_")}_${term}_${year}`,
@@ -1268,7 +1362,8 @@ function MarksPage() {
               </div>
             </div>
             <div className="text-xs text-muted-foreground">
-              Total Pupils: <span className="font-semibold text-foreground">{classPupils.length}</span>
+              Total Pupils:{" "}
+              <span className="font-semibold text-foreground">{classPupils.length}</span>
             </div>
           </div>
 

@@ -103,21 +103,27 @@ function Landing() {
               <GraduationCap className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-sm font-semibold tracking-wide text-foreground">
-                Noble Edu
+              <div className="text-sm font-semibold tracking-wide text-foreground">Noble Edu</div>
+              <div className="text-xs text-muted-foreground">
+                School operations, without the noise
               </div>
-              <div className="text-xs text-muted-foreground">School operations, without the noise</div>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-3 text-xs text-muted-foreground border-r pr-4 border-border/60">
               <span className="font-medium text-foreground">Inquiries:</span>
-              <a href="tel:0786951347" className="flex items-center gap-1 hover:text-foreground font-medium">
+              <a
+                href="tel:0786951347"
+                className="flex items-center gap-1 hover:text-foreground font-medium"
+              >
                 <Phone className="h-3.5 w-3.5 text-primary" /> 0786951347
               </a>
               <span>•</span>
-              <a href="mailto:nobleahimbisibwe5@gmail.com" className="flex items-center gap-1 hover:text-foreground font-medium">
+              <a
+                href="mailto:nobleahimbisibwe5@gmail.com"
+                className="flex items-center gap-1 hover:text-foreground font-medium"
+              >
                 <Mail className="h-3.5 w-3.5 text-primary" /> nobleahimbisibwe5@gmail.com
               </a>
             </div>
@@ -165,7 +171,10 @@ function Landing() {
           </div>
 
           <div className="lg:justify-self-end">
-            <Card ref={loginRef} className="overflow-hidden border-border/70 bg-card/95 shadow-[0_30px_80px_-35px_rgba(0,0,0,0.35)]">
+            <Card
+              ref={loginRef}
+              className="overflow-hidden border-border/70 bg-card/95 shadow-[0_30px_80px_-35px_rgba(0,0,0,0.35)]"
+            >
               <CardHeader className="space-y-2 border-b border-border/60 bg-muted/35 px-6 py-5">
                 <CardTitle className="text-lg">School access</CardTitle>
                 <CardDescription>
@@ -219,8 +228,19 @@ function Landing() {
 
                   <p className="text-center text-xs text-muted-foreground">
                     For inquiries call{" "}
-                    <a href="tel:0786951347" className="font-medium text-foreground hover:underline">0786951347</a> or email{" "}
-                    <a href="mailto:nobleahimbisibwe5@gmail.com" className="font-medium text-foreground hover:underline">nobleahimbisibwe5@gmail.com</a>
+                    <a
+                      href="tel:0786951347"
+                      className="font-medium text-foreground hover:underline"
+                    >
+                      0786951347
+                    </a>{" "}
+                    or email{" "}
+                    <a
+                      href="mailto:nobleahimbisibwe5@gmail.com"
+                      className="font-medium text-foreground hover:underline"
+                    >
+                      nobleahimbisibwe5@gmail.com
+                    </a>
                   </p>
                 </div>
               </CardContent>
@@ -279,17 +299,22 @@ function Landing() {
           </div>
           <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">For Inquiries:</span>
-            <a href="tel:0786951347" className="inline-flex items-center gap-1 text-foreground hover:text-primary hover:underline font-medium">
+            <a
+              href="tel:0786951347"
+              className="inline-flex items-center gap-1 text-foreground hover:text-primary hover:underline font-medium"
+            >
               <Phone className="h-3.5 w-3.5 text-primary" /> 0786951347
             </a>
             <span>•</span>
-            <a href="mailto:nobleahimbisibwe5@gmail.com" className="inline-flex items-center gap-1 text-foreground hover:text-primary hover:underline font-medium">
+            <a
+              href="mailto:nobleahimbisibwe5@gmail.com"
+              className="inline-flex items-center gap-1 text-foreground hover:text-primary hover:underline font-medium"
+            >
               <Mail className="h-3.5 w-3.5 text-primary" /> nobleahimbisibwe5@gmail.com
             </a>
           </div>
           <p className="text-xs text-muted-foreground">
-            {new Date().getFullYear()} Noble Edu. Built for schools that want clarity, not
-            clutter.
+            {new Date().getFullYear()} Noble Edu. Built for schools that want clarity, not clutter.
           </p>
         </div>
       </footer>

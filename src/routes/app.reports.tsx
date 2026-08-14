@@ -75,11 +75,13 @@ const DEFAULT_REPORT_FORMAT: ReportFormatConfig = {
   principalTitle: "Headteacher's Signature & Date",
   showClassRank: true,
   showStampBox: true,
-  footerRemarks: "Next term begins on Monday, 15th September. All school fees must be cleared by the first week of term.",
+  footerRemarks:
+    "Next term begins on Monday, 15th September. All school fees must be cleared by the first week of term.",
 };
 
 function ReportsPage() {
-  const { currentUser, pupils, attendance, classes, marks, schools, getSchoolSubjects } = useStore();
+  const { currentUser, pupils, attendance, classes, marks, schools, getSchoolSubjects } =
+    useStore();
   const isAdmin = currentUser?.role === "super_admin" || currentUser?.role === "admin";
   const today = new Date().toISOString().slice(0, 10);
   const todayAtt = attendance.filter((a) => a.date === today);
@@ -88,9 +90,13 @@ function ReportsPage() {
   const [formatConfig, setFormatConfig] = useState<ReportFormatConfig>(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = localStorage.getItem("noble_report_format_config") || localStorage.getItem("kindy_report_format_config");
+        const saved =
+          localStorage.getItem("noble_report_format_config") ||
+          localStorage.getItem("kindy_report_format_config");
         if (saved) return { ...DEFAULT_REPORT_FORMAT, ...JSON.parse(saved) };
-      } catch {}
+      } catch {
+        /* ignore localStorage error */
+      }
     }
     return DEFAULT_REPORT_FORMAT;
   });
@@ -102,7 +108,9 @@ function ReportsPage() {
     setFormatConfig(editFormat);
     try {
       localStorage.setItem("noble_report_format_config", JSON.stringify(editFormat));
-    } catch {}
+    } catch {
+      /* ignore localStorage error */
+    }
     toast.success("Report format settings saved successfully!");
     setFormatDialogOpen(false);
   };
@@ -113,7 +121,9 @@ function ReportsPage() {
     try {
       localStorage.removeItem("noble_report_format_config");
       localStorage.removeItem("kindy_report_format_config");
-    } catch {}
+    } catch {
+      /* ignore localStorage error */
+    }
     toast.success("Reset report format to default settings");
     setFormatDialogOpen(false);
   };
@@ -151,15 +161,18 @@ function ReportsPage() {
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [previewPupil, setPreviewPupil] = useState<any>(null);
   const [marksSheetOpen, setMarksSheetOpen] = useState(false);
-  const [sheetDisplayMode, setSheetDisplayMode] = useState<"score" | "percentage" | "grade">("score");
+  const [sheetDisplayMode, setSheetDisplayMode] = useState<"score" | "percentage" | "grade">(
+    "score",
+  );
 
   const currentClassObj = classes.find((c) => c.id === selectedClass);
   const currentSchoolObj = schools.find(
     (s) => s.id === (currentClassObj?.schoolId || currentUser?.schoolId),
   );
-  const reportSchoolId = currentUser?.role === "super_admin"
-    ? superSchoolId
-    : (currentClassObj?.schoolId || currentUser?.schoolId);
+  const reportSchoolId =
+    currentUser?.role === "super_admin"
+      ? superSchoolId
+      : currentClassObj?.schoolId || currentUser?.schoolId;
   const rawReportSubjects = getSchoolSubjects(reportSchoolId);
   const subjects = useMemo(() => rawReportSubjects.map((s) => s.name), [rawReportSubjects]);
   const selectedClassPupils = pupils.filter((p) => p.classId === selectedClass && p.active);
@@ -269,7 +282,13 @@ function ReportsPage() {
   };
 
   const handleExportWeeklyCSV = () => {
-    const headers = ["Admission No", "Pupil Name", "Class", "Days Present (Last 7 Days)", "Late Arrivals"];
+    const headers = [
+      "Admission No",
+      "Pupil Name",
+      "Class",
+      "Days Present (Last 7 Days)",
+      "Late Arrivals",
+    ];
     const rows = weeklySummary.map((item) => [
       item.pupil.admissionNo,
       `${item.pupil.firstName} ${item.pupil.lastName}`,
@@ -287,7 +306,13 @@ function ReportsPage() {
   };
 
   const handleExportMonthlyCSV = () => {
-    const headers = ["Admission No", "Pupil Name", "Class", "Days Present (Last 30 Days)", "Late Arrivals"];
+    const headers = [
+      "Admission No",
+      "Pupil Name",
+      "Class",
+      "Days Present (Last 30 Days)",
+      "Late Arrivals",
+    ];
     const rows = monthlySummary.map((item) => [
       item.pupil.admissionNo,
       `${item.pupil.firstName} ${item.pupil.lastName}`,
@@ -411,7 +436,9 @@ function ReportsPage() {
 
   const downloadReportCard = () => {
     window.print();
-    toast.success(`Report card for ${previewPupil?.firstName || "pupil"} sent to print / PDF download`);
+    toast.success(
+      `Report card for ${previewPupil?.firstName || "pupil"} sent to print / PDF download`,
+    );
     setPreviewDialogOpen(false);
   };
 
@@ -509,9 +536,13 @@ function ReportsPage() {
                   {weeklySummary.map((item) => (
                     <TableRow key={item.pupil.id}>
                       {isAdmin && (
-                        <TableCell className="font-mono text-xs">{item.pupil.admissionNo}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {item.pupil.admissionNo}
+                        </TableCell>
                       )}
-                      <TableCell>{item.pupil.firstName} {item.pupil.lastName}</TableCell>
+                      <TableCell>
+                        {item.pupil.firstName} {item.pupil.lastName}
+                      </TableCell>
                       <TableCell>{item.className}</TableCell>
                       <TableCell>{item.daysPresent}</TableCell>
                       <TableCell>{item.lateDays}</TableCell>
@@ -519,7 +550,10 @@ function ReportsPage() {
                   ))}
                   {weeklySummary.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={isAdmin ? 5 : 4} className="text-center py-6 text-muted-foreground">
+                      <TableCell
+                        colSpan={isAdmin ? 5 : 4}
+                        className="text-center py-6 text-muted-foreground"
+                      >
                         No pupils found
                       </TableCell>
                     </TableRow>
@@ -560,9 +594,13 @@ function ReportsPage() {
                   {monthlySummary.map((item) => (
                     <TableRow key={item.pupil.id}>
                       {isAdmin && (
-                        <TableCell className="font-mono text-xs">{item.pupil.admissionNo}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {item.pupil.admissionNo}
+                        </TableCell>
                       )}
-                      <TableCell>{item.pupil.firstName} {item.pupil.lastName}</TableCell>
+                      <TableCell>
+                        {item.pupil.firstName} {item.pupil.lastName}
+                      </TableCell>
                       <TableCell>{item.className}</TableCell>
                       <TableCell>{item.daysPresent}</TableCell>
                       <TableCell>{item.lateDays}</TableCell>
@@ -570,7 +608,10 @@ function ReportsPage() {
                   ))}
                   {monthlySummary.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={isAdmin ? 5 : 4} className="text-center py-6 text-muted-foreground">
+                      <TableCell
+                        colSpan={isAdmin ? 5 : 4}
+                        className="text-center py-6 text-muted-foreground"
+                      >
                         No pupils found
                       </TableCell>
                     </TableRow>
@@ -804,7 +845,8 @@ function ReportsPage() {
               Edit Report Format Settings
             </DialogTitle>
             <CardDescription>
-              Customize school headers, visible sections, signature blocks, and closing notices for report cards.
+              Customize school headers, visible sections, signature blocks, and closing notices for
+              report cards.
             </CardDescription>
           </DialogHeader>
 
@@ -817,7 +859,9 @@ function ReportsPage() {
               </h3>
               <div className="grid grid-cols-1 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="headerTitle" className="text-xs font-semibold">School Name / Title</Label>
+                  <Label htmlFor="headerTitle" className="text-xs font-semibold">
+                    School Name / Title
+                  </Label>
                   <Input
                     id="headerTitle"
                     value={editFormat.headerTitle}
@@ -826,7 +870,9 @@ function ReportsPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="subtitle" className="text-xs font-semibold">Report Subtitle</Label>
+                  <Label htmlFor="subtitle" className="text-xs font-semibold">
+                    Report Subtitle
+                  </Label>
                   <Input
                     id="subtitle"
                     value={editFormat.subtitle}
@@ -835,11 +881,15 @@ function ReportsPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="schoolAddress" className="text-xs font-semibold">Address & Contact Information</Label>
+                  <Label htmlFor="schoolAddress" className="text-xs font-semibold">
+                    Address & Contact Information
+                  </Label>
                   <Input
                     id="schoolAddress"
                     value={editFormat.schoolAddress}
-                    onChange={(e) => setEditFormat({ ...editFormat, schoolAddress: e.target.value })}
+                    onChange={(e) =>
+                      setEditFormat({ ...editFormat, schoolAddress: e.target.value })
+                    }
                     placeholder="e.g. P.O. Box 1234, Kampala, Uganda | Tel: +256 700 000 000"
                   />
                 </div>
@@ -856,22 +906,30 @@ function ReportsPage() {
                 <div className="flex items-center justify-between border p-3 rounded-lg bg-muted/20">
                   <div className="space-y-0.5">
                     <Label className="text-sm font-medium">Class Rank / Position</Label>
-                    <p className="text-xs text-muted-foreground">Display pupil's position in class</p>
+                    <p className="text-xs text-muted-foreground">
+                      Display pupil's position in class
+                    </p>
                   </div>
                   <Switch
                     checked={editFormat.showClassRank}
-                    onCheckedChange={(checked) => setEditFormat({ ...editFormat, showClassRank: checked })}
+                    onCheckedChange={(checked) =>
+                      setEditFormat({ ...editFormat, showClassRank: checked })
+                    }
                   />
                 </div>
 
                 <div className="flex items-center justify-between border p-3 rounded-lg bg-muted/20">
                   <div className="space-y-0.5">
                     <Label className="text-sm font-medium">Attendance Summary</Label>
-                    <p className="text-xs text-muted-foreground">Display total days present in term</p>
+                    <p className="text-xs text-muted-foreground">
+                      Display total days present in term
+                    </p>
                   </div>
                   <Switch
                     checked={editFormat.showAttendance}
-                    onCheckedChange={(checked) => setEditFormat({ ...editFormat, showAttendance: checked })}
+                    onCheckedChange={(checked) =>
+                      setEditFormat({ ...editFormat, showAttendance: checked })
+                    }
                   />
                 </div>
 
@@ -882,7 +940,9 @@ function ReportsPage() {
                   </div>
                   <Switch
                     checked={editFormat.showTeacherComments}
-                    onCheckedChange={(checked) => setEditFormat({ ...editFormat, showTeacherComments: checked })}
+                    onCheckedChange={(checked) =>
+                      setEditFormat({ ...editFormat, showTeacherComments: checked })
+                    }
                   />
                 </div>
 
@@ -893,18 +953,24 @@ function ReportsPage() {
                   </div>
                   <Switch
                     checked={editFormat.showPrincipalSignature}
-                    onCheckedChange={(checked) => setEditFormat({ ...editFormat, showPrincipalSignature: checked })}
+                    onCheckedChange={(checked) =>
+                      setEditFormat({ ...editFormat, showPrincipalSignature: checked })
+                    }
                   />
                 </div>
 
                 <div className="flex items-center justify-between border p-3 rounded-lg bg-muted/20 sm:col-span-2">
                   <div className="space-y-0.5">
                     <Label className="text-sm font-medium">School Stamp Box</Label>
-                    <p className="text-xs text-muted-foreground">Reserve dedicated space for physical school stamp</p>
+                    <p className="text-xs text-muted-foreground">
+                      Reserve dedicated space for physical school stamp
+                    </p>
                   </div>
                   <Switch
                     checked={editFormat.showStampBox}
-                    onCheckedChange={(checked) => setEditFormat({ ...editFormat, showStampBox: checked })}
+                    onCheckedChange={(checked) =>
+                      setEditFormat({ ...editFormat, showStampBox: checked })
+                    }
                   />
                 </div>
               </div>
@@ -919,23 +985,31 @@ function ReportsPage() {
               <div className="space-y-3">
                 {editFormat.showPrincipalSignature && (
                   <div className="space-y-1.5">
-                    <Label htmlFor="principalTitle" className="text-xs font-semibold">Signature Line Title</Label>
+                    <Label htmlFor="principalTitle" className="text-xs font-semibold">
+                      Signature Line Title
+                    </Label>
                     <Input
                       id="principalTitle"
                       value={editFormat.principalTitle}
-                      onChange={(e) => setEditFormat({ ...editFormat, principalTitle: e.target.value })}
+                      onChange={(e) =>
+                        setEditFormat({ ...editFormat, principalTitle: e.target.value })
+                      }
                       placeholder="e.g. Headteacher's Signature & Date"
                     />
                   </div>
                 )}
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="footerRemarks" className="text-xs font-semibold">Closing Notice / Next Term Remarks</Label>
+                  <Label htmlFor="footerRemarks" className="text-xs font-semibold">
+                    Closing Notice / Next Term Remarks
+                  </Label>
                   <Textarea
                     id="footerRemarks"
                     rows={2}
                     value={editFormat.footerRemarks}
-                    onChange={(e) => setEditFormat({ ...editFormat, footerRemarks: e.target.value })}
+                    onChange={(e) =>
+                      setEditFormat({ ...editFormat, footerRemarks: e.target.value })
+                    }
                     placeholder="e.g. Next term begins on Monday 15th September. All fees must be cleared."
                   />
                 </div>
@@ -944,7 +1018,12 @@ function ReportsPage() {
           </div>
 
           <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between items-center pt-4 border-t">
-            <Button variant="ghost" size="sm" onClick={handleResetFormat} className="text-muted-foreground hover:text-destructive">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleResetFormat}
+              className="text-muted-foreground hover:text-destructive"
+            >
               <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
               Reset to Default
             </Button>
@@ -1007,12 +1086,13 @@ function ReportsPage() {
                   ) : (
                     <div className="w-24 h-24 rounded-md bg-background flex items-center justify-center border shadow-sm">
                       <span className="text-3xl text-muted-foreground font-semibold">
-                        {previewPupil.firstName?.[0]}{previewPupil.lastName?.[0]}
+                        {previewPupil.firstName?.[0]}
+                        {previewPupil.lastName?.[0]}
                       </span>
                     </div>
                   )}
                 </div>
-                
+
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 flex-1 w-full">
                   <div>
                     <Label className="text-xs text-muted-foreground">Pupil Name</Label>
@@ -1040,7 +1120,9 @@ function ReportsPage() {
                   {formatConfig.showClassRank && (
                     <div>
                       <Label className="text-xs text-muted-foreground">Class Rank</Label>
-                      <p className="font-semibold text-primary">{getPupilClassRank(previewPupil.id)}</p>
+                      <p className="font-semibold text-primary">
+                        {getPupilClassRank(previewPupil.id)}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1069,7 +1151,9 @@ function ReportsPage() {
                           {((mark.score / mark.maxScore) * 100).toFixed(0)}%)
                         </TableCell>
                         <TableCell>
-                          <Badge className={`${getGradeColor(mark.grade || "")} text-[11px] px-2 py-0.5`}>
+                          <Badge
+                            className={`${getGradeColor(mark.grade || "")} text-[11px] px-2 py-0.5`}
+                          >
                             {mark.grade}
                           </Badge>
                         </TableCell>
@@ -1116,7 +1200,9 @@ function ReportsPage() {
                         {formatConfig.principalTitle}
                       </p>
                     </div>
-                  ) : <div />}
+                  ) : (
+                    <div />
+                  )}
 
                   {formatConfig.showStampBox && (
                     <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/40 rounded-lg p-3 h-20 bg-muted/20">
@@ -1158,7 +1244,12 @@ function ReportsPage() {
                 {currentSchoolObj?.name || formatConfig.headerTitle} - Pupil Marks Sheet
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-1">
-                Class: <span className="font-semibold text-foreground">{currentClassObj?.name || "All Classes"}</span> | Term: <span className="font-semibold text-foreground">{selectedTerm}</span> | Year: <span className="font-semibold text-foreground">{selectedYear}</span>
+                Class:{" "}
+                <span className="font-semibold text-foreground">
+                  {currentClassObj?.name || "All Classes"}
+                </span>{" "}
+                | Term: <span className="font-semibold text-foreground">{selectedTerm}</span> |
+                Year: <span className="font-semibold text-foreground">{selectedYear}</span>
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -1177,19 +1268,21 @@ function ReportsPage() {
                     "Average (%)",
                     "Overall Grade",
                   ];
-                  const rows = broadsheetData.map(({ pupil, subjectMarks, avgPct, overallGrade }) => [
-                    pupil.admissionNo,
-                    `${pupil.firstName} ${pupil.lastName}`,
-                    ...subjects.map((s) => {
-                      const item = subjectMarks[s];
-                      if (!item) return "-";
-                      if (sheetDisplayMode === "score") return `${item.score}/${item.maxScore}`;
-                      if (sheetDisplayMode === "percentage") return `${item.pct.toFixed(0)}%`;
-                      return item.grade || "-";
-                    }),
-                    avgPct !== null ? `${avgPct.toFixed(1)}%` : "-",
-                    overallGrade,
-                  ]);
+                  const rows = broadsheetData.map(
+                    ({ pupil, subjectMarks, avgPct, overallGrade }) => [
+                      pupil.admissionNo,
+                      `${pupil.firstName} ${pupil.lastName}`,
+                      ...subjects.map((s) => {
+                        const item = subjectMarks[s];
+                        if (!item) return "-";
+                        if (sheetDisplayMode === "score") return `${item.score}/${item.maxScore}`;
+                        if (sheetDisplayMode === "percentage") return `${item.pct.toFixed(0)}%`;
+                        return item.grade || "-";
+                      }),
+                      avgPct !== null ? `${avgPct.toFixed(1)}%` : "-",
+                      overallGrade,
+                    ],
+                  );
                   const classNameStr = currentClassObj?.name || "All_Classes";
                   downloadCSV(
                     `Marks_Sheet_${classNameStr.replace(/\s+/g, "_")}_${selectedTerm}_${selectedYear}`,
@@ -1262,7 +1355,8 @@ function ReportsPage() {
               </div>
             </div>
             <div className="text-xs text-muted-foreground">
-              Total Pupils: <span className="font-semibold text-foreground">{selectedClassPupils.length}</span>
+              Total Pupils:{" "}
+              <span className="font-semibold text-foreground">{selectedClassPupils.length}</span>
             </div>
           </div>
 

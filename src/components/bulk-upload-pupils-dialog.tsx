@@ -107,10 +107,14 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
 
   const validateAndCompare = async (
     file: File,
-    mapping: Partial<Record<ExpectedHeader, string>>
+    mapping: Partial<Record<ExpectedHeader, string>>,
   ) => {
     try {
-      const { parseResult: result, comparisonResult: comp, rawHeaders } = await parseCSVFile(file, mapping);
+      const {
+        parseResult: result,
+        comparisonResult: comp,
+        rawHeaders,
+      } = await parseCSVFile(file, mapping);
 
       setUploadedHeaders(rawHeaders);
       setComparisonResult(comp);
@@ -138,7 +142,9 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
       if (comp.isMatchValid) {
         toast.success(`Columns compared: ${comp.similarityScore}% match`);
       } else {
-        toast.error(`Column mismatch: ${comp.missingRequiredHeaders.length} required fields unmapped`);
+        toast.error(
+          `Column mismatch: ${comp.missingRequiredHeaders.length} required fields unmapped`,
+        );
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to parse CSV file");
@@ -175,7 +181,7 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
     try {
       const pupilsToUpload = parseResult.data.map((row: PupilCSVRow) => {
         const classRoom = classes.find(
-          (c) => c.name.trim().toLowerCase() === row.className.trim().toLowerCase()
+          (c) => c.name.trim().toLowerCase() === row.className.trim().toLowerCase(),
         );
 
         if (!classRoom) {
@@ -254,23 +260,39 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
 
           {/* Stepper Header */}
           <div className="flex items-center justify-between border-b pb-3 pt-2 text-xs font-medium text-muted-foreground">
-            <div className={`flex items-center gap-1.5 ${stage === "select" ? "text-primary font-bold" : ""}`}>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px]">1</span>
+            <div
+              className={`flex items-center gap-1.5 ${stage === "select" ? "text-primary font-bold" : ""}`}
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px]">
+                1
+              </span>
               <span>Select File</span>
             </div>
             <ArrowRight className="h-3 w-3 opacity-40" />
-            <div className={`flex items-center gap-1.5 ${stage === "compare" ? "text-primary font-bold" : ""}`}>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px]">2</span>
+            <div
+              className={`flex items-center gap-1.5 ${stage === "compare" ? "text-primary font-bold" : ""}`}
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px]">
+                2
+              </span>
               <span>Compare & Merge Columns</span>
             </div>
             <ArrowRight className="h-3 w-3 opacity-40" />
-            <div className={`flex items-center gap-1.5 ${stage === "review" ? "text-primary font-bold" : ""}`}>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px]">3</span>
+            <div
+              className={`flex items-center gap-1.5 ${stage === "review" ? "text-primary font-bold" : ""}`}
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px]">
+                3
+              </span>
               <span>Review Data</span>
             </div>
             <ArrowRight className="h-3 w-3 opacity-40" />
-            <div className={`flex items-center gap-1.5 ${stage === "complete" ? "text-primary font-bold" : ""}`}>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px]">4</span>
+            <div
+              className={`flex items-center gap-1.5 ${stage === "complete" ? "text-primary font-bold" : ""}`}
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px]">
+                4
+              </span>
               <span>Complete</span>
             </div>
           </div>
@@ -282,7 +304,9 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
             <Alert className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
               <FileText className="h-4 w-4 text-blue-600" />
               <AlertDescription className="text-blue-900 dark:text-blue-200 text-xs">
-                Download the official CSV template first, fill in pupil details, then upload. The system will compare your file columns against the standard template before allowing upload.
+                Download the official CSV template first, fill in pupil details, then upload. The
+                system will compare your file columns against the standard template before allowing
+                upload.
               </AlertDescription>
             </Alert>
 
@@ -329,16 +353,36 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
             <div className="space-y-2 text-xs text-muted-foreground border-t pt-4">
               <p className="font-semibold text-foreground">Standard Column Requirements:</p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                <p>• admissionNo <span className="text-red-500">*</span></p>
-                <p>• firstName <span className="text-red-500">*</span></p>
-                <p>• lastName <span className="text-red-500">*</span></p>
-                <p>• gender (M/F) <span className="text-red-500">*</span></p>
-                <p>• dob (YYYY-MM-DD) <span className="text-red-500">*</span></p>
-                <p>• className <span className="text-red-500">*</span></p>
-                <p>• parentName <span className="text-red-500">*</span></p>
-                <p>• parentPhone <span className="text-red-500">*</span></p>
-                <p>• parentEmail <span className="text-red-500">*</span></p>
-                <p>• parentRelationship <span className="text-red-500">*</span></p>
+                <p>
+                  • admissionNo <span className="text-red-500">*</span>
+                </p>
+                <p>
+                  • firstName <span className="text-red-500">*</span>
+                </p>
+                <p>
+                  • lastName <span className="text-red-500">*</span>
+                </p>
+                <p>
+                  • gender (M/F) <span className="text-red-500">*</span>
+                </p>
+                <p>
+                  • dob (YYYY-MM-DD) <span className="text-red-500">*</span>
+                </p>
+                <p>
+                  • className <span className="text-red-500">*</span>
+                </p>
+                <p>
+                  • parentName <span className="text-red-500">*</span>
+                </p>
+                <p>
+                  • parentPhone <span className="text-red-500">*</span>
+                </p>
+                <p>
+                  • parentEmail <span className="text-red-500">*</span>
+                </p>
+                <p>
+                  • parentRelationship <span className="text-red-500">*</span>
+                </p>
               </div>
             </div>
           </div>
@@ -351,7 +395,9 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
               <RefreshCw className="h-10 w-10 text-primary animate-spin" />
               <div className="text-center space-y-1">
                 <p className="text-sm font-medium">Comparing file columns against template...</p>
-                <p className="text-xs text-muted-foreground">Checking structure and mapping headers</p>
+                <p className="text-xs text-muted-foreground">
+                  Checking structure and mapping headers
+                </p>
               </div>
             </div>
           </div>
@@ -368,16 +414,26 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
                   <div>
                     <p className="text-sm font-bold">Column Similarity Analysis</p>
                     <p className="text-xs text-muted-foreground">
-                      File: <span className="font-mono text-foreground font-medium">{selectedFile?.name}</span> ({uploadedHeaders.length} columns detected)
+                      File:{" "}
+                      <span className="font-mono text-foreground font-medium">
+                        {selectedFile?.name}
+                      </span>{" "}
+                      ({uploadedHeaders.length} columns detected)
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={comparisonResult.similarityScore >= 80 ? "default" : "destructive"} className="text-xs px-2.5 py-1">
+                  <Badge
+                    variant={comparisonResult.similarityScore >= 80 ? "default" : "destructive"}
+                    className="text-xs px-2.5 py-1"
+                  >
                     {comparisonResult.similarityScore}% Header Match
                   </Badge>
                   {comparisonResult.isMatchValid ? (
-                    <Badge variant="outline" className="border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40 gap-1">
+                    <Badge
+                      variant="outline"
+                      className="border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40 gap-1"
+                    >
                       <CheckCircle2 className="h-3 w-3" /> Ready to Proceed
                     </Badge>
                   ) : (
@@ -393,15 +449,20 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
                 <Alert variant="destructive" className="py-2.5">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-xs leading-relaxed">
-                    <span className="font-bold block">Upload Blocked: Required columns are missing or unmapped!</span>
-                    The system prevents upload when headers do not match. Please map the missing required fields below or click <strong>Download CSV Template</strong> to use the standard column format.
+                    <span className="font-bold block">
+                      Upload Blocked: Required columns are missing or unmapped!
+                    </span>
+                    The system prevents upload when headers do not match. Please map the missing
+                    required fields below or click <strong>Download CSV Template</strong> to use the
+                    standard column format.
                   </AlertDescription>
                 </Alert>
               ) : (
                 <Alert className="py-2 bg-green-50/60 dark:bg-green-950/30 border-green-200 dark:border-green-800 text-green-900 dark:text-green-200">
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <AlertDescription className="text-xs">
-                    All required template columns are matched! You can review or adjust column mappings below before proceeding to data review.
+                    All required template columns are matched! You can review or adjust column
+                    mappings below before proceeding to data review.
                   </AlertDescription>
                 </Alert>
               )}
@@ -413,7 +474,12 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
                 <p className="text-xs font-semibold text-foreground uppercase tracking-wider">
                   Template vs Uploaded Columns Comparison
                 </p>
-                <Button variant="ghost" size="sm" onClick={handleDownloadTemplate} className="h-7 text-xs gap-1.5 text-primary">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDownloadTemplate}
+                  className="h-7 text-xs gap-1.5 text-primary"
+                >
                   <Download className="h-3.5 w-3.5" /> Download Standard Template
                 </Button>
               </div>
@@ -430,7 +496,14 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
                   </TableHeader>
                   <TableBody>
                     {comparisonResult.items.map((item) => (
-                      <TableRow key={item.expectedHeader} className={item.status === "missing" && item.required ? "bg-red-50/40 dark:bg-red-950/20" : ""}>
+                      <TableRow
+                        key={item.expectedHeader}
+                        className={
+                          item.status === "missing" && item.required
+                            ? "bg-red-50/40 dark:bg-red-950/20"
+                            : ""
+                        }
+                      >
                         <TableCell className="font-medium">
                           <div className="space-y-0.5">
                             <span className="font-mono text-xs">{item.expectedHeader}</span>
@@ -440,7 +513,12 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
 
                         <TableCell>
                           {item.required ? (
-                            <Badge variant="secondary" className="text-[10px] bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300">Required</Badge>
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300"
+                            >
+                              Required
+                            </Badge>
                           ) : (
                             <span className="text-xs text-muted-foreground">Optional</span>
                           )}
@@ -448,22 +526,34 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
 
                         <TableCell>
                           {item.status === "exact_match" && (
-                            <Badge variant="outline" className="border-green-500 text-green-700 bg-green-50 dark:bg-green-950/40 text-[11px] gap-1">
+                            <Badge
+                              variant="outline"
+                              className="border-green-500 text-green-700 bg-green-50 dark:bg-green-950/40 text-[11px] gap-1"
+                            >
                               <CheckCircle className="h-3 w-3 text-green-600" /> Matched
                             </Badge>
                           )}
                           {item.status === "auto_mapped" && (
-                            <Badge variant="outline" className="border-blue-500 text-blue-700 bg-blue-50 dark:bg-blue-950/40 text-[11px]">
+                            <Badge
+                              variant="outline"
+                              className="border-blue-500 text-blue-700 bg-blue-50 dark:bg-blue-950/40 text-[11px]"
+                            >
                               Auto-Mapped
                             </Badge>
                           )}
                           {item.status === "merged" && (
-                            <Badge variant="outline" className="border-purple-500 text-purple-700 bg-purple-50 dark:bg-purple-950/40 text-[11px] gap-1">
+                            <Badge
+                              variant="outline"
+                              className="border-purple-500 text-purple-700 bg-purple-50 dark:bg-purple-950/40 text-[11px] gap-1"
+                            >
                               <Columns className="h-3 w-3 text-purple-600" /> Merged Name
                             </Badge>
                           )}
                           {item.status === "custom_mapped" && (
-                            <Badge variant="outline" className="border-indigo-500 text-indigo-700 bg-indigo-50 dark:bg-indigo-950/40 text-[11px]">
+                            <Badge
+                              variant="outline"
+                              className="border-indigo-500 text-indigo-700 bg-indigo-50 dark:bg-indigo-950/40 text-[11px]"
+                            >
                               Mapped
                             </Badge>
                           )}
@@ -488,16 +578,28 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
                               <SelectValue placeholder="-- Select CSV Column --" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="__none__" className="text-xs text-muted-foreground italic">
+                              <SelectItem
+                                value="__none__"
+                                className="text-xs text-muted-foreground italic"
+                              >
                                 -- Not Mapped --
                               </SelectItem>
-                              {comparisonResult.hasMergedNameColumn && (item.expectedHeader === "firstName" || item.expectedHeader === "lastName") && (
-                                <SelectItem value="__MERGE_FULL_NAME__" className="text-xs font-semibold text-purple-700">
-                                  🔀 Merge from Full Name column
-                                </SelectItem>
-                              )}
+                              {comparisonResult.hasMergedNameColumn &&
+                                (item.expectedHeader === "firstName" ||
+                                  item.expectedHeader === "lastName") && (
+                                  <SelectItem
+                                    value="__MERGE_FULL_NAME__"
+                                    className="text-xs font-semibold text-purple-700"
+                                  >
+                                    🔀 Merge from Full Name column
+                                  </SelectItem>
+                                )}
                               {uploadedHeaders.map((header) => (
-                                <SelectItem key={header} value={header} className="text-xs font-mono">
+                                <SelectItem
+                                  key={header}
+                                  value={header}
+                                  className="text-xs font-mono"
+                                >
                                   {header}
                                 </SelectItem>
                               ))}
@@ -514,7 +616,9 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
             {/* Unmapped Extra Columns Banner if any */}
             {comparisonResult.unmappedUploadedHeaders.length > 0 && (
               <div className="p-3 border rounded-lg bg-muted/30 text-xs space-y-1">
-                <p className="font-semibold text-muted-foreground">Extra Columns in Uploaded File (Ignored):</p>
+                <p className="font-semibold text-muted-foreground">
+                  Extra Columns in Uploaded File (Ignored):
+                </p>
                 <div className="flex flex-wrap gap-1.5">
                   {comparisonResult.unmappedUploadedHeaders.map((col) => (
                     <Badge key={col} variant="secondary" className="font-mono text-[10px]">
@@ -537,7 +641,12 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
                   {parseResult.data.length} valid pupil records found
                 </p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setStage("compare")} className="gap-1 text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setStage("compare")}
+                className="gap-1 text-xs"
+              >
                 <Columns className="h-3.5 w-3.5" /> Adjust Column Mapping
               </Button>
             </div>
@@ -610,7 +719,9 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
             {/* Preview Table */}
             {parseResult.data.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wider text-foreground">Preview Parsed Data (First 5 Pupils)</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                  Preview Parsed Data (First 5 Pupils)
+                </p>
                 <div className="border rounded-xl overflow-hidden max-h-60 overflow-y-auto">
                   <Table>
                     <TableHeader className="bg-muted/50">
@@ -626,12 +737,18 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
                     <TableBody>
                       {parseResult.data.slice(0, 5).map((row, i) => (
                         <TableRow key={i}>
-                          <TableCell className="font-mono text-xs font-medium">{row.admissionNo}</TableCell>
-                          <TableCell className="text-xs">{row.firstName} {row.lastName}</TableCell>
+                          <TableCell className="font-mono text-xs font-medium">
+                            {row.admissionNo}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {row.firstName} {row.lastName}
+                          </TableCell>
                           <TableCell className="text-xs">{row.gender}</TableCell>
                           <TableCell className="text-xs font-mono">{row.dob}</TableCell>
                           <TableCell className="text-xs font-medium">{row.className}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{row.parentName} ({row.parentPhone})</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {row.parentName} ({row.parentPhone})
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -684,14 +801,20 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
               <div className="flex items-center gap-3 p-4 border rounded-xl bg-green-50/50 dark:bg-green-950/20 border-green-200">
                 <CheckCircle className="h-6 w-6 text-green-600" />
                 <div>
-                  <p className="text-2xl font-bold text-green-700 dark:text-green-400">{uploadResult.successCount}</p>
-                  <p className="text-xs text-green-800 dark:text-green-300">Successfully Imported</p>
+                  <p className="text-2xl font-bold text-green-700 dark:text-green-400">
+                    {uploadResult.successCount}
+                  </p>
+                  <p className="text-xs text-green-800 dark:text-green-300">
+                    Successfully Imported
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-4 border rounded-xl bg-red-50/50 dark:bg-red-950/20 border-red-200">
                 <XCircle className="h-6 w-6 text-red-600" />
                 <div>
-                  <p className="text-2xl font-bold text-red-700 dark:text-red-400">{uploadResult.failCount}</p>
+                  <p className="text-2xl font-bold text-red-700 dark:text-red-400">
+                    {uploadResult.failCount}
+                  </p>
                   <p className="text-xs text-red-800 dark:text-red-300">Failed Records</p>
                 </div>
               </div>
@@ -714,7 +837,9 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
                         .filter((r) => !r.success)
                         .map((result, i) => (
                           <TableRow key={i}>
-                            <TableCell className="font-mono text-xs">{result.admissionNo}</TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {result.admissionNo}
+                            </TableCell>
                             <TableCell className="text-xs">{result.name}</TableCell>
                             <TableCell className="text-xs text-red-600">{result.error}</TableCell>
                           </TableRow>
@@ -769,9 +894,7 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
               <Button variant="outline" onClick={handleReset}>
                 Upload Another CSV
               </Button>
-              <Button onClick={handleClose}>
-                Done
-              </Button>
+              <Button onClick={handleClose}>Done</Button>
             </>
           )}
         </DialogFooter>

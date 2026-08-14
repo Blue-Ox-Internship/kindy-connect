@@ -114,12 +114,21 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         </nav>
         <div className="border-t p-3 space-y-3">
           <div className="rounded-lg bg-muted/40 p-2.5 text-xs space-y-1">
-            <div className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider">For Inquiries</div>
-            <a href="tel:0786951347" className="flex items-center gap-1.5 font-medium text-foreground hover:underline">
+            <div className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider">
+              For Inquiries
+            </div>
+            <a
+              href="tel:0786951347"
+              className="flex items-center gap-1.5 font-medium text-foreground hover:underline"
+            >
               <Phone className="h-3 w-3 text-primary shrink-0" />
               <span>0786951347</span>
             </a>
-            <a href="mailto:nobleahimbisibwe5@gmail.com" className="flex items-center gap-1.5 text-muted-foreground hover:underline truncate" title="nobleahimbisibwe5@gmail.com">
+            <a
+              href="mailto:nobleahimbisibwe5@gmail.com"
+              className="flex items-center gap-1.5 text-muted-foreground hover:underline truncate"
+              title="nobleahimbisibwe5@gmail.com"
+            >
               <Mail className="h-3 w-3 text-primary shrink-0" />
               <span className="truncate">nobleahimbisibwe5@gmail.com</span>
             </a>
@@ -163,12 +172,18 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
             </Badge>
             <div className="hidden lg:flex items-center gap-3 rounded-lg border bg-card/60 px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
               <span className="font-semibold text-foreground">Inquiries:</span>
-              <a href="tel:0786951347" className="flex items-center gap-1 font-medium text-foreground hover:text-primary hover:underline">
+              <a
+                href="tel:0786951347"
+                className="flex items-center gap-1 font-medium text-foreground hover:text-primary hover:underline"
+              >
                 <Phone className="h-3.5 w-3.5 text-primary" />
                 0786951347
               </a>
               <span className="text-border">•</span>
-              <a href="mailto:nobleahimbisibwe5@gmail.com" className="flex items-center gap-1 font-medium text-foreground hover:text-primary hover:underline">
+              <a
+                href="mailto:nobleahimbisibwe5@gmail.com"
+                className="flex items-center gap-1 font-medium text-foreground hover:text-primary hover:underline"
+              >
                 <Mail className="h-3.5 w-3.5 text-primary" />
                 nobleahimbisibwe5@gmail.com
               </a>

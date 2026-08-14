@@ -1,6 +1,7 @@
 import postgres from "postgres";
 
-const connectionString = "postgresql://postgres:cNdFqdQgDFeW3ZUy@db.eoboieyyszobkejfzqis.supabase.co:5432/postgres";
+const connectionString =
+  "postgresql://postgres:cNdFqdQgDFeW3ZUy@db.eoboieyyszobkejfzqis.supabase.co:5432/postgres";
 
 console.log("Connecting to new database...");
 

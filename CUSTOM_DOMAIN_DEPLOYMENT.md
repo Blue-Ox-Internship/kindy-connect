@@ -34,6 +34,7 @@
 **Where:** Pupils page → "Bulk Upload" button (next to "Register pupil")
 
 **What it does:**
+
 - Upload multiple pupils at once via CSV file
 - Download pre-formatted template
 - Automatic validation before upload
@@ -66,6 +67,7 @@
 ## 🔍 How to Verify Deployment is Complete
 
 ### Method 1: Check Vercel Dashboard
+
 1. Go to: https://vercel.com/dashboard
 2. Click "kindy-connect" project
 3. Look at "Deployments" tab
@@ -74,12 +76,14 @@
    - ✅ "Ready" (completed)
 
 ### Method 2: Check Your Custom Domain
+
 1. Go to: https://aia-academy.org
 2. Hard refresh (Ctrl+Shift+R or Cmd+Shift+R)
 3. Login and go to Pupils page
 4. If you see "Bulk Upload" button → ✅ Deployed!
 
 ### Method 3: Check Domain Settings
+
 1. Vercel Dashboard → kindy-connect
 2. Settings → Domains
 3. Should show: aia-academy.org
@@ -103,6 +107,7 @@
 ## ⚠️ If Changes Don't Appear After 5 Minutes
 
 ### Check 1: Vercel Deployment Status
+
 ```
 1. Go to Vercel Dashboard
 2. Check latest deployment
@@ -111,6 +116,7 @@
 ```
 
 ### Check 2: Clear Browser Cache
+
 ```
 1. Hard refresh: Ctrl+Shift+R (Windows) or Cmd+Shift+R (Mac)
 2. Or clear browser cache
@@ -119,6 +125,7 @@
 ```
 
 ### Check 3: DNS Propagation
+
 ```
 - If domain was recently changed, DNS may take time
 - Usually instant, but can take up to 24 hours in rare cases
@@ -126,6 +133,7 @@
 ```
 
 ### Check 4: Vercel Configuration
+
 ```
 1. Vercel Dashboard → kindy-connect
 2. Settings → Domains
@@ -138,6 +146,7 @@
 ## 📁 What Was Deployed to aia-academy.org
 
 ### New Feature Files:
+
 - CSV parsing and validation system
 - Bulk upload UI dialog component
 - Database bulk insert function
@@ -145,12 +154,14 @@
 - User documentation
 
 ### Changes:
+
 - ✅ 6 new files created
 - ✅ 3 files modified
 - ✅ ~2,150 lines of code added
 - ✅ ~1,700 lines of documentation
 
 ### Feature Summary:
+
 - Upload multiple pupils via CSV
 - Template generator
 - Field validation (10 fields per pupil)
@@ -198,6 +209,7 @@ After 2-3 minutes, run this quick test:
 ## 📞 Support
 
 If you have issues:
+
 1. Wait full 5 minutes for deployment
 2. Hard refresh your browser
 3. Check Vercel dashboard for errors
@@ -220,9 +232,11 @@ If you have issues:
 ## 🎯 Next Actions
 
 **Right Now:**
+
 1. ⏳ Wait 2-3 minutes for Vercel to build and deploy
 
 **After 2-3 Minutes:**
+
 1. 🔄 Go to https://aia-academy.org
 2. 🔄 Hard refresh (Ctrl+Shift+R)
 3. 🔍 Check for "Bulk Upload" button on Pupils page
@@ -241,4 +255,3 @@ If you have issues:
 **Status:** ⏳ Deploying  
 **ETA:** 2-3 minutes  
 **Feature:** Bulk Upload Pupils (CSV)
-

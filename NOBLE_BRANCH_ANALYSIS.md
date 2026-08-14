@@ -9,6 +9,7 @@
 ## 🎯 Key Changes from Main Branch
 
 ### 1. **Refactoring & Cleanup** ✅
+
 - **Renamed:** `mock-store.tsx` → `store.tsx` (cleaner naming)
 - **Removed:** Mock-era `loginAs` method
 - **Removed:** Lock screen component (46 lines removed)
@@ -20,6 +21,7 @@
 ---
 
 ### 2. **Authentication Improvements** ✅
+
 - **Added:** Password requirement for sign-in
 - **Added:** Tenant-aware data loading (multi-school support)
 - **Improved:** Login flow with better validation
@@ -29,18 +31,21 @@
 ---
 
 ### 3. **Database & Deployment** ✅
+
 - **Fixed:** Deployment issues
 - **Removed:** Mock data and seed files
 - **Added:** Report format customization
 - **Cleaned:** Database migrations directory
 
 **Files Removed:**
+
 - `clear_mock_data.sql`
 - `seed_add_5_pupils.sql`
 
 ---
 
 ### 4. **Dependencies Added** ✅
+
 - **bcrypt:** `^6.0.0` - Ready for password hashing implementation
 - **undici:** For better HTTP client support
 - **unstorage:** For better caching capabilities
@@ -112,12 +117,13 @@ kindy-connect/
 ### 🔴 **Critical Issues**
 
 #### 1. **Security: Plain Text Passwords**
+
 ```typescript
 // Current (INSECURE)
-password: 'admin123' // Stored as plain text
+password: "admin123"; // Stored as plain text
 
 // Needed
-import bcrypt from 'bcrypt';
+import bcrypt from "bcrypt";
 const hashed = await bcrypt.hash(password, 10);
 ```
 
@@ -127,11 +133,13 @@ const hashed = await bcrypt.hash(password, 10);
 ---
 
 #### 2. **Database Connection Issues**
+
 - Supabase free tier keeps pausing
 - Connection errors disrupting workflow
 - No connection retry logic
 
 **Solutions:**
+
 - Upgrade to Supabase Pro ($25/month)
 - Add connection pooling
 - Implement offline-first architecture
@@ -141,12 +149,14 @@ const hashed = await bcrypt.hash(password, 10);
 ### 🟡 **Medium Priority Issues**
 
 #### 3. **No Testing**
+
 - Zero test coverage
 - No unit tests
 - No integration tests
 - No E2E tests
 
 **Recommendation:**
+
 ```bash
 npm install -D vitest @testing-library/react
 ```
@@ -154,11 +164,13 @@ npm install -D vitest @testing-library/react
 ---
 
 #### 4. **No Error Monitoring**
+
 - No Sentry/error tracking
 - Limited error handling
 - No performance monitoring
 
 **Recommendation:**
+
 ```bash
 npm install @sentry/react
 ```
@@ -166,6 +178,7 @@ npm install @sentry/react
 ---
 
 #### 5. **Missing TypeScript Strict Mode**
+
 ```json
 // tsconfig.json - Add:
 {
@@ -180,6 +193,7 @@ npm install @sentry/react
 ---
 
 #### 6. **No CI/CD Pipeline**
+
 - No automated testing
 - No automated linting
 - Manual deployment process
@@ -191,6 +205,7 @@ npm install @sentry/react
 ### 🟢 **Minor Issues**
 
 #### 7. **Documentation**
+
 - ✅ README.md exists
 - ❌ No API documentation
 - ❌ No component documentation
@@ -199,6 +214,7 @@ npm install @sentry/react
 ---
 
 #### 8. **Performance**
+
 - No lazy loading
 - No code splitting optimization
 - No image optimization
@@ -208,24 +224,25 @@ npm install @sentry/react
 
 ## 📊 Code Quality Metrics
 
-| Metric | Status | Notes |
-|--------|--------|-------|
-| TypeScript | 🟢 Good | Using TS throughout |
-| Type Safety | 🟡 Medium | No strict mode |
-| Code Organization | 🟢 Good | Clean structure |
-| Component Size | 🟢 Good | Well-scoped |
-| Naming Conventions | 🟢 Good | Consistent |
-| Error Handling | 🟡 Medium | Could be better |
-| Security | 🔴 Critical | Plain text passwords |
-| Testing | 🔴 None | 0% coverage |
-| Documentation | 🟡 Basic | README only |
-| Performance | 🟡 Medium | No optimization |
+| Metric             | Status      | Notes                |
+| ------------------ | ----------- | -------------------- |
+| TypeScript         | 🟢 Good     | Using TS throughout  |
+| Type Safety        | 🟡 Medium   | No strict mode       |
+| Code Organization  | 🟢 Good     | Clean structure      |
+| Component Size     | 🟢 Good     | Well-scoped          |
+| Naming Conventions | 🟢 Good     | Consistent           |
+| Error Handling     | 🟡 Medium   | Could be better      |
+| Security           | 🔴 Critical | Plain text passwords |
+| Testing            | 🔴 None     | 0% coverage          |
+| Documentation      | 🟡 Basic    | README only          |
+| Performance        | 🟡 Medium   | No optimization      |
 
 ---
 
 ## 🚀 Recommended Immediate Actions
 
 ### Priority 1: Security (Do Today)
+
 ```bash
 # 1. Implement password hashing
 # File: src/lib/db-functions.ts
@@ -246,6 +263,7 @@ export async function loginUser(id, password) {
 ```
 
 ### Priority 2: Database (Do Today)
+
 ```typescript
 // Add retry logic for database connections
 // File: src/lib/db.ts
@@ -258,7 +276,7 @@ export const sql = postgres(connectionString, {
   onnotice: () => {},
   // Add retry
   connection: {
-    application_name: 'kindy-connect',
+    application_name: "kindy-connect",
   },
   transform: {
     undefined: null,
@@ -267,6 +285,7 @@ export const sql = postgres(connectionString, {
 ```
 
 ### Priority 3: Environment (Do This Week)
+
 ```bash
 # Upgrade Supabase to Pro
 # - No pausing
@@ -279,33 +298,33 @@ export const sql = postgres(connectionString, {
 
 ## 🎯 Feature Completeness
 
-| Feature | Status | Quality |
-|---------|--------|---------|
-| Authentication | ✅ Basic | 🟡 Needs hashing |
-| Multi-school | ✅ Complete | 🟢 Good |
-| User Management | ✅ Complete | 🟢 Good |
-| Pupil Management | ✅ Complete | 🟢 Good |
-| Attendance | ✅ Complete | 🟢 Good |
-| Marks & Grades | ✅ Complete | 🟢 Good |
-| Reports | ✅ Complete | 🟢 Good |
-| Audit Logs | ✅ Complete | 🟢 Good |
-| Notifications | ✅ Partial | 🟡 SMS/Email not implemented |
-| RLS Policies | ✅ Ready | 🟡 Not tested |
+| Feature          | Status      | Quality                      |
+| ---------------- | ----------- | ---------------------------- |
+| Authentication   | ✅ Basic    | 🟡 Needs hashing             |
+| Multi-school     | ✅ Complete | 🟢 Good                      |
+| User Management  | ✅ Complete | 🟢 Good                      |
+| Pupil Management | ✅ Complete | 🟢 Good                      |
+| Attendance       | ✅ Complete | 🟢 Good                      |
+| Marks & Grades   | ✅ Complete | 🟢 Good                      |
+| Reports          | ✅ Complete | 🟢 Good                      |
+| Audit Logs       | ✅ Complete | 🟢 Good                      |
+| Notifications    | ✅ Partial  | 🟡 SMS/Email not implemented |
+| RLS Policies     | ✅ Ready    | 🟡 Not tested                |
 
 ---
 
 ## 🏆 Noble Branch Score Card
 
-| Category | Score | Grade |
-|----------|-------|-------|
-| **Architecture** | 9/10 | A |
-| **Code Quality** | 7/10 | B |
-| **Security** | 4/10 | D 🔴 |
-| **Performance** | 6/10 | C |
-| **Testing** | 0/10 | F 🔴 |
-| **Documentation** | 6/10 | C |
-| **Deployment** | 8/10 | B+ |
-| **Features** | 9/10 | A |
+| Category          | Score | Grade |
+| ----------------- | ----- | ----- |
+| **Architecture**  | 9/10  | A     |
+| **Code Quality**  | 7/10  | B     |
+| **Security**      | 4/10  | D 🔴  |
+| **Performance**   | 6/10  | C     |
+| **Testing**       | 0/10  | F 🔴  |
+| **Documentation** | 6/10  | C     |
+| **Deployment**    | 8/10  | B+    |
+| **Features**      | 9/10  | A     |
 
 **Overall: 6.1/10 - Good foundation, critical security issues**
 
@@ -314,6 +333,7 @@ export const sql = postgres(connectionString, {
 ## 📋 30-Day Roadmap
 
 ### Week 1: Critical Fixes
+
 - [ ] Implement bcrypt password hashing
 - [ ] Add password reset functionality
 - [ ] Fix database connection reliability
@@ -321,6 +341,7 @@ export const sql = postgres(connectionString, {
 - [ ] Implement proper error logging
 
 ### Week 2: Quality Improvements
+
 - [ ] Add unit tests (target 50% coverage)
 - [ ] Add integration tests
 - [ ] Enable TypeScript strict mode
@@ -328,6 +349,7 @@ export const sql = postgres(connectionString, {
 - [ ] Implement proper session management
 
 ### Week 3: Performance & UX
+
 - [ ] Add React Query caching
 - [ ] Implement lazy loading
 - [ ] Optimize images
@@ -335,6 +357,7 @@ export const sql = postgres(connectionString, {
 - [ ] Improve error messages
 
 ### Week 4: Features & Polish
+
 - [ ] Complete SMS/Email notifications
 - [ ] Add bulk operations
 - [ ] Generate report PDFs
@@ -346,27 +369,30 @@ export const sql = postgres(connectionString, {
 ## 🔧 Quick Fixes (Do Now)
 
 ### Fix 1: Update .env.example with all variables
+
 ```bash
 cp .env .env.example
 # Then remove sensitive values
 ```
 
 ### Fix 2: Add .env validation
+
 ```typescript
 // src/lib/env.ts
-import { z } from 'zod';
+import { z } from "zod";
 
 const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string(),
-  NODE_ENV: z.enum(['development', 'production', 'test']),
+  NODE_ENV: z.enum(["development", "production", "test"]),
 });
 
 export const env = envSchema.parse(process.env);
 ```
 
 ### Fix 3: Add TypeScript strict mode
+
 ```json
 // tsconfig.json
 {
@@ -384,15 +410,15 @@ export const env = envSchema.parse(process.env);
 
 ## 🎭 Comparison: Main vs Noble Branch
 
-| Aspect | Main | Noble | Winner |
-|--------|------|-------|--------|
-| Code Organization | Good | Better | Noble ✅ |
-| Mock Data | Yes | No | Noble ✅ |
-| File Naming | mock-store | store | Noble ✅ |
-| Commits | Messy | Clean | Noble ✅ |
-| Dependencies | Basic | + bcrypt, unstorage | Noble ✅ |
-| Features | Same | Same | Tie |
-| Security | Plain text | Plain text | Tie 🔴 |
+| Aspect            | Main       | Noble               | Winner   |
+| ----------------- | ---------- | ------------------- | -------- |
+| Code Organization | Good       | Better              | Noble ✅ |
+| Mock Data         | Yes        | No                  | Noble ✅ |
+| File Naming       | mock-store | store               | Noble ✅ |
+| Commits           | Messy      | Clean               | Noble ✅ |
+| Dependencies      | Basic      | + bcrypt, unstorage | Noble ✅ |
+| Features          | Same       | Same                | Tie      |
+| Security          | Plain text | Plain text          | Tie 🔴   |
 
 **Recommendation:** Continue with Noble branch, it's cleaner and more production-ready.
 
@@ -413,18 +439,21 @@ Total: 6 hours to address critical issues
 ## 🤝 Team Recommendations
 
 ### For Developers:
+
 - Use Noble branch as main development branch
 - Implement security fixes immediately
 - Add tests for new features
 - Follow TypeScript strict mode
 
 ### For Deployment:
+
 - Upgrade Supabase to Pro
 - Set up error monitoring
 - Configure CI/CD pipeline
 - Add health checks
 
 ### For Product:
+
 - Current features are complete
 - Focus on security & stability
 - Plan next feature set
@@ -434,4 +463,3 @@ Total: 6 hours to address critical issues
 
 **Status:** Noble branch is production-ready EXCEPT for password security.  
 **Action:** Fix password hashing, then deploy confidently! 🚀
-

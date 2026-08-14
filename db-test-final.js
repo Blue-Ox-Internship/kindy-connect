@@ -1,12 +1,13 @@
 import postgres from "postgres";
 
-const connectionString = "postgresql://postgres.eoboieyyszobkejfzqis:Kgf8cygCvnWUNZKo@aws-0-eu-central-1.pooler.supabase.com:6543/postgres";
+const connectionString =
+  "postgresql://postgres.eoboieyyszobkejfzqis:Kgf8cygCvnWUNZKo@aws-0-eu-central-1.pooler.supabase.com:6543/postgres";
 
 console.log("Connecting to database...");
 
 const sql = postgres(connectionString, {
   connect_timeout: 5,
-  prepare: false
+  prepare: false,
 });
 
 try {

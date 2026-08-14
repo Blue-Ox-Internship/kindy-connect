@@ -107,10 +107,12 @@ interface Store {
     data: Partial<Omit<User, "id" | "registeredAt">> & { password?: string },
   ) => Promise<void>;
   addPupil: (data: Omit<Pupil, "id" | "active"> & { parent?: Omit<Parent, "id"> }) => Promise<void>;
-  bulkAddPupils: (pupils: Array<{
-    pupil: Omit<Pupil, "id" | "active">;
-    parent: Omit<Parent, "id">;
-  }>) => Promise<{
+  bulkAddPupils: (
+    pupils: Array<{
+      pupil: Omit<Pupil, "id" | "active">;
+      parent: Omit<Parent, "id">;
+    }>,
+  ) => Promise<{
     total: number;
     successCount: number;
     failCount: number;
@@ -171,11 +173,19 @@ interface Store {
   }) => Promise<void>;
   updateSchool: (id: string, data: Partial<Omit<School, "id" | "registeredAt">>) => Promise<void>;
   deleteSchool: (id: string) => Promise<void>;
-  addClass: (data: { name: string; schoolId: string; teacherId?: string; subjects?: string[] }) => Promise<void>;
+  addClass: (data: {
+    name: string;
+    schoolId: string;
+    teacherId?: string;
+    subjects?: string[];
+  }) => Promise<void>;
   updateClass: (id: string, data: Partial<Omit<ClassRoom, "id">>) => Promise<void>;
   deleteClass: (id: string) => Promise<void>;
   addSubject: (data: { schoolId: string; name: string; code?: string }) => Promise<void>;
-  addSubjectsBulk: (data: { schoolId: string; subjects: Array<{ name: string; code?: string }> }) => Promise<void>;
+  addSubjectsBulk: (data: {
+    schoolId: string;
+    subjects: Array<{ name: string; code?: string }>;
+  }) => Promise<void>;
   updateSubject: (id: string, name: string, code?: string) => Promise<void>;
   deleteSubject: (id: string) => Promise<void>;
   seedDefaultSubjects: (schoolId: string) => Promise<void>;
@@ -294,7 +304,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }, 25000);
 
     try {
-      const data = (await getInitialData({ data: { userId: state.currentUserId ?? undefined } })) as any;
+      const data = (await getInitialData({
+        data: { userId: state.currentUserId ?? undefined },
+      })) as any;
       if (data?.error) {
         throw new Error(data.error);
       }
@@ -343,9 +355,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // Refresh function to reload data from database
   const refreshData = useCallback(async () => {
     try {
-      const data = (await getInitialData({ data: { userId: state.currentUserId ?? undefined } })) as any;
+      const data = (await getInitialData({
+        data: { userId: state.currentUserId ?? undefined },
+      })) as any;
       if (!data || data.error || !data.users || data.users.length === 0) {
-        console.warn("refreshData returned error or empty users, preserving existing state:", data?.error);
+        console.warn(
+          "refreshData returned error or empty users, preserving existing state:",
+          data?.error,
+        );
         return;
       }
       setState((s) => ({
@@ -367,8 +384,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       console.error("Failed to refresh database data:", err);
     }
   }, [state.currentUserId]);
-
-
 
   // Sync user session to local storage
   useEffect(() => {
@@ -435,25 +450,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, []);
 
-  const unlock = useCallback(async (password: string) => {
-    // Validate password for current user id
-    if (!state.currentUserId) return false;
-    try {
-      const u = await loginUser({ data: { id: state.currentUserId, password } });
-      if (u) {
-        setIsLocked(false);
-        try {
-          sessionStorage.removeItem("kinder.locked");
-        } catch {}
-        // refresh idle timer
-        startIdleTimer();
-        return true;
+  const unlock = useCallback(
+    async (password: string) => {
+      // Validate password for current user id
+      if (!state.currentUserId) return false;
+      try {
+        const u = await loginUser({ data: { id: state.currentUserId, password } });
+        if (u) {
+          setIsLocked(false);
+          try {
+            sessionStorage.removeItem("kinder.locked");
+          } catch {}
+          // refresh idle timer
+          startIdleTimer();
+          return true;
+        }
+      } catch (err) {
+        console.error("Unlock failed:", err);
       }
-    } catch (err) {
-      console.error("Unlock failed:", err);
-    }
-    return false;
-  }, [state.currentUserId, startIdleTimer]);
+      return false;
+    },
+    [state.currentUserId, startIdleTimer],
+  );
 
   // Sync school context to session storage
   useEffect(() => {
@@ -600,8 +618,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return u;
     },
 
-
-
     logout: () => {
       setState((s) => ({ ...s, currentUserId: null, selectedSchoolId: null }));
       setIsLocked(false);
@@ -629,7 +645,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       classId,
     }) => {
       const res = await registerUserDb({
-        data: { id, name, email, phone, password, role, schoolId, newSchoolName, status, subjects, photo, classId },
+        data: {
+          id,
+          name,
+          email,
+          phone,
+          password,
+          role,
+          schoolId,
+          newSchoolName,
+          status,
+          subjects,
+          photo,
+          classId,
+        },
       });
       setState((s) => {
         const nextUsers = [...s.users, res.user];
@@ -777,12 +806,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
 
     bulkAddPupils: async (pupils) => {
-      if (!currentUser) return {
-        total: 0,
-        successCount: 0,
-        failCount: 0,
-        results: [],
-      };
+      if (!currentUser)
+        return {
+          total: 0,
+          successCount: 0,
+          failCount: 0,
+          results: [],
+        };
 
       const schoolId = currentUser.schoolId;
 
@@ -869,7 +899,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       // Optimistic state update for instant UI feedback across Dashboard & Attendance
       setState((s) => {
-        const existingIndex = s.attendance.findIndex((a) => a.pupilId === pupilId && a.date === date);
+        const existingIndex = s.attendance.findIndex(
+          (a) => a.pupilId === pupilId && a.date === date,
+        );
         let updatedAtt: Attendance;
         if (existingIndex >= 0) {
           updatedAtt = {
@@ -895,9 +927,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           };
         }
 
-        const nextAttendance = existingIndex >= 0
-          ? s.attendance.map((a, i) => (i === existingIndex ? updatedAtt : a))
-          : [updatedAtt, ...s.attendance];
+        const nextAttendance =
+          existingIndex >= 0
+            ? s.attendance.map((a, i) => (i === existingIndex ? updatedAtt : a))
+            : [updatedAtt, ...s.attendance];
 
         return { ...s, attendance: nextAttendance };
       });
@@ -923,12 +956,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             attendance: nextAtt,
             notifications: [
               ...res.notifications,
-              ...s.notifications.filter((n) => !res.notifications.some((rn: any) => rn.id === n.id)),
+              ...s.notifications.filter(
+                (n) => !res.notifications.some((rn: any) => rn.id === n.id),
+              ),
             ],
-            audit: [
-              res.audit,
-              ...s.audit.filter((a) => a.id !== res.audit.id),
-            ],
+            audit: [res.audit, ...s.audit.filter((a) => a.id !== res.audit.id)],
           };
         });
       } catch (err) {
@@ -956,7 +988,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       // Optimistic state update
       setState((s) => {
-        const existingIndex = s.attendance.findIndex((a) => a.pupilId === pupilId && a.date === date);
+        const existingIndex = s.attendance.findIndex(
+          (a) => a.pupilId === pupilId && a.date === date,
+        );
         let updatedAtt: Attendance;
         if (existingIndex >= 0) {
           updatedAtt = {
@@ -982,9 +1016,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           };
         }
 
-        const nextAttendance = existingIndex >= 0
-          ? s.attendance.map((a, i) => (i === existingIndex ? updatedAtt : a))
-          : [updatedAtt, ...s.attendance];
+        const nextAttendance =
+          existingIndex >= 0
+            ? s.attendance.map((a, i) => (i === existingIndex ? updatedAtt : a))
+            : [updatedAtt, ...s.attendance];
 
         return { ...s, attendance: nextAttendance };
       });
@@ -1010,12 +1045,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             attendance: nextAtt,
             notifications: [
               ...res.notifications,
-              ...s.notifications.filter((n) => !res.notifications.some((rn: any) => rn.id === n.id)),
+              ...s.notifications.filter(
+                (n) => !res.notifications.some((rn: any) => rn.id === n.id),
+              ),
             ],
-            audit: [
-              res.audit,
-              ...s.audit.filter((a) => a.id !== res.audit.id),
-            ],
+            audit: [res.audit, ...s.audit.filter((a) => a.id !== res.audit.id)],
           };
         });
       } catch (err) {
@@ -1113,10 +1147,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       setState((s) => {
         const savedIds = new Set(savedMarks.map((m: any) => m.id));
-        const updatedMarksList = [
-          ...savedMarks,
-          ...s.marks.filter((m) => !savedIds.has(m.id)),
-        ];
+        const updatedMarksList = [...savedMarks, ...s.marks.filter((m) => !savedIds.has(m.id))];
 
         return {
           ...s,
@@ -1503,11 +1534,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  return (
-    <Ctx.Provider value={store}>
-      {children}
-    </Ctx.Provider>
-  );
+  return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }
 
 export function useStore() {

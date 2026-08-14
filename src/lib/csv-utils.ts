@@ -65,27 +65,57 @@ export const HEADER_LABELS: Record<
   ExpectedHeader,
   { label: string; required: boolean; description: string }
 > = {
-  admissionNo: { label: "Admission Number", required: true, description: "Unique pupil admission/ID number" },
+  admissionNo: {
+    label: "Admission Number",
+    required: true,
+    description: "Unique pupil admission/ID number",
+  },
   firstName: { label: "First Name", required: true, description: "Pupil's first name" },
   lastName: { label: "Last Name", required: true, description: "Pupil's surname / last name" },
   gender: { label: "Gender", required: true, description: "M or F" },
   dob: { label: "Date of Birth", required: true, description: "Format: YYYY-MM-DD" },
   className: { label: "Class Name", required: true, description: "Exact class name in school" },
   parentName: { label: "Parent Name", required: true, description: "Full name of parent/guardian" },
-  parentPhone: { label: "Parent Phone", required: true, description: "Phone number with country code" },
+  parentPhone: {
+    label: "Parent Phone",
+    required: true,
+    description: "Phone number with country code",
+  },
   parentEmail: { label: "Parent Email", required: true, description: "Valid email address" },
-  parentRelationship: { label: "Relationship", required: true, description: "Father, Mother, Guardian, etc." },
+  parentRelationship: {
+    label: "Relationship",
+    required: true,
+    description: "Father, Mother, Guardian, etc.",
+  },
 };
 
 export const HEADER_ALIASES: Record<ExpectedHeader, string[]> = {
-  admissionNo: ["admissionno", "admission_no", "admission", "adm_no", "adm", "pupil_id", "student_id", "reg_no", "id"],
+  admissionNo: [
+    "admissionno",
+    "admission_no",
+    "admission",
+    "adm_no",
+    "adm",
+    "pupil_id",
+    "student_id",
+    "reg_no",
+    "id",
+  ],
   firstName: ["firstname", "first_name", "fname", "given_name", "first"],
   lastName: ["lastname", "last_name", "lname", "surname", "family_name", "last"],
   gender: ["gender", "sex"],
   dob: ["dob", "dateofbirth", "date_of_birth", "birth_date", "birthdate"],
   className: ["classname", "class_name", "class", "grade", "stream", "room"],
   parentName: ["parentname", "parent_name", "guardian_name", "parent", "guardian"],
-  parentPhone: ["parentphone", "parent_phone", "phone", "contact", "mobile", "parent_contact", "telephone"],
+  parentPhone: [
+    "parentphone",
+    "parent_phone",
+    "phone",
+    "contact",
+    "mobile",
+    "parent_contact",
+    "telephone",
+  ],
   parentEmail: ["parentemail", "parent_email", "email", "email_address"],
   parentRelationship: ["parentrelationship", "parent_relationship", "relationship", "relation"],
 };
@@ -167,11 +197,11 @@ export function downloadCSVTemplate(): void {
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
-  
+
   link.setAttribute("href", url);
   link.setAttribute("download", `pupils_upload_template_${Date.now()}.csv`);
   link.style.visibility = "hidden";
-  
+
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -189,7 +219,7 @@ function normalizeHeader(str: string): string {
  */
 export function compareCSVHeaders(
   uploadedHeaders: string[],
-  customMapping: Partial<Record<ExpectedHeader, string>> = {}
+  customMapping: Partial<Record<ExpectedHeader, string>> = {},
 ): ColumnComparisonResult {
   const normUploadedMap = new Map<string, string>();
   uploadedHeaders.forEach((h) => {
@@ -339,7 +369,10 @@ export function compareCSVHeaders(
 /**
  * Parse CSV text to raw header array and row object list
  */
-export function parseCSVRaw(csvText: string): { headers: string[]; rawRows: Record<string, string>[] } {
+export function parseCSVRaw(csvText: string): {
+  headers: string[];
+  rawRows: Record<string, string>[];
+} {
   const lines = csvText.trim().split("\n");
   if (lines.length < 2) {
     throw new Error("CSV file must have at least a header row and one data row");
@@ -367,7 +400,7 @@ export function parseCSVRaw(csvText: string): { headers: string[]; rawRows: Reco
  */
 export function transformRawRows(
   rawRows: Record<string, string>[],
-  columnComparison: ColumnComparisonResult
+  columnComparison: ColumnComparisonResult,
 ): Record<string, string>[] {
   const mappingMap = new Map<ExpectedHeader, string>();
   columnComparison.items.forEach((item) => {
@@ -501,7 +534,7 @@ export function validatePupilsCSV(data: Record<string, string>[]): ParseResult {
  */
 export async function parseCSVFile(
   file: File,
-  customMapping: Partial<Record<ExpectedHeader, string>> = {}
+  customMapping: Partial<Record<ExpectedHeader, string>> = {},
 ): Promise<{
   parseResult: ParseResult;
   comparisonResult: ColumnComparisonResult;
@@ -515,7 +548,7 @@ export async function parseCSVFile(
         const text = e.target?.result as string;
         const { headers, rawRows } = parseCSVRaw(text);
         const comparisonResult = compareCSVHeaders(headers, customMapping);
-        
+
         if (!comparisonResult.isMatchValid) {
           const transformedRows = transformRawRows(rawRows, comparisonResult);
           const validation = validatePupilsCSV(transformedRows);
@@ -524,7 +557,7 @@ export async function parseCSVFile(
             row: 1,
             field: "headers",
             message: `Column mismatch: Required columns (${comparisonResult.missingRequiredHeaders.join(
-              ", "
+              ", ",
             )}) are missing or unmapped`,
           });
           resolve({ parseResult: validation, comparisonResult, rawHeaders: headers });
@@ -547,13 +580,12 @@ export async function parseCSVFile(
   });
 }
 
-
 /**
  * Check for duplicate admission numbers
  */
 export function checkDuplicates(
   data: PupilCSVRow[],
-  existingAdmissionNos: string[]
+  existingAdmissionNos: string[],
 ): Array<{ row: number; admissionNo: string }> {
   const duplicates: Array<{ row: number; admissionNo: string }> = [];
   const existingSet = new Set(existingAdmissionNos.map((a) => a.trim().toLowerCase()));

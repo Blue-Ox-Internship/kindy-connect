@@ -11,69 +11,69 @@ export default defineConfig(({ mode }) => {
     process.env.DATABASE_URL = env.DATABASE_URL;
   }
   return {
-  plugins: [
-    tsConfigPaths({ projects: ["./tsconfig.json"] }),
-    tanstackStart({
-      importProtection: {
-        behavior: "error",
-        client: {
-          files: ["**/server/**"],
-          specifiers: ["server-only"],
+    plugins: [
+      tsConfigPaths({ projects: ["./tsconfig.json"] }),
+      tanstackStart({
+        importProtection: {
+          behavior: "error",
+          client: {
+            files: ["**/server/**"],
+            specifiers: ["server-only"],
+          },
+        },
+        server: { entry: "server" },
+      }),
+      tailwindcss(),
+      react(),
+      nitro({
+        preset: "vercel",
+        publicAssets: [
+          {
+            dir: "public",
+            maxAge: 0,
+          },
+        ],
+      }),
+      {
+        name: "mock-vercel-turborepo-summary",
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url && req.url.includes("/files/turborepo-summary")) {
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ tasks: [] }));
+              return;
+            }
+            next();
+          });
         },
       },
-      server: { entry: "server" },
-    }),
-    tailwindcss(),
-    react(),
-    nitro({
-      preset: "vercel",
-      publicAssets: [
-        {
-          dir: "public",
-          maxAge: 0,
-        },
-      ],
-    }),
-    {
-      name: "mock-vercel-turborepo-summary",
-      configureServer(server) {
-        server.middlewares.use((req, res, next) => {
-          if (req.url && req.url.includes("/files/turborepo-summary")) {
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ tasks: [] }));
-            return;
-          }
-          next();
-        });
-      },
-    },
-  ],
-  resolve: {
-    alias: {
-      "@": "/src",
-    },
-    dedupe: [
-      "react",
-      "react-dom",
-      "react/jsx-runtime",
-      "react/jsx-dev-runtime",
-      "@tanstack/react-query",
-      "@tanstack/query-core",
     ],
-  },
-  server: {
-    host: "::",
-    port: 8080,
-    proxy: {
-      "/api/v6": {
-        target: "https://vercel.com",
-        changeOrigin: true,
+    resolve: {
+      alias: {
+        "@": "/src",
       },
-      "/api/v7": {
-        target: "https://vercel.com",
-        changeOrigin: true,
+      dedupe: [
+        "react",
+        "react-dom",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+        "@tanstack/react-query",
+        "@tanstack/query-core",
+      ],
+    },
+    server: {
+      host: "::",
+      port: 8080,
+      proxy: {
+        "/api/v6": {
+          target: "https://vercel.com",
+          changeOrigin: true,
+        },
+        "/api/v7": {
+          target: "https://vercel.com",
+          changeOrigin: true,
+        },
       },
     },
-  },
-};
+  };
 });
