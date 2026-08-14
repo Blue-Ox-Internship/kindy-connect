@@ -217,7 +217,7 @@ function Dashboard() {
   const today = new Date().toISOString().slice(0, 10);
   const todayAtt = attendance.filter((a) => a.date === today);
   const presentIds = new Set(todayAtt.filter((a) => a.arrival).map((a) => a.pupilId));
-  const pending = users.filter((u) => u.role === "teacher" && u.status === "pending").length;
+  const pending = (users || []).filter((u) => u?.role === "teacher" && u?.status === "pending").length;
 
   const stats = isStaff
     ? [
@@ -801,16 +801,16 @@ function Dashboard() {
 }
 
 function SuperAdminDashboard({ schools, users, pupils, classes, audit, subjects }: any) {
-  const totalTeachers = users.filter(
-    (u: any) => u.role === "teacher" && u.status === "verified",
+  const totalTeachers = (users || []).filter(
+    (u: any) => u?.role === "teacher" && u?.status === "verified",
   ).length;
-  const pendingTeachers = users.filter(
-    (u: any) => u.role === "teacher" && u.status === "pending",
+  const pendingTeachers = (users || []).filter(
+    (u: any) => u?.role === "teacher" && u?.status === "pending",
   ).length;
-  const totalAdmins = users.filter(
-    (u: any) => (u.role === "admin" || u.role === "deputy") && u.status === "verified",
+  const totalAdmins = (users || []).filter(
+    (u: any) => (u?.role === "admin" || u?.role === "deputy") && u?.status === "verified",
   ).length;
-  const activePupils = pupils.filter((p: any) => p.active).length;
+  const activePupils = (pupils || []).filter((p: any) => p?.active).length;
 
   const stats = [
     {

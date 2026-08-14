@@ -196,10 +196,10 @@ function UsersPage() {
   }
 
   // Get role counts for metrics
-  const superAdminCount = users.filter((u) => u.role === "super_admin").length;
-  const adminCount = users.filter((u) => u.role === "admin").length;
-  const deputyCount = users.filter((u) => u.role === "deputy").length;
-  const teacherCount = users.filter((u) => u.role === "teacher").length;
+  const superAdminCount = (users || []).filter((u) => u?.role === "super_admin").length;
+  const adminCount = (users || []).filter((u) => u?.role === "admin").length;
+  const deputyCount = (users || []).filter((u) => u?.role === "deputy").length;
+  const teacherCount = (users || []).filter((u) => u?.role === "teacher").length;
 
   return (
     <AppShell title="User Directory">

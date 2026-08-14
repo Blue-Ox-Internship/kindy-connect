@@ -24,7 +24,7 @@ import { SchoolSelector } from "@/components/school-selector";
 import { useEffect, type ReactNode } from "react";
 
 export function AppShell({ children, title }: { children: ReactNode; title: string }) {
-  const { currentUser, users, logout, schools } = useStore();
+  const { currentUser, users = [], logout, schools = [] } = useStore();
   const { isLocked } = useStore() as any;
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -41,8 +41,8 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
 
   const isSuperAdmin = currentUser.role === "super_admin";
   const isStaff = currentUser.role === "admin" || currentUser.role === "deputy";
-  const pendingCount = users.filter((u) => u.role === "teacher" && u.status === "pending").length;
-  const currentSchool = schools.find((s) => s.id === currentUser.schoolId);
+  const pendingCount = (users || []).filter((u) => u?.role === "teacher" && u?.status === "pending").length;
+  const currentSchool = (schools || []).find((s) => s?.id === currentUser.schoolId);
 
   const items = isSuperAdmin
     ? [
@@ -136,7 +136,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
           <div className="flex items-center gap-3">
             <Avatar className="h-9 w-9">
               <AvatarFallback className="bg-secondary text-secondary-foreground">
-                {currentUser.name
+                {(currentUser.name || "User")
                   .split(" ")
                   .map((p) => p[0])
                   .join("")
@@ -144,9 +144,9 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate">{currentUser.name}</div>
+              <div className="text-sm font-medium truncate">{currentUser.name || "User"}</div>
               <div className="text-xs text-muted-foreground capitalize">
-                {currentUser.role.replace("_", " ")}
+                {(currentUser.role || "").replace("_", " ")}
               </div>
             </div>
             <Button
@@ -168,7 +168,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
           <h1 className="text-2xl font-semibold">{title}</h1>
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="capitalize">
-              {currentUser.role.replace("_", " ")}
+              {(currentUser.role || "").replace("_", " ")}
             </Badge>
             <div className="hidden lg:flex items-center gap-3 rounded-lg border bg-card/60 px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
               <span className="font-semibold text-foreground">Inquiries:</span>
