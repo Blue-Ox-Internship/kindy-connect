@@ -72,7 +72,7 @@ function TeachersPage() {
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
   // Create User Form State
-  const [form, setForm] = useState({
+  const [createForm, setCreateForm] = useState({
     id: "",
     name: "",
     email: "",
@@ -103,7 +103,7 @@ function TeachersPage() {
   const isAuthorized = isSuperAdmin || isSchoolAdmin || currentUser?.role === "deputy";
 
   // Available subjects for Create Modal
-  const targetSchoolForSubjects = form.schoolId || (schoolFilter !== "all" ? schoolFilter : undefined) || currentUser?.schoolId;
+  const targetSchoolForSubjects = createForm.schoolId || (schoolFilter !== "all" ? schoolFilter : undefined) || currentUser?.schoolId;
   const rawSubjects = typeof getSchoolSubjects === "function" ? getSchoolSubjects(targetSchoolForSubjects) : [];
   const availableSubjects = useMemo(() => (rawSubjects || []).map((s) => s.name), [rawSubjects]);
 
@@ -150,14 +150,14 @@ function TeachersPage() {
       if (isEdit) {
         setEditForm((prev) => ({ ...prev, photo: reader.result as string }));
       } else {
-        setForm((prev) => ({ ...prev, photo: reader.result as string }));
+        setCreateForm((prev) => ({ ...prev, photo: reader.result as string }));
       }
     };
     reader.readAsDataURL(file);
   };
 
   const resetForm = () => {
-    setForm({
+    setCreateForm({
       id: "",
       name: "",
       email: "",
@@ -244,11 +244,11 @@ function TeachersPage() {
   };
 
   const submitCreateUser = async () => {
-    const userId = form.id.trim();
-    const name = form.name.trim();
-    const email = form.email.trim();
-    const phone = form.phone.trim();
-    const password = form.password.trim();
+    const userId = createForm.id.trim();
+    const name = createForm.name.trim();
+    const email = createForm.email.trim();
+    const phone = createForm.phone.trim();
+    const password = createForm.password.trim();
 
     if (!userId || !name || !email || !phone || !password) {
       return toast.error("Please fill in all required fields");
@@ -264,31 +264,31 @@ function TeachersPage() {
       return toast.error(`Phone number '${phone}' is already registered`);
     }
 
-    if (form.role === "teacher" && form.subjects.length === 0) {
+    if (createForm.role === "teacher" && createForm.subjects.length === 0) {
       return toast.error("Please select at least one subject for the teacher");
     }
 
-    const targetSchoolId = isSuperAdmin ? form.schoolId : (currentUser?.schoolId ?? "");
+    const targetSchoolId = isSuperAdmin ? createForm.schoolId : (currentUser?.schoolId ?? "");
     if (!isSuperAdmin && !targetSchoolId) {
       return toast.error("School context is missing");
     }
 
     try {
       await registerUser({
-        id: form.id.trim(),
-        name: form.name.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim(),
-        role: form.role,
-        password: form.password,
-        schoolId: isSuperAdmin && form.role === "super_admin" ? undefined : targetSchoolId,
-        classId: form.classId || undefined,
+        id: createForm.id.trim(),
+        name: createForm.name.trim(),
+        email: createForm.email.trim(),
+        phone: createForm.phone.trim(),
+        role: createForm.role,
+        password: createForm.password,
+        schoolId: isSuperAdmin && createForm.role === "super_admin" ? undefined : targetSchoolId,
+        classId: createForm.classId || undefined,
         status: "verified",
-        subjects: form.role === "teacher" ? form.subjects : undefined,
-        photo: form.photo,
+        subjects: createForm.role === "teacher" ? createForm.subjects : undefined,
+        photo: createForm.photo,
       });
 
-      toast.success(`Account for ${form.name} created successfully!`);
+      toast.success(`Account for ${createForm.name} created successfully!`);
       setOpen(false);
       resetForm();
     } catch (error: any) {
@@ -691,8 +691,8 @@ function TeachersPage() {
                       <Label htmlFor="create-id">Login ID *</Label>
                       <Input
                         id="create-id"
-                        value={form.id}
-                        onChange={(e) => setForm({ ...form, id: e.target.value })}
+                        value={createForm.id}
+                        onChange={(e) => setCreateForm({ ...createForm, id: e.target.value })}
                         placeholder="e.g. TCH-001"
                         autoComplete="off"
                       />
@@ -702,8 +702,8 @@ function TeachersPage() {
                       <Input
                         id="create-pwd"
                         type="password"
-                        value={form.password}
-                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        value={createForm.password}
+                        onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
                         placeholder="Secret123"
                         autoComplete="new-password"
                         data-lpignore="true"
@@ -716,8 +716,8 @@ function TeachersPage() {
                     <Label htmlFor="create-name">Full Name *</Label>
                     <Input
                       id="create-name"
-                      value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      value={createForm.name}
+                      onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
                       placeholder="e.g. Jane Doe"
                       autoComplete="off"
                     />
@@ -728,8 +728,8 @@ function TeachersPage() {
                       <Input
                         id="create-email"
                         type="email"
-                        value={form.email}
-                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        value={createForm.email}
+                        onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
                         placeholder="jane@school.com"
                         autoComplete="off"
                       />
@@ -738,8 +738,8 @@ function TeachersPage() {
                       <Label htmlFor="create-phone">Phone Number *</Label>
                       <Input
                         id="create-phone"
-                        value={form.phone}
-                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        value={createForm.phone}
+                        onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
                         placeholder="+256..."
                         autoComplete="off"
                       />
@@ -750,8 +750,8 @@ function TeachersPage() {
                       <Label htmlFor="create-role">System Role</Label>
                       <select
                         id="create-role"
-                        value={form.role}
-                        onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
+                        value={createForm.role}
+                        onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as Role })}
                         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                       >
                         <option value="teacher">Teacher</option>
@@ -764,8 +764,8 @@ function TeachersPage() {
                         <Label htmlFor="create-school">Assigned School</Label>
                         <select
                           id="create-school"
-                          value={form.schoolId}
-                          onChange={(e) => setForm({ ...form, schoolId: e.target.value })}
+                          value={createForm.schoolId}
+                          onChange={(e) => setCreateForm({ ...createForm, schoolId: e.target.value })}
                           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         >
                           {schools.map((s) => (
@@ -781,8 +781,8 @@ function TeachersPage() {
                     <Label htmlFor="create-class">Assigned Class (Optional)</Label>
                     <select
                       id="create-class"
-                      value={form.classId}
-                      onChange={(e) => setForm({ ...form, classId: e.target.value })}
+                      value={createForm.classId}
+                      onChange={(e) => setCreateForm({ ...createForm, classId: e.target.value })}
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
                       <option value="">-- Select Class --</option>
@@ -793,7 +793,7 @@ function TeachersPage() {
                       ))}
                     </select>
                   </div>
-                  {form.role === "teacher" && (
+                  {createForm.role === "teacher" && (
                     <div>
                       <Label htmlFor="create-subjects">Teaching Subjects (Select at least one) *</Label>
                       {availableSubjects.length === 0 ? (
@@ -809,14 +809,14 @@ function TeachersPage() {
                             <label key={subject} className="flex items-center gap-2 cursor-pointer text-xs">
                               <input
                                 type="checkbox"
-                                checked={form.subjects.includes(subject)}
+                                checked={createForm.subjects.includes(subject)}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    setForm({ ...form, subjects: [...form.subjects, subject] });
+                                    setCreateForm({ ...createForm, subjects: [...createForm.subjects, subject] });
                                   } else {
-                                    setForm({
-                                      ...form,
-                                      subjects: form.subjects.filter((s) => s !== subject),
+                                    setCreateForm({
+                                      ...createForm,
+                                      subjects: createForm.subjects.filter((s) => s !== subject),
                                     });
                                   }
                                 }}
@@ -837,10 +837,10 @@ function TeachersPage() {
                       accept="image/*"
                       onChange={(e) => handlePhotoChange(e, false)}
                     />
-                    {form.photo && (
+                    {createForm.photo && (
                       <div className="mt-2 flex items-center gap-2">
                         <img
-                          src={form.photo}
+                          src={createForm.photo}
                           alt="Preview"
                           className="w-12 h-12 object-cover rounded-full border"
                         />
