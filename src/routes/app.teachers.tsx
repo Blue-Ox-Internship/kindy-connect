@@ -38,8 +38,15 @@ import {
   BookMarked,
   Mail,
   Phone,
-  School,
   Building2,
+  Sparkles,
+  LayoutGrid,
+  List,
+  UserPlus,
+  UserCheck,
+  Clock,
+  KeyRound,
+  RefreshCw,
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
@@ -69,7 +76,15 @@ function TeachersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>("teacher");
   const [schoolFilter, setSchoolFilter] = useState<string>("all");
+  const [classFilter, setClassFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [customSubjectInput, setCustomSubjectInput] = useState("");
+
+  const isSuperAdmin = currentUser?.role === "super_admin";
+  const isSchoolAdmin = currentUser?.role === "admin";
+  const isAuthorized = isSuperAdmin || isSchoolAdmin || currentUser?.role === "deputy";
 
   // Create User Form State
   const [createForm, setCreateForm] = useState({
@@ -98,14 +113,33 @@ function TeachersPage() {
     photo: "",
   });
 
-  const isSuperAdmin = currentUser?.role === "super_admin";
-  const isSchoolAdmin = currentUser?.role === "admin";
-  const isAuthorized = isSuperAdmin || isSchoolAdmin || currentUser?.role === "deputy";
+  // Helper to generate next teacher ID
+  const generateTeacherId = () => {
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    return `TCH-${randomNum}`;
+  };
+
+  // Helper to generate a friendly secure password
+  const generatePassword = () => {
+    const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let pwd = "";
+    for (let i = 0; i < 8; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return pwd;
+  };
 
   // Available subjects for Create Modal
-  const targetSchoolForSubjects = createForm.schoolId || (schoolFilter !== "all" ? schoolFilter : undefined) || currentUser?.schoolId;
-  const rawSubjects = typeof getSchoolSubjects === "function" ? getSchoolSubjects(targetSchoolForSubjects) : [];
-  const availableSubjects = useMemo(() => (rawSubjects || []).map((s) => s.name), [rawSubjects]);
+  const targetSchoolForSubjects =
+    createForm.schoolId || (schoolFilter !== "all" ? schoolFilter : undefined) || currentUser?.schoolId;
+  const rawSubjects =
+    typeof getSchoolSubjects === "function" ? getSchoolSubjects(targetSchoolForSubjects) : [];
+  const availableSubjects = useMemo(() => {
+    const fromDb = (rawSubjects || []).map((s) => s.name);
+    // Merge any custom subjects added during creation
+    const merged = Array.from(new Set([...fromDb, ...createForm.subjects]));
+    return merged;
+  }, [rawSubjects, createForm.subjects]);
 
   // Available classes for target school
   const availableClasses = useMemo(() => {
@@ -116,8 +150,12 @@ function TeachersPage() {
 
   // Available subjects for Edit Modal
   const targetEditSchool = editForm.schoolId || currentUser?.schoolId;
-  const rawEditSubjects = typeof getSchoolSubjects === "function" ? getSchoolSubjects(targetEditSchool) : [];
-  const availableEditSubjects = useMemo(() => (rawEditSubjects || []).map((s) => s.name), [rawEditSubjects]);
+  const rawEditSubjects =
+    typeof getSchoolSubjects === "function" ? getSchoolSubjects(targetEditSchool) : [];
+  const availableEditSubjects = useMemo(() => {
+    const fromDb = (rawEditSubjects || []).map((s) => s.name);
+    return Array.from(new Set([...fromDb, ...editForm.subjects]));
+  }, [rawEditSubjects, editForm.subjects]);
 
   const availableEditClasses = useMemo(() => {
     if (!targetEditSchool) return classes || [];
@@ -158,22 +196,25 @@ function TeachersPage() {
 
   const resetForm = () => {
     setCreateForm({
-      id: "",
+      id: generateTeacherId(),
       name: "",
       email: "",
       phone: "",
       role: "teacher" as Role,
       schoolId: currentUser?.schoolId ?? schools?.[0]?.id ?? "",
       classId: "",
-      password: "",
+      password: generatePassword(),
       subjects: [],
       photo: "",
     });
+    setCustomSubjectInput("");
   };
 
   const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen) {
+      resetForm();
+    }
     setOpen(isOpen);
-    resetForm();
   };
 
   const handleOpenEdit = (user: User) => {
@@ -192,6 +233,21 @@ function TeachersPage() {
     setEditOpen(true);
   };
 
+  const handleAddCustomSubject = (isEdit = false) => {
+    const trimmed = customSubjectInput.trim();
+    if (!trimmed) return;
+    if (isEdit) {
+      if (!editForm.subjects.includes(trimmed)) {
+        setEditForm((prev) => ({ ...prev, subjects: [...prev.subjects, trimmed] }));
+      }
+    } else {
+      if (!createForm.subjects.includes(trimmed)) {
+        setCreateForm((prev) => ({ ...prev, subjects: [...prev.subjects, trimmed] }));
+      }
+    }
+    setCustomSubjectInput("");
+  };
+
   const listToDisplay = useMemo(() => {
     let list = users || [];
 
@@ -207,6 +263,11 @@ function TeachersPage() {
       list = list.filter((u) => u?.schoolId === schoolFilter);
     }
 
+    // Filter by class
+    if (classFilter !== "all") {
+      list = list.filter((u) => u?.classId === classFilter);
+    }
+
     // Filter by search query
     if (q.trim()) {
       const searchLower = q.toLowerCase();
@@ -216,22 +277,23 @@ function TeachersPage() {
           (u?.email || "").toLowerCase().includes(searchLower) ||
           (u?.id || "").toLowerCase().includes(searchLower) ||
           (u?.phone || "").toLowerCase().includes(searchLower) ||
-          (u?.subjects || []).some((s) => s.toLowerCase().includes(searchLower)),
+          (u?.subjects || []).some((s) => s.toLowerCase().includes(searchLower)) ||
+          (classes?.find((c) => c.id === u?.classId)?.name || "").toLowerCase().includes(searchLower),
       );
     }
 
     return list;
-  }, [users, roleFilter, isSuperAdmin, currentUser, schoolFilter, q]);
+  }, [users, roleFilter, isSuperAdmin, currentUser, schoolFilter, classFilter, q, classes]);
 
-  const pending = useMemo(
+  const activeTeachers = useMemo(
+    () => (listToDisplay || []).filter((t) => t?.status === "verified" || !t?.status),
+    [listToDisplay],
+  );
+  const pendingTeachers = useMemo(
     () => (listToDisplay || []).filter((t) => t?.status === "pending"),
     [listToDisplay],
   );
-  const verified = useMemo(
-    () => (listToDisplay || []).filter((t) => t?.status === "verified"),
-    [listToDisplay],
-  );
-  const rejected = useMemo(
+  const rejectedTeachers = useMemo(
     () => (listToDisplay || []).filter((t) => t?.status === "rejected"),
     [listToDisplay],
   );
@@ -251,21 +313,17 @@ function TeachersPage() {
     const password = createForm.password.trim();
 
     if (!userId || !name || !email || !phone || !password) {
-      return toast.error("Please fill in all required fields");
+      return toast.error("Please fill in all required fields (ID, Name, Email, Phone, Password)");
     }
 
     if (users.some((u) => (u?.id || "").trim().toLowerCase() === userId.toLowerCase())) {
-      return toast.error(`User ID '${userId}' is already assigned`);
+      return toast.error(`User ID '${userId}' is already assigned. Please choose another.`);
     }
     if (users.some((u) => (u?.email || "").trim().toLowerCase() === email.toLowerCase())) {
-      return toast.error(`Email address '${email}' is already registered`);
+      return toast.error(`Email address '${email}' is already registered.`);
     }
     if (users.some((u) => u?.phone && u.phone.trim() === phone)) {
-      return toast.error(`Phone number '${phone}' is already registered`);
-    }
-
-    if (createForm.role === "teacher" && createForm.subjects.length === 0) {
-      return toast.error("Please select at least one subject for the teacher");
+      return toast.error(`Phone number '${phone}' is already registered.`);
     }
 
     const targetSchoolId = isSuperAdmin ? createForm.schoolId : (currentUser?.schoolId ?? "");
@@ -275,12 +333,12 @@ function TeachersPage() {
 
     try {
       await registerUser({
-        id: createForm.id.trim(),
-        name: createForm.name.trim(),
-        email: createForm.email.trim(),
-        phone: createForm.phone.trim(),
+        id: userId,
+        name: name,
+        email: email,
+        phone: phone,
         role: createForm.role,
-        password: createForm.password,
+        password: password,
         schoolId: isSuperAdmin && createForm.role === "super_admin" ? undefined : targetSchoolId,
         classId: createForm.classId || undefined,
         status: "verified",
@@ -288,12 +346,12 @@ function TeachersPage() {
         photo: createForm.photo,
       });
 
-      toast.success(`Account for ${createForm.name} created successfully!`);
+      toast.success(`Teacher account for ${name} (${userId}) created successfully!`);
       setOpen(false);
       resetForm();
     } catch (error: any) {
       console.error("Error creating user:", error);
-      toast.error(error.message || "Failed to create user");
+      toast.error(error.message || "Failed to create teacher account");
     }
   };
 
@@ -315,9 +373,7 @@ function TeachersPage() {
       return toast.error(`Email address '${email}' is registered to another user`);
     }
     if (
-      (users || []).some(
-        (u) => u?.id !== editingUser.id && u?.phone && u.phone.trim() === phone,
-      )
+      (users || []).some((u) => u?.id !== editingUser.id && u?.phone && u.phone.trim() === phone)
     ) {
       return toast.error(`Phone number '${phone}' is registered to another user`);
     }
@@ -348,6 +404,263 @@ function TeachersPage() {
     }
   };
 
+  // Render Grid/Card View for Available Teachers
+  const renderCards = (list: typeof users, withActions = false, showManage = false) => {
+    if (!list || list.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center p-12 text-center border rounded-2xl bg-card">
+          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
+            <GraduationCap className="h-8 w-8" />
+          </div>
+          <h3 className="text-lg font-semibold mb-1">No Teachers Found</h3>
+          <p className="text-sm text-muted-foreground max-w-sm mb-6">
+            There are no teacher records matching your current filter criteria. You can add a new teacher right now.
+          </p>
+          <Button onClick={() => setOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" /> Add Teacher
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {list.map((t) => {
+          if (!t) return null;
+          const schoolName = schools?.find((s) => s.id === t.schoolId)?.name || "System Wide";
+          const assignedClass = classes?.find((c) => c.id === t.classId)?.name;
+          const canDelete = isSuperAdmin && t.id !== currentUser?.id;
+          const initials = (t.name || "T")
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2);
+
+          return (
+            <Card
+              key={t.id}
+              className="border shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden"
+            >
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 border-2 border-primary/20 shadow-sm">
+                      {t.photo && <AvatarImage src={t.photo} alt={t.name} />}
+                      <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-bold text-base flex items-center gap-2">
+                        {t.name || "Unnamed"}
+                        {t.id === currentUser?.id && (
+                          <Badge variant="outline" className="text-[10px] py-0 px-1 text-primary border-primary/40">
+                            You
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 font-mono">
+                        <span>{t.id}</span>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-5 w-5 text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            navigator.clipboard.writeText(t.id);
+                            toast.success("User ID copied");
+                          }}
+                          title="Copy ID"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  <Badge
+                    variant={
+                      t.status === "verified" || !t.status
+                        ? "default"
+                        : t.status === "rejected"
+                          ? "destructive"
+                          : "secondary"
+                    }
+                    className="capitalize text-xs font-normal shrink-0"
+                  >
+                    {t.status || "Active"}
+                  </Badge>
+                </div>
+
+                {/* Info Pills */}
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Mail className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{t.email || "No email"}</span>
+                  </div>
+
+                  {t.phone && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Phone className="h-3.5 w-3.5 shrink-0" />
+                      <span>{t.phone}</span>
+                    </div>
+                  )}
+
+                  {isSuperAdmin && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <School className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{schoolName}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="text-muted-foreground shrink-0 font-medium">Class:</span>
+                    {assignedClass ? (
+                      <Badge variant="secondary" className="font-normal text-xs py-0.5 bg-primary/10 text-primary">
+                        <Building2 className="h-3 w-3 mr-1" />
+                        {assignedClass}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground italic">Unassigned</span>
+                    )}
+                  </div>
+
+                  {/* Teaching Subjects */}
+                  <div className="pt-2">
+                    <span className="text-muted-foreground font-medium block mb-1.5">Subjects:</span>
+                    {t.subjects && t.subjects.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {t.subjects.map((sub) => (
+                          <Badge
+                            key={sub}
+                            variant="outline"
+                            className="text-[11px] py-0 px-2 font-normal bg-secondary/40 text-secondary-foreground"
+                          >
+                            {sub}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground italic">No subjects assigned</span>
+                    )}
+                  </div>
+
+                  {/* Credentials / Password for Admins */}
+                  {(isSuperAdmin || isSchoolAdmin) && (
+                    <div className="mt-3 pt-3 border-t flex items-center justify-between bg-muted/40 p-2 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="font-mono text-xs">
+                          {visiblePasswords[t.id] ? t.password || "No password" : "••••••••"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6"
+                          onClick={() => togglePasswordVisibility(t.id)}
+                          title={visiblePasswords[t.id] ? "Hide password" : "Show password"}
+                        >
+                          {visiblePasswords[t.id] ? (
+                            <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                          )}
+                        </Button>
+                        {t.password && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6"
+                            onClick={() => {
+                              navigator.clipboard.writeText(t.password || "");
+                              toast.success("Password copied to clipboard");
+                            }}
+                            title="Copy Password"
+                          >
+                            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+
+              {/* Actions Footer */}
+              {(withActions || showManage) && (
+                <div className="p-3 bg-muted/30 border-t flex items-center justify-end gap-2">
+                  {withActions && (
+                    <>
+                      <Button
+                        size="sm"
+                        className="h-8 gap-1"
+                        onClick={async () => {
+                          await approveTeacher(t.id);
+                          toast.success(`${t.name || "Teacher"} approved - account active`);
+                        }}
+                      >
+                        <Check className="h-3.5 w-3.5" /> Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-8 gap-1"
+                        onClick={async () => {
+                          await rejectTeacher(t.id);
+                          toast(`${t.name || "Teacher"} status set to rejected`);
+                        }}
+                      >
+                        <X className="h-3.5 w-3.5" /> Reject
+                      </Button>
+                    </>
+                  )}
+                  {showManage && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 gap-1.5 text-xs"
+                        onClick={() => handleOpenEdit(t)}
+                      >
+                        <Edit2 className="h-3.5 w-3.5" /> Edit Profile
+                      </Button>
+                      {canDelete && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                          onClick={async () => {
+                            if (
+                              confirm(
+                                `Are you sure you want to delete ${t.name || "this user"}? This action cannot be undone.`,
+                              )
+                            ) {
+                              try {
+                                await deleteUser(t.id);
+                                toast.success(`${t.name || "User"} has been deleted`);
+                              } catch (error: any) {
+                                toast.error(error.message || "Failed to delete user");
+                              }
+                            }
+                          }}
+                          title="Delete User"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Render Table View
   const renderTable = (list: typeof users, withActions = false, showManage = false) => {
     let totalCols = 5; // Teacher, Subjects, Class, Registered, Status
     if (isSuperAdmin) totalCols += 2; // User ID, School
@@ -355,233 +668,241 @@ function TeachersPage() {
     if (withActions || showManage) totalCols += 1; // Actions
 
     return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {isSuperAdmin && <TableHead>User ID</TableHead>}
-            <TableHead>Teacher Details</TableHead>
-            {isSuperAdmin && <TableHead>School</TableHead>}
-            <TableHead>Assigned Class</TableHead>
-            <TableHead>Subjects</TableHead>
-            {(isSuperAdmin || isSchoolAdmin) && <TableHead>Password</TableHead>}
-            <TableHead>Registered</TableHead>
-            <TableHead>Status</TableHead>
-            {(withActions || showManage) && <TableHead className="text-right">Actions</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {(list || []).map((t) => {
-            if (!t) return null;
-            const schoolName = schools?.find((s) => s.id === t.schoolId)?.name || "System Wide";
-            const assignedClass = classes?.find((c) => c.id === t.classId)?.name || "Unassigned";
-            const canDelete = isSuperAdmin && t.id !== currentUser?.id;
-            const initials = (t.name || "T")
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .toUpperCase()
-              .slice(0, 2);
+      <div className="rounded-xl border overflow-hidden bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              {isSuperAdmin && <TableHead>User ID</TableHead>}
+              <TableHead>Teacher Details</TableHead>
+              {isSuperAdmin && <TableHead>School</TableHead>}
+              <TableHead>Assigned Class</TableHead>
+              <TableHead>Subjects</TableHead>
+              {(isSuperAdmin || isSchoolAdmin) && <TableHead>Password</TableHead>}
+              <TableHead>Registered</TableHead>
+              <TableHead>Status</TableHead>
+              {(withActions || showManage) && <TableHead className="text-right">Actions</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {(list || []).map((t) => {
+              if (!t) return null;
+              const schoolName = schools?.find((s) => s.id === t.schoolId)?.name || "System Wide";
+              const assignedClass = classes?.find((c) => c.id === t.classId)?.name || "Unassigned";
+              const canDelete = isSuperAdmin && t.id !== currentUser?.id;
+              const initials = (t.name || "T")
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2);
 
-            return (
-              <TableRow key={t.id || Math.random().toString()} className="group hover:bg-muted/40">
-                {isSuperAdmin && (
-                  <TableCell className="font-mono text-xs font-semibold">
-                    <div className="flex items-center gap-1">
-                      <span>{t.id || "N/A"}</span>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => {
-                          navigator.clipboard.writeText(t.id);
-                          toast.success("User ID copied");
-                        }}
-                        title="Copy ID"
-                      >
-                        <Copy className="h-3 w-3 text-muted-foreground" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                )}
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9 border">
-                      {t.photo && <AvatarImage src={t.photo} alt={t.name} />}
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-semibold text-sm flex items-center gap-2">
-                        {t.name || "Unnamed"}
-                        {t.id === currentUser?.id && (
-                          <Badge variant="outline" className="text-[10px] py-0 px-1 border-primary/40 text-primary font-normal">
-                            You
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex flex-col gap-0.5 mt-0.5 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Mail className="h-3 w-3" /> {t.email || "No email"}
-                        </span>
-                        {t.phone && (
-                          <span className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" /> {t.phone}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </TableCell>
-                {isSuperAdmin && (
-                  <TableCell className="text-muted-foreground text-xs">{schoolName}</TableCell>
-                )}
-                <TableCell>
-                  <Badge variant={t.classId ? "secondary" : "outline"} className="font-normal text-xs">
-                    <Building2 className="h-3 w-3 mr-1 opacity-70" />
-                    {assignedClass}
-                  </Badge>
-                </TableCell>
-                <TableCell className="max-w-[200px]">
-                  {t.subjects && t.subjects.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {t.subjects.map((sub) => (
-                        <Badge key={sub} variant="outline" className="text-[11px] py-0 px-1.5 font-normal bg-secondary/50">
-                          {sub}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-xs text-muted-foreground italic">None assigned</span>
-                  )}
-                </TableCell>
-                {(isSuperAdmin || isSchoolAdmin) && (
-                  <TableCell className="font-mono text-xs">
-                    <div className="flex items-center gap-1">
-                      <span>{visiblePasswords[t.id] ? t.password || "N/A" : "••••••••"}</span>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-6 w-6"
-                        onClick={() => togglePasswordVisibility(t.id)}
-                        title={visiblePasswords[t.id] ? "Hide password" : "Show password"}
-                      >
-                        {visiblePasswords[t.id] ? (
-                          <EyeOff className="h-3 w-3 text-muted-foreground" />
-                        ) : (
-                          <Eye className="h-3 w-3 text-muted-foreground" />
-                        )}
-                      </Button>
-                      {t.password && (
+              return (
+                <TableRow key={t.id || Math.random().toString()} className="group hover:bg-muted/40">
+                  {isSuperAdmin && (
+                    <TableCell className="font-mono text-xs font-semibold">
+                      <div className="flex items-center gap-1">
+                        <span>{t.id || "N/A"}</span>
                         <Button
                           size="icon"
                           variant="ghost"
                           className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={() => {
-                            navigator.clipboard.writeText(t.password || "");
-                            toast.success("Password copied");
+                            navigator.clipboard.writeText(t.id);
+                            toast.success("User ID copied");
                           }}
-                          title="Copy password"
+                          title="Copy ID"
                         >
                           <Copy className="h-3 w-3 text-muted-foreground" />
                         </Button>
-                      )}
+                      </div>
+                    </TableCell>
+                  )}
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9 border">
+                        {t.photo && <AvatarImage src={t.photo} alt={t.name} />}
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-semibold text-sm flex items-center gap-2">
+                          {t.name || "Unnamed"}
+                          {t.id === currentUser?.id && (
+                            <Badge variant="outline" className="text-[10px] py-0 px-1 border-primary/40 text-primary font-normal">
+                              You
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-0.5 mt-0.5 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Mail className="h-3 w-3" /> {t.email || "No email"}
+                          </span>
+                          {t.phone && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" /> {t.phone}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </TableCell>
-                )}
-                <TableCell className="text-xs text-muted-foreground">{formatRegisteredAt(t.registeredAt)}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      t.status === "verified"
-                        ? "default"
-                        : t.status === "rejected"
-                          ? "destructive"
-                          : "secondary"
-                    }
-                    className="capitalize text-xs font-normal"
-                  >
-                    {t.status || "pending"}
-                  </Badge>
-                </TableCell>
-                {(withActions || showManage) && (
-                  <TableCell className="text-right space-x-1">
-                    {withActions && (
-                      <>
-                        <Button
-                          size="sm"
-                          onClick={async () => {
-                            await approveTeacher(t.id);
-                            toast.success(`${t.name || "Teacher"} approved - account active`);
-                          }}
-                        >
-                          <Check className="h-4 w-4 mr-1" />
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={async () => {
-                            await rejectTeacher(t.id);
-                            toast(`${t.name || "Teacher"} status set to rejected`);
-                          }}
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Reject
-                        </Button>
-                      </>
+                  {isSuperAdmin && (
+                    <TableCell className="text-muted-foreground text-xs">{schoolName}</TableCell>
+                  )}
+                  <TableCell>
+                    <Badge variant={t.classId ? "secondary" : "outline"} className="font-normal text-xs">
+                      <Building2 className="h-3 w-3 mr-1 opacity-70" />
+                      {assignedClass}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="max-w-[200px]">
+                    {t.subjects && t.subjects.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {t.subjects.map((sub) => (
+                          <Badge key={sub} variant="outline" className="text-[11px] py-0 px-1.5 font-normal bg-secondary/50">
+                            {sub}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">None assigned</span>
                     )}
-                    {showManage && (
-                      <>
+                  </TableCell>
+                  {(isSuperAdmin || isSchoolAdmin) && (
+                    <TableCell className="font-mono text-xs">
+                      <div className="flex items-center gap-1">
+                        <span>{visiblePasswords[t.id] ? t.password || "N/A" : "••••••••"}</span>
                         <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleOpenEdit(t)}
-                          title="Edit Teacher"
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6"
+                          onClick={() => togglePasswordVisibility(t.id)}
+                          title={visiblePasswords[t.id] ? "Hide password" : "Show password"}
                         >
-                          <Edit2 className="h-3.5 w-3.5 mr-1" />
-                          Edit
+                          {visiblePasswords[t.id] ? (
+                            <EyeOff className="h-3 w-3 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-3 w-3 text-muted-foreground" />
+                          )}
                         </Button>
-                        {canDelete && (
+                        {t.password && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => {
+                              navigator.clipboard.writeText(t.password || "");
+                              toast.success("Password copied");
+                            }}
+                            title="Copy password"
+                          >
+                            <Copy className="h-3 w-3 text-muted-foreground" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
+                  <TableCell className="text-xs text-muted-foreground">{formatRegisteredAt(t.registeredAt)}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        t.status === "verified" || !t.status
+                          ? "default"
+                          : t.status === "rejected"
+                            ? "destructive"
+                            : "secondary"
+                      }
+                      className="capitalize text-xs font-normal"
+                    >
+                      {t.status || "Active"}
+                    </Badge>
+                  </TableCell>
+                  {(withActions || showManage) && (
+                    <TableCell className="text-right space-x-1">
+                      {withActions && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={async () => {
+                              await approveTeacher(t.id);
+                              toast.success(`${t.name || "Teacher"} approved - account active`);
+                            }}
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={async () => {
+                              await rejectTeacher(t.id);
+                              toast(`${t.name || "Teacher"} status set to rejected`);
+                            }}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      {showManage && (
+                        <>
                           <Button
                             size="sm"
                             variant="outline"
-                            className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                            onClick={async () => {
-                              if (
-                                confirm(
-                                  `Are you sure you want to delete ${t.name || "this user"}? This action cannot be undone.`,
-                                )
-                              ) {
-                                try {
-                                  await deleteUser(t.id);
-                                  toast.success(`${t.name || "User"} has been deleted`);
-                                } catch (error: any) {
-                                  toast.error(error.message || "Failed to delete user");
-                                }
-                              }
-                            }}
-                            title="Delete User"
+                            onClick={() => handleOpenEdit(t)}
+                            title="Edit Teacher"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Edit2 className="h-3.5 w-3.5 mr-1" />
+                            Edit
                           </Button>
-                        )}
-                      </>
-                    )}
-                  </TableCell>
-                )}
+                          {canDelete && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                              onClick={async () => {
+                                if (
+                                  confirm(
+                                    `Are you sure you want to delete ${t.name || "this user"}? This action cannot be undone.`,
+                                  )
+                                ) {
+                                  try {
+                                    await deleteUser(t.id);
+                                    toast.success(`${t.name || "User"} has been deleted`);
+                                  } catch (error: any) {
+                                    toast.error(error.message || "Failed to delete user");
+                                  }
+                                }
+                              }}
+                              title="Delete User"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </TableCell>
+                  )}
+                </TableRow>
+              );
+            })}
+            {list.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={totalCols} className="text-center text-muted-foreground py-10">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <GraduationCap className="h-8 w-8 text-muted-foreground/50" />
+                    <span>No teacher accounts found matching your filter criteria.</span>
+                    <Button size="sm" variant="outline" onClick={() => setOpen(true)} className="mt-2">
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Teacher
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
-            );
-          })}
-          {list.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={totalCols} className="text-center text-muted-foreground py-8">
-                No teacher accounts found matching the specified filter criteria.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     );
   };
 
@@ -615,43 +936,45 @@ function TeachersPage() {
   // Teacher Metrics
   const totalTeachers = (users || []).filter((u) => u?.role === "teacher").length;
   const pendingTeachersCount = (users || []).filter((u) => u?.role === "teacher" && u?.status === "pending").length;
-  const verifiedTeachersCount = (users || []).filter((u) => u?.role === "teacher" && u?.status === "verified").length;
+  const verifiedTeachersCount = (users || []).filter((u) => u?.role === "teacher" && (u?.status === "verified" || !u?.status)).length;
 
   return (
-    <AppShell title="Teachers Console">
+    <AppShell title="Teachers & Staff">
       <div className="space-y-6">
         {/* Metrics Grid */}
         <div className="grid gap-4 sm:grid-cols-3">
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-500/10 to-transparent">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent">
             <CardContent className="p-5 flex items-center gap-4">
               <div className="h-12 w-12 rounded-2xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center dark:text-emerald-400">
+                <UserCheck className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-3xl font-bold">{verifiedTeachersCount}</div>
+                <div className="text-sm text-muted-foreground font-medium">Available Active Teachers</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-amber-500/15 text-amber-600 flex items-center justify-center dark:text-amber-400">
+                <Clock className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-3xl font-bold">{pendingTeachersCount}</div>
+                <div className="text-sm text-muted-foreground font-medium">Pending Approvals</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-blue-500/15 text-blue-600 flex items-center justify-center dark:text-blue-400">
                 <GraduationCap className="h-6 w-6" />
               </div>
               <div>
                 <div className="text-3xl font-bold">{totalTeachers}</div>
-                <div className="text-sm text-muted-foreground">Total Teachers</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-amber-500/10 to-transparent">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-amber-500/15 text-amber-600 flex items-center justify-center dark:text-amber-400">
-                <GraduationCap className="h-6 w-6" />
-              </div>
-              <div>
-                <div className="text-3xl font-bold">{pendingTeachersCount}</div>
-                <div className="text-sm text-muted-foreground">Pending Approvals</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-500/10 to-transparent">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-blue-500/15 text-blue-600 flex items-center justify-center dark:text-blue-400">
-                <BookMarked className="h-6 w-6" />
-              </div>
-              <div>
-                <div className="text-3xl font-bold">{verifiedTeachersCount}</div>
-                <div className="text-sm text-muted-foreground">Active Verified Teachers</div>
+                <div className="text-sm text-muted-foreground font-medium">Total Registered Staff</div>
               </div>
             </CardContent>
           </Card>
@@ -659,24 +982,29 @@ function TeachersPage() {
 
         {/* Main Card */}
         <Card className="border-0 shadow-sm">
-          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 gap-4">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 gap-4">
             <div>
-              <CardTitle>Teachers Manager</CardTitle>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <GraduationCap className="h-5 w-5 text-primary" />
+                Teachers Directory
+              </CardTitle>
               <CardDescription>
-                Review teacher registrations, assign subject specialties, manage class teachers, and configure credentials.
+                View all available teachers, assign classes and subjects, manage login credentials, and add new teaching staff.
               </CardDescription>
             </div>
 
             {/* Create Teacher Dialog */}
             <Dialog open={open} onOpenChange={handleOpenChange}>
               <DialogTrigger asChild>
-                <Button className="flex items-center gap-1.5">
-                  <Plus className="h-4 w-4" /> Add Teacher
+                <Button className="flex items-center gap-1.5 shadow-sm font-medium">
+                  <UserPlus className="h-4 w-4" /> Add New Teacher
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Register New Teacher Account</DialogTitle>
+                  <DialogTitle className="flex items-center gap-2">
+                    <UserPlus className="h-5 w-5 text-primary" /> Register New Teacher Account
+                  </DialogTitle>
                 </DialogHeader>
                 <form
                   onSubmit={(e) => {
@@ -684,44 +1012,76 @@ function TeachersPage() {
                     submitCreateUser();
                   }}
                   autoComplete="off"
-                  className="space-y-3 py-2 text-sm"
+                  className="space-y-4 py-2 text-sm"
                 >
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label htmlFor="create-id">Login ID *</Label>
+                      <div className="flex items-center justify-between mb-1">
+                        <Label htmlFor="create-id">Teacher ID *</Label>
+                        <button
+                          type="button"
+                          onClick={() => setCreateForm((prev) => ({ ...prev, id: generateTeacherId() }))}
+                          className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
+                        >
+                          <RefreshCw className="h-3 w-3" /> Auto
+                        </button>
+                      </div>
                       <Input
                         id="create-id"
                         value={createForm.id}
                         onChange={(e) => setCreateForm({ ...createForm, id: e.target.value })}
-                        placeholder="e.g. TCH-001"
+                        placeholder="e.g. TCH-1024"
                         autoComplete="off"
+                        required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="create-pwd">Password *</Label>
-                      <Input
-                        id="create-pwd"
-                        type="password"
-                        value={createForm.password}
-                        onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                        placeholder="Secret123"
-                        autoComplete="new-password"
-                        data-lpignore="true"
-                        data-bwignore="true"
-                        data-1p-ignore="true"
-                      />
+                      <div className="flex items-center justify-between mb-1">
+                        <Label htmlFor="create-pwd">Password *</Label>
+                        <button
+                          type="button"
+                          onClick={() => setCreateForm((prev) => ({ ...prev, password: generatePassword() }))}
+                          className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
+                        >
+                          <Sparkles className="h-3 w-3" /> Generate
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <Input
+                          id="create-pwd"
+                          type={showCreatePassword ? "text" : "password"}
+                          value={createForm.password}
+                          onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                          placeholder="Password"
+                          autoComplete="new-password"
+                          className="pr-9"
+                          required
+                        />
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="absolute right-0 top-0 h-9 w-9 text-muted-foreground"
+                          onClick={() => setShowCreatePassword(!showCreatePassword)}
+                        >
+                          {showCreatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
                     </div>
                   </div>
+
                   <div>
                     <Label htmlFor="create-name">Full Name *</Label>
                     <Input
                       id="create-name"
                       value={createForm.name}
                       onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                      placeholder="e.g. Jane Doe"
+                      placeholder="e.g. Sarah Johnson"
                       autoComplete="off"
+                      required
                     />
                   </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="create-email">Email Address *</Label>
@@ -730,8 +1090,9 @@ function TeachersPage() {
                         type="email"
                         value={createForm.email}
                         onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                        placeholder="jane@school.com"
+                        placeholder="sarah@school.com"
                         autoComplete="off"
+                        required
                       />
                     </div>
                     <div>
@@ -740,11 +1101,13 @@ function TeachersPage() {
                         id="create-phone"
                         value={createForm.phone}
                         onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
-                        placeholder="+256..."
+                        placeholder="+256 700 000000"
                         autoComplete="off"
+                        required
                       />
                     </div>
                   </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="create-role">System Role</Label>
@@ -755,7 +1118,7 @@ function TeachersPage() {
                         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                       >
                         <option value="teacher">Teacher</option>
-                        <option value="deputy">Deputy</option>
+                        <option value="deputy">Deputy Head</option>
                         {isSuperAdmin && <option value="admin">School Admin</option>}
                       </select>
                     </div>
@@ -777,6 +1140,7 @@ function TeachersPage() {
                       </div>
                     )}
                   </div>
+
                   <div>
                     <Label htmlFor="create-class">Assigned Class (Optional)</Label>
                     <select
@@ -785,7 +1149,7 @@ function TeachersPage() {
                       onChange={(e) => setCreateForm({ ...createForm, classId: e.target.value })}
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                      <option value="">-- Select Class --</option>
+                      <option value="">-- No Class Assigned --</option>
                       {availableClasses.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.name}
@@ -793,63 +1157,100 @@ function TeachersPage() {
                       ))}
                     </select>
                   </div>
+
                   {createForm.role === "teacher" && (
-                    <div>
-                      <Label htmlFor="create-subjects">Teaching Subjects (Select at least one) *</Label>
-                      {availableSubjects.length === 0 ? (
-                        <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-md text-xs text-amber-800 dark:text-amber-300 space-y-1">
-                          <div>No subjects configured for this school yet.</div>
-                          <Link to="/app/subjects" className="font-semibold underline text-primary">
-                            Configure school subjects
-                          </Link>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md max-h-40 overflow-y-auto">
-                          {availableSubjects.map((subject) => (
-                            <label key={subject} className="flex items-center gap-2 cursor-pointer text-xs">
-                              <input
-                                type="checkbox"
-                                checked={createForm.subjects.includes(subject)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setCreateForm({ ...createForm, subjects: [...createForm.subjects, subject] });
-                                  } else {
-                                    setCreateForm({
-                                      ...createForm,
-                                      subjects: createForm.subjects.filter((s) => s !== subject),
-                                    });
-                                  }
-                                }}
-                                className="h-4 w-4 rounded border-gray-300"
-                              />
-                              <span>{subject}</span>
-                            </label>
-                          ))}
-                        </div>
-                      )}
+                    <div className="space-y-2">
+                      <Label>Teaching Subjects</Label>
+                      <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg max-h-36 overflow-y-auto bg-muted/20">
+                        {availableSubjects.map((subject) => (
+                          <label
+                            key={subject}
+                            className="flex items-center gap-2 cursor-pointer text-xs p-1 rounded hover:bg-muted/50 transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={createForm.subjects.includes(subject)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setCreateForm({ ...createForm, subjects: [...createForm.subjects, subject] });
+                                } else {
+                                  setCreateForm({
+                                    ...createForm,
+                                    subjects: createForm.subjects.filter((s) => s !== subject),
+                                  });
+                                }
+                              }}
+                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                            <span className="truncate">{subject}</span>
+                          </label>
+                        ))}
+                      </div>
+
+                      {/* Add Custom Subject Inline */}
+                      <div className="flex gap-2 pt-1">
+                        <Input
+                          placeholder="Add custom subject (e.g. Music, Art)"
+                          value={customSubjectInput}
+                          onChange={(e) => setCustomSubjectInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleAddCustomSubject(false);
+                            }
+                          }}
+                          className="h-8 text-xs"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs shrink-0"
+                          onClick={() => handleAddCustomSubject(false)}
+                        >
+                          <Plus className="h-3 w-3 mr-1" /> Add
+                        </Button>
+                      </div>
                     </div>
                   )}
+
                   <div>
-                    <Label htmlFor="create-photo">Profile Photo</Label>
+                    <Label htmlFor="create-photo">Profile Photo (Optional)</Label>
                     <Input
                       id="create-photo"
                       type="file"
                       accept="image/*"
                       onChange={(e) => handlePhotoChange(e, false)}
+                      className="mt-1"
                     />
                     {createForm.photo && (
-                      <div className="mt-2 flex items-center gap-2">
+                      <div className="mt-2 flex items-center gap-3 p-2 border rounded-lg bg-muted/20">
                         <img
                           src={createForm.photo}
                           alt="Preview"
-                          className="w-12 h-12 object-cover rounded-full border"
+                          className="w-10 h-10 object-cover rounded-full border"
                         />
-                        <span className="text-xs text-muted-foreground">Photo preview</span>
+                        <span className="text-xs text-muted-foreground">Photo preview loaded</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs text-destructive h-7 ml-auto"
+                          onClick={() => setCreateForm((prev) => ({ ...prev, photo: "" }))}
+                        >
+                          Remove
+                        </Button>
                       </div>
                     )}
                   </div>
-                  <DialogFooter className="pt-2">
-                    <Button type="submit">Create Account</Button>
+
+                  <DialogFooter className="pt-3">
+                    <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" className="gap-1.5">
+                      <UserPlus className="h-4 w-4" /> Create Teacher Account
+                    </Button>
                   </DialogFooter>
                 </form>
               </DialogContent>
@@ -857,9 +1258,11 @@ function TeachersPage() {
 
             {/* Edit Teacher Dialog */}
             <Dialog open={editOpen} onOpenChange={setEditOpen}>
-              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Edit Teacher Profile ({editingUser?.id})</DialogTitle>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Edit2 className="h-5 w-5 text-primary" /> Edit Teacher Profile ({editingUser?.id})
+                  </DialogTitle>
                 </DialogHeader>
                 <form
                   onSubmit={(e) => {
@@ -867,7 +1270,7 @@ function TeachersPage() {
                     submitEditUser();
                   }}
                   autoComplete="off"
-                  className="space-y-3 py-2 text-sm"
+                  className="space-y-4 py-2 text-sm"
                 >
                   <div>
                     <Label htmlFor="edit-name">Full Name *</Label>
@@ -876,6 +1279,7 @@ function TeachersPage() {
                       value={editForm.name}
                       onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                       autoComplete="off"
+                      required
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -887,6 +1291,7 @@ function TeachersPage() {
                         value={editForm.email}
                         onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
                         autoComplete="off"
+                        required
                       />
                     </div>
                     <div>
@@ -896,6 +1301,7 @@ function TeachersPage() {
                         value={editForm.phone}
                         onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
                         autoComplete="off"
+                        required
                       />
                     </div>
                   </div>
@@ -909,7 +1315,7 @@ function TeachersPage() {
                         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                       >
                         <option value="teacher">Teacher</option>
-                        <option value="deputy">Deputy</option>
+                        <option value="deputy">Deputy Head</option>
                         {isSuperAdmin && <option value="admin">School Admin</option>}
                       </select>
                     </div>
@@ -939,7 +1345,7 @@ function TeachersPage() {
                       onChange={(e) => setEditForm({ ...editForm, classId: e.target.value })}
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                      <option value="">-- Unassigned --</option>
+                      <option value="">-- No Class Assigned --</option>
                       {availableEditClasses.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.name}
@@ -954,41 +1360,62 @@ function TeachersPage() {
                       type="password"
                       value={editForm.password}
                       onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                      placeholder="New password"
+                      placeholder="Enter new password if updating"
                       autoComplete="new-password"
                     />
                   </div>
                   {editForm.role === "teacher" && (
-                    <div>
+                    <div className="space-y-2">
                       <Label>Teaching Subjects</Label>
-                      {availableEditSubjects.length === 0 ? (
-                        <div className="mt-2 p-2 bg-muted rounded-md text-xs text-muted-foreground">
-                          No subjects configured for this school.
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md max-h-40 overflow-y-auto">
-                          {availableEditSubjects.map((subject) => (
-                            <label key={subject} className="flex items-center gap-2 cursor-pointer text-xs">
-                              <input
-                                type="checkbox"
-                                checked={editForm.subjects.includes(subject)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setEditForm({ ...editForm, subjects: [...editForm.subjects, subject] });
-                                  } else {
-                                    setEditForm({
-                                      ...editForm,
-                                      subjects: editForm.subjects.filter((s) => s !== subject),
-                                    });
-                                  }
-                                }}
-                                className="h-4 w-4 rounded border-gray-300"
-                              />
-                              <span>{subject}</span>
-                            </label>
-                          ))}
-                        </div>
-                      )}
+                      <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg max-h-36 overflow-y-auto bg-muted/20">
+                        {availableEditSubjects.map((subject) => (
+                          <label
+                            key={subject}
+                            className="flex items-center gap-2 cursor-pointer text-xs p-1 rounded hover:bg-muted/50 transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={editForm.subjects.includes(subject)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setEditForm({ ...editForm, subjects: [...editForm.subjects, subject] });
+                                } else {
+                                  setEditForm({
+                                    ...editForm,
+                                    subjects: editForm.subjects.filter((s) => s !== subject),
+                                  });
+                                }
+                              }}
+                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                            <span className="truncate">{subject}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {/* Add Custom Subject Inline */}
+                      <div className="flex gap-2 pt-1">
+                        <Input
+                          placeholder="Add custom subject..."
+                          value={customSubjectInput}
+                          onChange={(e) => setCustomSubjectInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleAddCustomSubject(true);
+                            }
+                          }}
+                          className="h-8 text-xs"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs shrink-0"
+                          onClick={() => handleAddCustomSubject(true)}
+                        >
+                          <Plus className="h-3 w-3 mr-1" /> Add
+                        </Button>
+                      </div>
                     </div>
                   )}
                   <div>
@@ -998,19 +1425,20 @@ function TeachersPage() {
                       type="file"
                       accept="image/*"
                       onChange={(e) => handlePhotoChange(e, true)}
+                      className="mt-1"
                     />
                     {editForm.photo && (
-                      <div className="mt-2 flex items-center gap-2">
+                      <div className="mt-2 flex items-center gap-3 p-2 border rounded-lg bg-muted/20">
                         <img
                           src={editForm.photo}
                           alt="Preview"
-                          className="w-12 h-12 object-cover rounded-full border"
+                          className="w-10 h-10 object-cover rounded-full border"
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="text-xs text-destructive h-7 px-2"
+                          className="text-xs text-destructive h-7"
                           onClick={() => setEditForm({ ...editForm, photo: "" })}
                         >
                           Remove photo
@@ -1018,7 +1446,7 @@ function TeachersPage() {
                       </div>
                     )}
                   </div>
-                  <DialogFooter className="pt-2">
+                  <DialogFooter className="pt-3">
                     <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
                       Cancel
                     </Button>
@@ -1028,28 +1456,47 @@ function TeachersPage() {
               </DialogContent>
             </Dialog>
           </CardHeader>
-          <CardContent className="p-5 pt-0">
-            {/* Toolbar Filters */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-4 justify-between items-stretch sm:items-center">
-              <div className="relative flex-1 max-w-sm">
+
+          <CardContent className="p-5 pt-0 space-y-4">
+            {/* Toolbar Filters & Controls */}
+            <div className="flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
+              <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  placeholder="Search teacher by name, email, phone or subject..."
+                  placeholder="Search by teacher name, subject, class, phone, ID..."
                   className="pl-9"
                 />
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-2">
-                  <Label className="shrink-0 text-xs font-medium">Role:</Label>
+                {/* Class Filter */}
+                <div className="flex items-center gap-1.5">
+                  <Label className="shrink-0 text-xs font-medium text-muted-foreground">Class:</Label>
+                  <select
+                    value={classFilter}
+                    onChange={(e) => setClassFilter(e.target.value)}
+                    className="flex h-9 rounded-md border border-input bg-transparent px-2.5 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="all">All Classes</option>
+                    {classes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Role Filter */}
+                <div className="flex items-center gap-1.5">
+                  <Label className="shrink-0 text-xs font-medium text-muted-foreground">Role:</Label>
                   <select
                     value={roleFilter}
                     onChange={(e) => setRoleFilter(e.target.value)}
                     className="flex h-9 rounded-md border border-input bg-transparent px-2.5 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
-                    <option value="teacher">Teachers Only</option>
+                    <option value="teacher">Teachers</option>
                     <option value="deputy">Deputies</option>
                     <option value="admin">School Admins</option>
                     <option value="all">All Roles</option>
@@ -1057,8 +1504,8 @@ function TeachersPage() {
                 </div>
 
                 {isSuperAdmin && (
-                  <div className="flex items-center gap-2">
-                    <Label className="shrink-0 text-xs font-medium">School:</Label>
+                  <div className="flex items-center gap-1.5">
+                    <Label className="shrink-0 text-xs font-medium text-muted-foreground">School:</Label>
                     <select
                       value={schoolFilter}
                       onChange={(e) => setSchoolFilter(e.target.value)}
@@ -1073,36 +1520,93 @@ function TeachersPage() {
                     </select>
                   </div>
                 )}
+
+                {/* View Mode Toggle */}
+                <div className="flex items-center border rounded-lg p-0.5 bg-muted/40 ml-auto">
+                  <Button
+                    size="icon"
+                    variant={viewMode === "grid" ? "secondary" : "ghost"}
+                    className="h-7 w-7 rounded-md"
+                    onClick={() => setViewMode("grid")}
+                    title="Grid View"
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant={viewMode === "table" ? "secondary" : "ghost"}
+                    className="h-7 w-7 rounded-md"
+                    onClick={() => setViewMode("table")}
+                    title="Table View"
+                  >
+                    <List className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {/* Tabs for Pending, Verified, Rejected */}
-            <Tabs defaultValue="pending">
-              <TabsList className="mb-2">
-                <TabsTrigger value="pending" className="relative">
+            {/* Tabs for Active Teachers, Pending Approvals, All Staff, Rejected */}
+            <Tabs defaultValue="active" className="space-y-4">
+              <TabsList className="bg-muted/60 p-1">
+                <TabsTrigger value="active" className="gap-2">
+                  <UserCheck className="h-4 w-4" />
+                  Available Teachers
+                  <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-normal">
+                    {activeTeachers.length}
+                  </Badge>
+                </TabsTrigger>
+
+                <TabsTrigger value="pending" className="gap-2 relative">
+                  <Clock className="h-4 w-4" />
                   Pending Approvals
-                  {pending.length > 0 && (
-                    <Badge className="ml-2 bg-amber-500 text-white font-normal px-1.5 py-0 text-[10px]">
-                      {pending.length}
+                  {pendingTeachers.length > 0 && (
+                    <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-normal px-1.5 py-0 text-[10px]">
+                      {pendingTeachers.length}
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="verified">
-                  Active Teachers ({verified.length})
+
+                <TabsTrigger value="all" className="gap-2">
+                  <GraduationCap className="h-4 w-4" />
+                  All Staff ({listToDisplay.length})
                 </TabsTrigger>
-                <TabsTrigger value="rejected">
-                  Rejected ({rejected.length})
-                </TabsTrigger>
+
+                {rejectedTeachers.length > 0 && (
+                  <TabsTrigger value="rejected" className="gap-2">
+                    Rejected ({rejectedTeachers.length})
+                  </TabsTrigger>
+                )}
               </TabsList>
-              <TabsContent value="pending" className="mt-2">
-                {renderTable(pending, true, false)}
+
+              {/* Available Active Teachers */}
+              <TabsContent value="active" className="mt-0">
+                {viewMode === "grid"
+                  ? renderCards(activeTeachers, false, true)
+                  : renderTable(activeTeachers, false, true)}
               </TabsContent>
-              <TabsContent value="verified" className="mt-2">
-                {renderTable(verified, false, true)}
+
+              {/* Pending Approvals */}
+              <TabsContent value="pending" className="mt-0">
+                {viewMode === "grid"
+                  ? renderCards(pendingTeachers, true, false)
+                  : renderTable(pendingTeachers, true, false)}
               </TabsContent>
-              <TabsContent value="rejected" className="mt-2">
-                {renderTable(rejected, false, true)}
+
+              {/* All Staff */}
+              <TabsContent value="all" className="mt-0">
+                {viewMode === "grid"
+                  ? renderCards(listToDisplay, false, true)
+                  : renderTable(listToDisplay, false, true)}
               </TabsContent>
+
+              {/* Rejected */}
+              {rejectedTeachers.length > 0 && (
+                <TabsContent value="rejected" className="mt-0">
+                  {viewMode === "grid"
+                    ? renderCards(rejectedTeachers, false, true)
+                    : renderTable(rejectedTeachers, false, true)}
+                </TabsContent>
+              )}
             </Tabs>
           </CardContent>
         </Card>
