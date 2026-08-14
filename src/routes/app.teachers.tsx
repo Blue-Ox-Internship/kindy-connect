@@ -20,6 +20,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
@@ -38,7 +39,7 @@ export function TeachersPage() {
   const users = useMemo(() => store?.users ?? [], [store?.users]);
   const schools = useMemo(() => store?.schools ?? [], [store?.schools]);
   const classes = useMemo(() => store?.classes ?? [], [store?.classes]);
-  const { approveTeacher, rejectTeacher, registerUser, updateUser, deleteUser, getSchoolSubjects, updateClass } = store;
+  const { approveTeacher, rejectTeacher, registerUser, updateUser, deleteUser, getSchoolSubjects, updateClass } = store ?? {};
 
   const isSuperAdmin = currentUser?.role === "super_admin";
   const isSchoolAdmin = currentUser?.role === "admin";
@@ -534,7 +535,7 @@ export function TeachersPage() {
           {list.length === 0 && (
             <TableRow>
               <TableCell
-                colSpan={isSuperAdmin ? 10 : 8}
+                colSpan={7 + (isSuperAdmin ? 2 : 0) + (isSuperAdmin || isSchoolAdmin ? 1 : 0)}
                 className="text-center text-muted-foreground py-10"
               >
                 <div className="flex flex-col items-center justify-center gap-2">
@@ -612,6 +613,9 @@ export function TeachersPage() {
                 <DialogTitle className="text-lg font-bold flex items-center gap-2">
                   <UserPlus className="h-5 w-5 text-primary" /> Register New Teacher
                 </DialogTitle>
+                <DialogDescription className="sr-only">
+                  Form to register a new teacher.
+                </DialogDescription>
               </DialogHeader>
 
               <form
@@ -897,6 +901,9 @@ export function TeachersPage() {
                 <DialogTitle className="text-lg font-bold flex items-center gap-2">
                   <Edit className="h-5 w-5 text-primary" /> Edit Teacher Profile
                 </DialogTitle>
+                <DialogDescription className="sr-only">
+                  Form to edit an existing teacher's profile.
+                </DialogDescription>
               </DialogHeader>
 
               <form
