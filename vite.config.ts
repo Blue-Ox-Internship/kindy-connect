@@ -30,6 +30,7 @@ export default defineConfig(({ mode }) => {
       publicAssets: [
         {
           dir: "public",
+          maxAge: 0,
         },
       ],
     }),

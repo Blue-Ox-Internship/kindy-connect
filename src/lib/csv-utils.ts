@@ -35,6 +35,14 @@ export interface ParseResult {
   }>;
 }
 
+function calculateAge(dobString: string): number {
+  const dob = new Date(dobString);
+  if (isNaN(dob.getTime())) return 0;
+  const diffMs = Date.now() - dob.getTime();
+  const ageDate = new Date(diffMs);
+  return Math.abs(ageDate.getUTCFullYear() - 1970);
+}
+
 /**
  * Generate CSV template with headers and sample data
  */

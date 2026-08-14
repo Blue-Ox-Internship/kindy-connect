@@ -198,6 +198,7 @@ export function BulkUploadPupilsDialog({ open, onOpenChange }: BulkUploadPupilsD
             phone: row.parentPhone,
             email: row.parentEmail,
             relationship: row.parentRelationship,
+            schoolId: currentUser.schoolId || classRoom.schoolId,
           },
         };
       });

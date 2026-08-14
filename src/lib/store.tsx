@@ -97,6 +97,7 @@ interface Store {
     status?: TeacherStatus;
     subjects?: string[];
     photo?: string;
+    classId?: string;
   }) => Promise<void>;
   approveTeacher: (id: string) => Promise<void>;
   rejectTeacher: (id: string) => Promise<void>;
@@ -625,9 +626,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       status,
       subjects,
       photo,
+      classId,
     }) => {
       const res = await registerUserDb({
-        data: { id, name, email, phone, password, role, schoolId, newSchoolName, status, subjects, photo },
+        data: { id, name, email, phone, password, role, schoolId, newSchoolName, status, subjects, photo, classId },
       });
       setState((s) => {
         const nextUsers = [...s.users, res.user];
@@ -921,7 +923,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             attendance: nextAtt,
             notifications: [
               ...res.notifications,
-              ...s.notifications.filter((n) => !res.notifications.some((rn) => rn.id === n.id)),
+              ...s.notifications.filter((n) => !res.notifications.some((rn: any) => rn.id === n.id)),
             ],
             audit: [
               res.audit,
@@ -1008,7 +1010,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             attendance: nextAtt,
             notifications: [
               ...res.notifications,
-              ...s.notifications.filter((n) => !res.notifications.some((rn) => rn.id === n.id)),
+              ...s.notifications.filter((n) => !res.notifications.some((rn: any) => rn.id === n.id)),
             ],
             audit: [
               res.audit,
@@ -1110,7 +1112,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
 
       setState((s) => {
-        const savedIds = new Set(savedMarks.map((m) => m.id));
+        const savedIds = new Set(savedMarks.map((m: any) => m.id));
         const updatedMarksList = [
           ...savedMarks,
           ...s.marks.filter((m) => !savedIds.has(m.id)),

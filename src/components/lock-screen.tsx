@@ -41,7 +41,7 @@ export function LockScreen() {
           />
           {error && <div className="text-destructive text-sm mt-2">{error}</div>}
           <div className="mt-4 flex justify-end">
-            <Button type="button" onClick={submit} loading={loading}>
+            <Button type="button" onClick={submit} disabled={loading}>
               Unlock
             </Button>
           </div>

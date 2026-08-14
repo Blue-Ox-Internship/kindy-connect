@@ -38,14 +38,16 @@ export function TeachersPage() {
   const users = useMemo(() => store?.users ?? [], [store?.users]);
   const schools = useMemo(() => store?.schools ?? [], [store?.schools]);
   const classes = useMemo(() => store?.classes ?? [], [store?.classes]);
-  const { approveTeacher, rejectTeacher, registerUser, updateUser, deleteUser, getSchoolSubjects } = store;
+  const { approveTeacher, rejectTeacher, registerUser, updateUser, deleteUser, getSchoolSubjects, updateClass } = store;
 
   const isSuperAdmin = currentUser?.role === "super_admin";
   const isSchoolAdmin = currentUser?.role === "admin";
-  const isAuthorized = isSuperAdmin || isSchoolAdmin || currentUser?.role === "deputy";
+  const isStaff = isSchoolAdmin || currentUser?.role === "deputy";
+  const isAuthorized = isSuperAdmin || isStaff || currentUser?.role === "teacher";
 
   const [q, setQ] = useState("");
   const [schoolFilter, setSchoolFilter] = useState<string>("all");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
   const [open, setOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -87,15 +89,14 @@ export function TeachersPage() {
     if (!form.schoolId && defaultSchoolId) {
       setForm((f) => ({ ...f, schoolId: defaultSchoolId }));
     }
-  }, [defaultSchoolId]);
+  }, [defaultSchoolId, form.schoolId]);
 
   // Target school for subjects & classes selection
   const activeSchoolForForm = form.schoolId || defaultSchoolId;
-  const rawSubjects = getSchoolSubjects ? getSchoolSubjects(activeSchoolForForm) : [];
-  const availableSubjects = useMemo(
-    () => (rawSubjects || []).map((s) => s.name).filter(Boolean),
-    [rawSubjects],
-  );
+  const availableSubjects = useMemo(() => {
+    const raw = getSchoolSubjects ? getSchoolSubjects(activeSchoolForForm) : [];
+    return (raw || []).map((s) => s.name).filter(Boolean);
+  }, [getSchoolSubjects, activeSchoolForForm, store?.subjects]);
 
   const availableClasses = useMemo(() => {
     if (!activeSchoolForForm) return classes;
@@ -104,11 +105,10 @@ export function TeachersPage() {
 
   // Target school for edit form subjects & classes
   const activeSchoolForEdit = editForm.schoolId || defaultSchoolId;
-  const rawEditSubjects = getSchoolSubjects ? getSchoolSubjects(activeSchoolForEdit) : [];
-  const editAvailableSubjects = useMemo(
-    () => (rawEditSubjects || []).map((s) => s.name).filter(Boolean),
-    [rawEditSubjects],
-  );
+  const editAvailableSubjects = useMemo(() => {
+    const raw = getSchoolSubjects ? getSchoolSubjects(activeSchoolForEdit) : [];
+    return (raw || []).map((s) => s.name).filter(Boolean);
+  }, [getSchoolSubjects, activeSchoolForEdit, store?.subjects]);
 
   const editAvailableClasses = useMemo(() => {
     if (!activeSchoolForEdit) return classes;
@@ -151,13 +151,14 @@ export function TeachersPage() {
   };
 
   const resetForm = () => {
+    const defaultSchool = isSuperAdmin && schoolFilter !== "all" ? schoolFilter : defaultSchoolId;
     setForm({
       id: generateRandomTeacherId(),
       name: "",
       email: "",
       phone: "",
       role: "teacher" as Role,
-      schoolId: defaultSchoolId,
+      schoolId: defaultSchool,
       classId: "",
       password: generateDefaultPassword(),
       subjects: [],
@@ -194,14 +195,21 @@ export function TeachersPage() {
   const listToDisplay = useMemo(() => {
     let list = users || [];
 
-    if (!isSuperAdmin && isSchoolAdmin) {
+    // Filter by school scope
+    if (!isSuperAdmin) {
       list = list.filter((u) => u && u.schoolId === currentUser?.schoolId);
-    } else if (!isSuperAdmin && !isSchoolAdmin) {
-      list = list.filter((u) => u && u.role === "teacher" && u.schoolId === currentUser?.schoolId);
+    } else if (isSuperAdmin && schoolFilter !== "all") {
+      list = list.filter((u) => u && u.schoolId === schoolFilter);
     }
 
-    if (isSuperAdmin && schoolFilter !== "all") {
-      list = list.filter((u) => u && u.schoolId === schoolFilter);
+    // Filter by role
+    if (roleFilter === "all") {
+      // By default show teaching staff accounts
+      list = list.filter(
+        (u) => u && (u.role === "teacher" || u.role === "deputy" || u.role === "admin"),
+      );
+    } else {
+      list = list.filter((u) => u && u.role === roleFilter);
     }
 
     if (q.trim()) {
@@ -217,7 +225,7 @@ export function TeachersPage() {
     }
 
     return list;
-  }, [users, isSuperAdmin, isSchoolAdmin, schoolFilter, q, currentUser]);
+  }, [users, isSuperAdmin, schoolFilter, roleFilter, q, currentUser]);
 
   const pending = useMemo(
     () => listToDisplay.filter((t) => t && t.status === "pending"),
@@ -257,8 +265,8 @@ export function TeachersPage() {
     }
 
     const targetSchoolId = isSuperAdmin ? form.schoolId : (currentUser?.schoolId ?? defaultSchoolId);
-    if (!isSuperAdmin && !targetSchoolId) {
-      return toast.error("School context is missing");
+    if (form.role !== "super_admin" && !targetSchoolId) {
+      return toast.error("Please select an assigned school for this teacher");
     }
 
     try {
@@ -273,11 +281,11 @@ export function TeachersPage() {
         status: "verified",
         subjects: form.subjects,
         photo: form.photo,
+        classId: form.classId || undefined,
       });
 
-      // If a class assignment was selected, update the user with classId
-      if (form.classId && updateUser) {
-        await updateUser(userId, { classId: form.classId });
+      if (form.classId && updateClass) {
+        await updateClass(form.classId, { teacherId: userId });
       }
 
       toast.success(`Teacher account for ${name} created successfully!`);
@@ -299,6 +307,26 @@ export function TeachersPage() {
       return toast.error("Name, email, and phone cannot be empty");
     }
 
+    if (
+      users.some(
+        (u) =>
+          u &&
+          u.id !== editingUser.id &&
+          u.email &&
+          u.email.trim().toLowerCase() === email.toLowerCase(),
+      )
+    ) {
+      return toast.error(`Email address '${email}' is already registered to another user`);
+    }
+
+    if (
+      users.some(
+        (u) => u && u.id !== editingUser.id && u.phone && u.phone.trim() === phone,
+      )
+    ) {
+      return toast.error(`Phone number '${phone}' is already registered to another user`);
+    }
+
     try {
       await updateUser(editingUser.id, {
         name,
@@ -312,6 +340,14 @@ export function TeachersPage() {
         photo: editForm.photo,
         ...(editForm.password.trim() ? { password: editForm.password.trim() } : {}),
       });
+
+      if (editingUser.classId && editingUser.classId !== editForm.classId && updateClass) {
+        await updateClass(editingUser.classId, { teacherId: undefined });
+      }
+
+      if (editForm.classId && updateClass) {
+        await updateClass(editForm.classId, { teacherId: editingUser.id });
+      }
 
       toast.success(`Updated details for ${name}`);
       setEditOpen(false);
@@ -1126,23 +1162,39 @@ export function TeachersPage() {
               />
             </div>
 
-            {isSuperAdmin && (
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
-                <Label className="shrink-0 text-xs font-semibold">School Filter:</Label>
+                <Label className="shrink-0 text-xs font-semibold">Role Filter:</Label>
                 <select
-                  value={schoolFilter}
-                  onChange={(e) => setSchoolFilter(e.target.value)}
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
                   className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
-                  <option value="all">All Schools</option>
-                  {schools.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
+                  <option value="all">All Teaching Staff</option>
+                  <option value="teacher">Teachers Only</option>
+                  <option value="deputy">Deputy Headteachers</option>
+                  <option value="admin">School Admins</option>
                 </select>
               </div>
-            )}
+
+              {isSuperAdmin && (
+                <div className="flex items-center gap-2">
+                  <Label className="shrink-0 text-xs font-semibold">School Filter:</Label>
+                  <select
+                    value={schoolFilter}
+                    onChange={(e) => setSchoolFilter(e.target.value)}
+                    className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="all">All Schools</option>
+                    {schools.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
           </div>
 
           <Tabs defaultValue="verified" className="w-full">
