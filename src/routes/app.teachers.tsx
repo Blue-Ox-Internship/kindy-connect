@@ -634,7 +634,7 @@ export function TeachersPage() {
                       </Label>
                       <button
                         type="button"
-                        onClick={() => setForm({ ...form, id: generateRandomTeacherId() })}
+                        onClick={() => setForm((prev) => ({ ...prev, id: generateRandomTeacherId() }))}
                         className="text-xs text-primary flex items-center gap-1 hover:underline"
                       >
                         <RefreshCw className="h-3 w-3" /> Auto-ID
@@ -643,7 +643,7 @@ export function TeachersPage() {
                     <Input
                       id="create-id"
                       value={form.id}
-                      onChange={(e) => setForm({ ...form, id: e.target.value })}
+                      onChange={(e) => setForm((prev) => ({ ...prev, id: e.target.value }))}
                       placeholder="e.g. TCH-101"
                       className="mt-1"
                       required
@@ -657,7 +657,7 @@ export function TeachersPage() {
                     <Input
                       id="create-name"
                       value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                       placeholder="e.g. Mary Nambasa"
                       className="mt-1"
                       required
@@ -674,7 +674,7 @@ export function TeachersPage() {
                       id="create-email"
                       type="email"
                       value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
                       placeholder="e.g. mary@school.edu"
                       className="mt-1"
                       required
@@ -688,7 +688,7 @@ export function TeachersPage() {
                     <Input
                       id="create-phone"
                       value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
                       placeholder="e.g. 0771234567"
                       className="mt-1"
                       required
@@ -704,7 +704,7 @@ export function TeachersPage() {
                       </Label>
                       <button
                         type="button"
-                        onClick={() => setForm({ ...form, password: generateDefaultPassword() })}
+                        onClick={() => setForm((prev) => ({ ...prev, password: generateDefaultPassword() }))}
                         className="text-xs text-primary hover:underline"
                       >
                         Reset Default
@@ -715,7 +715,7 @@ export function TeachersPage() {
                         id="create-pwd"
                         type={showPassword ? "text" : "password"}
                         value={form.password}
-                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
                         required
                         className="pr-10"
                       />
@@ -736,7 +736,7 @@ export function TeachersPage() {
                     <select
                       id="create-role"
                       value={form.role}
-                      onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
+                      onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value as Role }))}
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mt-1"
                     >
                       <option value="teacher">Teacher</option>
@@ -755,7 +755,7 @@ export function TeachersPage() {
                     <select
                       id="create-school"
                       value={form.schoolId}
-                      onChange={(e) => setForm({ ...form, schoolId: e.target.value })}
+                      onChange={(e) => setForm((prev) => ({ ...prev, schoolId: e.target.value }))}
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mt-1"
                     >
                       {schools.map((s) => (
@@ -776,7 +776,7 @@ export function TeachersPage() {
                       <select
                         id="create-class"
                         value={form.classId}
-                        onChange={(e) => setForm({ ...form, classId: e.target.value })}
+                        onChange={(e) => setForm((prev) => ({ ...prev, classId: e.target.value }))}
                         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mt-1"
                       >
                         <option value="">-- No Class Assigned --</option>
@@ -797,7 +797,7 @@ export function TeachersPage() {
                           <div className="flex items-center gap-2 text-xs">
                             <button
                               type="button"
-                              onClick={() => setForm({ ...form, subjects: [...availableSubjects] })}
+                              onClick={() => setForm((prev) => ({ ...prev, subjects: [...availableSubjects] }))}
                               className="text-primary hover:underline"
                             >
                               Select All
@@ -805,7 +805,7 @@ export function TeachersPage() {
                             <span className="text-muted-foreground">•</span>
                             <button
                               type="button"
-                              onClick={() => setForm({ ...form, subjects: [] })}
+                              onClick={() => setForm((prev) => ({ ...prev, subjects: [] }))}
                               className="text-muted-foreground hover:underline"
                             >
                               Clear All
@@ -834,12 +834,12 @@ export function TeachersPage() {
                                 checked={form.subjects.includes(subject)}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    setForm({ ...form, subjects: [...form.subjects, subject] });
+                                    setForm((prev) => ({ ...prev, subjects: [...prev.subjects, subject] }));
                                   } else {
-                                    setForm({
-                                      ...form,
-                                      subjects: form.subjects.filter((s) => s !== subject),
-                                    });
+                                    setForm((prev) => ({
+                                      ...prev,
+                                      subjects: prev.subjects.filter((s) => s !== subject),
+                                    }));
                                   }
                                 }}
                                 className="h-4 w-4 rounded border-input"
@@ -875,7 +875,7 @@ export function TeachersPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => setForm({ ...form, photo: "" })}
+                        onClick={() => setForm((prev) => ({ ...prev, photo: "" }))}
                         className="text-xs text-destructive"
                       >
                         Remove Photo
@@ -934,7 +934,7 @@ export function TeachersPage() {
                     <Input
                       id="edit-name"
                       value={editForm.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
                       className="mt-1"
                       required
                     />
@@ -950,7 +950,7 @@ export function TeachersPage() {
                       id="edit-email"
                       type="email"
                       value={editForm.email}
-                      onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
                       className="mt-1"
                       required
                     />
@@ -963,7 +963,7 @@ export function TeachersPage() {
                     <Input
                       id="edit-phone"
                       value={editForm.phone}
-                      onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, phone: e.target.value }))}
                       className="mt-1"
                       required
                     />
@@ -979,7 +979,7 @@ export function TeachersPage() {
                       id="edit-status"
                       value={editForm.status}
                       onChange={(e) =>
-                        setEditForm({ ...editForm, status: e.target.value as TeacherStatus })
+                        setEditForm((prev) => ({ ...prev, status: e.target.value as TeacherStatus }))
                       }
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mt-1"
                     >
@@ -996,7 +996,7 @@ export function TeachersPage() {
                     <select
                       id="edit-role"
                       value={editForm.role}
-                      onChange={(e) => setEditForm({ ...editForm, role: e.target.value as Role })}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, role: e.target.value as Role }))}
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mt-1"
                     >
                       <option value="teacher">Teacher</option>
@@ -1015,7 +1015,7 @@ export function TeachersPage() {
                         id="edit-pwd"
                         type={editShowPassword ? "text" : "password"}
                         value={editForm.password}
-                        onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, password: e.target.value }))}
                         placeholder="Leave blank to keep"
                         className="pr-10"
                       />
@@ -1039,7 +1039,7 @@ export function TeachersPage() {
                       <select
                         id="edit-class"
                         value={editForm.classId}
-                        onChange={(e) => setEditForm({ ...editForm, classId: e.target.value })}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, classId: e.target.value }))}
                         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mt-1"
                       >
                         <option value="">-- No Class Assigned --</option>
@@ -1059,7 +1059,7 @@ export function TeachersPage() {
                             <button
                               type="button"
                               onClick={() =>
-                                setEditForm({ ...editForm, subjects: [...editAvailableSubjects] })
+                                setEditForm((prev) => ({ ...prev, subjects: [...editAvailableSubjects] }))
                               }
                               className="text-primary hover:underline"
                             >
@@ -1068,7 +1068,7 @@ export function TeachersPage() {
                             <span className="text-muted-foreground">•</span>
                             <button
                               type="button"
-                              onClick={() => setEditForm({ ...editForm, subjects: [] })}
+                              onClick={() => setEditForm((prev) => ({ ...prev, subjects: [] }))}
                               className="text-muted-foreground hover:underline"
                             >
                               Clear All
@@ -1093,15 +1093,15 @@ export function TeachersPage() {
                                 checked={editForm.subjects.includes(subject)}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    setEditForm({
-                                      ...editForm,
-                                      subjects: [...editForm.subjects, subject],
-                                    });
+                                    setEditForm((prev) => ({
+                                      ...prev,
+                                      subjects: [...prev.subjects, subject],
+                                    }));
                                   } else {
-                                    setEditForm({
-                                      ...editForm,
-                                      subjects: editForm.subjects.filter((s) => s !== subject),
-                                    });
+                                    setEditForm((prev) => ({
+                                      ...prev,
+                                      subjects: prev.subjects.filter((s) => s !== subject),
+                                    }));
                                   }
                                 }}
                                 className="h-4 w-4 rounded border-input"
@@ -1137,7 +1137,7 @@ export function TeachersPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => setEditForm({ ...editForm, photo: "" })}
+                        onClick={() => setEditForm((prev) => ({ ...prev, photo: "" }))}
                         className="text-xs text-destructive"
                       >
                         Remove Photo
