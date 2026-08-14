@@ -77,8 +77,8 @@ function TeachersPage() {
 
   // Available subjects for selection
   const targetSchoolForSubjects = form.schoolId || (schoolFilter !== "all" ? schoolFilter : undefined);
-  const rawSubjects = getSchoolSubjects(targetSchoolForSubjects);
-  const availableSubjects = useMemo(() => rawSubjects.map((s) => s.name), [rawSubjects]);
+  const rawSubjects = typeof getSchoolSubjects === "function" ? getSchoolSubjects(targetSchoolForSubjects) : [];
+  const availableSubjects = useMemo(() => (rawSubjects || []).map((s) => s.name), [rawSubjects]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -111,7 +111,7 @@ function TeachersPage() {
       email: "",
       phone: "",
       role: "teacher" as Role,
-      schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
+      schoolId: currentUser?.schoolId ?? schools?.[0]?.id ?? "",
       password: "",
       subjects: [],
       photo: "",
@@ -125,28 +125,29 @@ function TeachersPage() {
 
   const listToDisplay = useMemo(() => {
     // Super admin sees all users, school admin sees users in their school, others see only teachers
-    let list = users;
+    let list = users || [];
 
     if (!isSuperAdmin && isSchoolAdmin) {
       // School admin: filter by their school
-      list = list.filter((u) => u.schoolId === currentUser?.schoolId);
+      list = list.filter((u) => u?.schoolId === currentUser?.schoolId);
     } else if (!isSuperAdmin && !isSchoolAdmin) {
       // Deputy: see only teachers in their school
-      list = list.filter((u) => u.role === "teacher" && u.schoolId === currentUser?.schoolId);
+      list = list.filter((u) => u?.role === "teacher" && u?.schoolId === currentUser?.schoolId);
     }
 
     // Apply Super Admin school filter (only for super admin)
     if (isSuperAdmin && schoolFilter !== "all") {
-      list = list.filter((u) => u.schoolId === schoolFilter);
+      list = list.filter((u) => u?.schoolId === schoolFilter);
     }
 
     // Apply search filter
     if (q.trim()) {
+      const searchLower = q.toLowerCase();
       list = list.filter(
         (u) =>
-          u.name.toLowerCase().includes(q.toLowerCase()) ||
-          u.email.toLowerCase().includes(q.toLowerCase()) ||
-          u.id.toLowerCase().includes(q.toLowerCase()),
+          (u?.name || "").toLowerCase().includes(searchLower) ||
+          (u?.email || "").toLowerCase().includes(searchLower) ||
+          (u?.id || "").toLowerCase().includes(searchLower),
       );
     }
 
@@ -154,20 +155,24 @@ function TeachersPage() {
   }, [users, isSuperAdmin, isSchoolAdmin, schoolFilter, q, currentUser]);
 
   const pending = useMemo(
-    () => listToDisplay.filter((t) => t.status === "pending"),
+    () => (listToDisplay || []).filter((t) => t?.status === "pending"),
     [listToDisplay],
   );
   const verified = useMemo(
-    () => listToDisplay.filter((t) => t.status === "verified"),
+    () => (listToDisplay || []).filter((t) => t?.status === "verified"),
     [listToDisplay],
   );
   const rejected = useMemo(
-    () => listToDisplay.filter((t) => t.status === "rejected"),
+    () => (listToDisplay || []).filter((t) => t?.status === "rejected"),
     [listToDisplay],
   );
 
-  const formatRegisteredAt = (value: string | Date) =>
-    value instanceof Date ? value.toISOString().slice(0, 10) : value;
+  const formatRegisteredAt = (value: string | Date | undefined | null) => {
+    if (!value) return "N/A";
+    if (value instanceof Date) return value.toISOString().slice(0, 10);
+    if (typeof value === "string") return value.slice(0, 10);
+    return String(value);
+  };
 
   const submitCreateUser = async () => {
     const userId = form.id.trim();
@@ -181,13 +186,13 @@ function TeachersPage() {
     }
 
     // Duplicate user checks
-    if (users.some((u) => u.id.trim().toLowerCase() === userId.toLowerCase())) {
+    if (users.some((u) => (u?.id || "").trim().toLowerCase() === userId.toLowerCase())) {
       return toast.error(`User ID '${userId}' is already assigned`);
     }
-    if (users.some((u) => u.email.trim().toLowerCase() === email.toLowerCase())) {
+    if (users.some((u) => (u?.email || "").trim().toLowerCase() === email.toLowerCase())) {
       return toast.error(`Email address '${email}' is already registered`);
     }
-    if (users.some((u) => u.phone && u.phone.trim() === phone)) {
+    if (users.some((u) => u?.phone && u.phone.trim() === phone)) {
       return toast.error(`Phone number '${phone}' is already registered`);
     }
 
@@ -224,7 +229,7 @@ function TeachersPage() {
         email: "",
         phone: "",
         role: "teacher",
-        schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
+        schoolId: currentUser?.schoolId ?? schools?.[0]?.id ?? "",
         password: "",
         subjects: [],
         photo: "",
@@ -252,25 +257,27 @@ function TeachersPage() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {list.map((t) => {
-          const schoolName = schools.find((s) => s.id === t.schoolId)?.name || "System Admin";
+        {(list || []).map((t) => {
+          if (!t) return null;
+          const schoolName = schools?.find((s) => s.id === t.schoolId)?.name || "System Admin";
           const canDelete = isSuperAdmin && t.id !== currentUser?.id;
+          const displayRole = (t.role || "teacher").replace(/_/g, " ");
 
           return (
-            <TableRow key={t.id}>
+            <TableRow key={t.id || Math.random().toString()}>
               {isSuperAdmin && (
-                <TableCell className="font-mono text-xs font-semibold">{t.id}</TableCell>
+                <TableCell className="font-mono text-xs font-semibold">{t.id || "N/A"}</TableCell>
               )}
-              <TableCell className="font-medium">{t.name}</TableCell>
-              <TableCell>{t.email}</TableCell>
-              <TableCell>{t.phone}</TableCell>
+              <TableCell className="font-medium">{t.name || "Unnamed"}</TableCell>
+              <TableCell>{t.email || "N/A"}</TableCell>
+              <TableCell>{t.phone || "N/A"}</TableCell>
               {isSuperAdmin && (
                 <TableCell className="text-muted-foreground text-xs">{schoolName}</TableCell>
               )}
               {(isSuperAdmin || isSchoolAdmin) && (
                 <TableCell className="capitalize">
                   <Badge variant="outline" className="capitalize font-normal">
-                    {t.role.replace("_", " ")}
+                    {displayRole}
                   </Badge>
                 </TableCell>
               )}
@@ -289,7 +296,7 @@ function TeachersPage() {
                   }
                   className="capitalize"
                 >
-                  {t.status}
+                  {t.status || "pending"}
                 </Badge>
               </TableCell>
               {(withActions || showDelete) && (
@@ -300,7 +307,7 @@ function TeachersPage() {
                         size="sm"
                         onClick={async () => {
                           await approveTeacher(t.id);
-                          toast.success(`${t.name} approved - account active`);
+                          toast.success(`${t.name || "Teacher"} approved - account active`);
                         }}
                       >
                         <Check className="h-4 w-4 mr-1" />
@@ -311,7 +318,7 @@ function TeachersPage() {
                         variant="destructive"
                         onClick={async () => {
                           await rejectTeacher(t.id);
-                          toast(`${t.name} status set to rejected`);
+                          toast(`${t.name || "Teacher"} status set to rejected`);
                         }}
                       >
                         <X className="h-4 w-4 mr-1" />
@@ -327,12 +334,12 @@ function TeachersPage() {
                       onClick={async () => {
                         if (
                           confirm(
-                            `Are you sure you want to delete ${t.name}? This action cannot be undone.`,
+                            `Are you sure you want to delete ${t.name || "this user"}? This action cannot be undone.`,
                           )
                         ) {
                           try {
                             await deleteUser(t.id);
-                            toast.success(`${t.name} has been deleted`);
+                            toast.success(`${t.name || "User"} has been deleted`);
                           } catch (error: any) {
                             toast.error(error.message || "Failed to delete user");
                           }
