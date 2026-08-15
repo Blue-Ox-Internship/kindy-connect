@@ -55,18 +55,19 @@ export const Route = createFileRoute("/app/subjects")({
 function SubjectsPage() {
   const {
     currentUser,
-    users,
-    schools,
+    users = [],
+    schools = [],
     selectedSchoolId,
     setSchoolContext,
-    subjects,
-    marks,
+    subjects = [],
+    marks = [],
     addSubject,
     addSubjectsBulk,
     updateSubject,
     deleteSubject,
     seedDefaultSubjects,
     getSchoolSubjects,
+    loading = false,
   } = useStore();
 
   const userRole = (currentUser?.role || "").toLowerCase();
@@ -77,10 +78,10 @@ function SubjectsPage() {
 
   // Selected school ID for subject context
   const activeSchoolId = isSuperAdmin
-    ? selectedSchoolId || schools[0]?.id || currentUser?.schoolId || ""
-    : currentUser?.schoolId || schools[0]?.id || "";
+    ? selectedSchoolId || schools?.[0]?.id || currentUser?.schoolId || ""
+    : currentUser?.schoolId || schools?.[0]?.id || "";
 
-  const currentSchool = schools.find((s) => s.id === activeSchoolId);
+  const currentSchool = (schools || []).find((s) => s?.id === activeSchoolId);
 
   // Filtered subjects for current active school (with fallback default subjects if empty)
   const schoolSubjects = useMemo(() => {
@@ -89,8 +90,8 @@ function SubjectsPage() {
 
   // Teachers teaching subjects in this school
   const schoolTeachers = useMemo(() => {
-    return users.filter(
-      (u) => u.role === "teacher" && (isSuperAdmin ? true : u.schoolId === activeSchoolId),
+    return (users || []).filter(
+      (u) => u?.role === "teacher" && (isSuperAdmin ? true : u?.schoolId === activeSchoolId),
     );
   }, [users, activeSchoolId, isSuperAdmin]);
 
@@ -321,6 +322,17 @@ function SubjectsPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (loading && !currentUser) {
+    return (
+      <AppShell title="School Subjects">
+        <div className="min-h-[50vh] flex flex-col items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mb-3" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading subjects...</p>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell title="School Subjects">

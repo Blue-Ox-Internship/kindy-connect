@@ -57,15 +57,16 @@ export const Route = createFileRoute("/app/marks")({
 function MarksPage() {
   const {
     currentUser,
-    pupils,
-    classes,
-    marks,
+    pupils = [],
+    classes = [],
+    marks = [],
     addMark,
     updateMark,
     deleteMark,
     saveBulkMarks,
-    schools,
+    schools = [],
     getSchoolSubjects,
+    loading = false,
   } = useStore();
 
   const isTeacher = currentUser?.role === "teacher";
@@ -74,7 +75,7 @@ function MarksPage() {
   const canEditMarks = isTeacher || isSchoolAdmin;
 
   // Super Admin School filtering
-  const [superSchoolId, setSuperSchoolId] = useState<string>(schools[0]?.id ?? "");
+  const [superSchoolId, setSuperSchoolId] = useState<string>(schools?.[0]?.id ?? "");
 
   const filteredClasses = useMemo(() => {
     if (currentUser?.role === "super_admin") {
@@ -603,6 +604,17 @@ function MarksPage() {
     else if (pct >= 60) grade = "D";
     return { pct, grade };
   }, [formData.score, formData.maxScore]);
+
+  if (loading && !currentUser) {
+    return (
+      <AppShell title="Marks & Grades">
+        <div className="min-h-[50vh] flex flex-col items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mb-3" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading marks...</p>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell title="Marks & Grades">

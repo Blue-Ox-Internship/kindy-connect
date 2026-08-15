@@ -40,21 +40,30 @@ export const Route = createFileRoute("/app/pupils")({
 });
 
 function PupilsPage() {
-  const { currentUser, pupils, classes, parents, addPupil, updatePupil, deactivatePupil, schools } =
-    useStore();
+  const {
+    currentUser,
+    pupils = [],
+    classes = [],
+    parents = [],
+    addPupil,
+    updatePupil,
+    deactivatePupil,
+    schools = [],
+    loading = false,
+  } = useStore();
   const isAdmin = currentUser?.role === "super_admin" || currentUser?.role === "admin";
   const [q, setQ] = useState("");
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>("all");
-  const [superSchoolId, setSuperSchoolId] = useState<string>(schools[0]?.id ?? "");
+  const [superSchoolId, setSuperSchoolId] = useState<string>(schools?.[0]?.id ?? "");
 
   const filteredClasses = useMemo(() => {
     if (currentUser?.role === "super_admin") {
-      return classes.filter((c) => c.schoolId === superSchoolId);
+      return (classes || []).filter((c) => c?.schoolId === superSchoolId);
     }
     if (currentUser?.schoolId) {
-      return classes.filter((c) => c.schoolId === currentUser.schoolId);
+      return (classes || []).filter((c) => c?.schoolId === currentUser?.schoolId);
     }
-    return classes;
+    return classes || [];
   }, [classes, currentUser, superSchoolId]);
 
   const [open, setOpen] = useState(false);
@@ -67,7 +76,7 @@ function PupilsPage() {
     lastName: "",
     gender: "M" as "M" | "F",
     dob: "",
-    classId: filteredClasses[0]?.id ?? classes[0]?.id ?? "",
+    classId: filteredClasses?.[0]?.id ?? classes?.[0]?.id ?? "",
     parentName: "",
     parentPhone: "",
     parentEmail: "",
@@ -262,6 +271,17 @@ function PupilsPage() {
     setEditOpen(false);
     setEditingPupil(null);
   };
+
+  if (loading && !currentUser) {
+    return (
+      <AppShell title="Pupils">
+        <div className="min-h-[50vh] flex flex-col items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mb-3" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading pupils...</p>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell title="Pupils">

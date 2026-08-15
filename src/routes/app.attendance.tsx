@@ -39,22 +39,31 @@ export const Route = createFileRoute("/app/attendance")({
 });
 
 function AttendancePage() {
-  const { currentUser, pupils, classes, attendance, markArrival, markDeparture, schools, parents } =
-    useStore();
+  const {
+    currentUser,
+    pupils = [],
+    classes = [],
+    attendance = [],
+    markArrival,
+    markDeparture,
+    schools = [],
+    parents = [],
+    loading = false,
+  } = useStore();
   const today = new Date().toISOString().slice(0, 10);
   const isTeacher = currentUser?.role === "teacher";
 
   // Super Admin School filtering
-  const [superSchoolId, setSuperSchoolId] = useState<string>(schools[0]?.id ?? "");
+  const [superSchoolId, setSuperSchoolId] = useState<string>(schools?.[0]?.id ?? "");
 
   const filteredClasses = useMemo(() => {
     if (currentUser?.role === "super_admin") {
-      return classes.filter((c) => c.schoolId === superSchoolId);
+      return (classes || []).filter((c) => c?.schoolId === superSchoolId);
     }
     if (currentUser?.schoolId) {
-      return classes.filter((c) => c.schoolId === currentUser.schoolId);
+      return (classes || []).filter((c) => c?.schoolId === currentUser?.schoolId);
     }
-    return classes;
+    return classes || [];
   }, [classes, currentUser, superSchoolId]);
 
   const [classId, setClassId] = useState<string>("");
@@ -230,6 +239,17 @@ function AttendancePage() {
     });
     setDepartureDialogOpen(true);
   };
+
+  if (loading && !currentUser) {
+    return (
+      <AppShell title="Attendance">
+        <div className="min-h-[50vh] flex flex-col items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mb-3" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading attendance...</p>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell title="Attendance">

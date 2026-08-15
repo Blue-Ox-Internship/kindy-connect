@@ -80,11 +80,19 @@ const DEFAULT_REPORT_FORMAT: ReportFormatConfig = {
 };
 
 function ReportsPage() {
-  const { currentUser, pupils, attendance, classes, marks, schools, getSchoolSubjects } =
-    useStore();
+  const {
+    currentUser,
+    pupils = [],
+    attendance = [],
+    classes = [],
+    marks = [],
+    schools = [],
+    getSchoolSubjects,
+    loading = false,
+  } = useStore();
   const isAdmin = currentUser?.role === "super_admin" || currentUser?.role === "admin";
   const today = new Date().toISOString().slice(0, 10);
-  const todayAtt = attendance.filter((a) => a.date === today);
+  const todayAtt = (attendance || []).filter((a) => a?.date === today);
 
   // Report Format Customization State
   const [formatConfig, setFormatConfig] = useState<ReportFormatConfig>(() => {
@@ -129,7 +137,7 @@ function ReportsPage() {
   };
 
   // Super Admin School filtering
-  const [superSchoolId, setSuperSchoolId] = useState<string>(schools[0]?.id ?? "");
+  const [superSchoolId, setSuperSchoolId] = useState<string>(schools?.[0]?.id ?? "");
 
   const filteredClasses = useMemo(() => {
     if (currentUser?.role === "super_admin") {
@@ -441,6 +449,17 @@ function ReportsPage() {
     );
     setPreviewDialogOpen(false);
   };
+
+  if (loading && !currentUser) {
+    return (
+      <AppShell title="Reports">
+        <div className="min-h-[50vh] flex flex-col items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mb-3" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading reports...</p>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell title="Reports">

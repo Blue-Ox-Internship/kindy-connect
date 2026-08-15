@@ -46,7 +46,7 @@ export const Route = createFileRoute("/app/users")({
 });
 
 function UsersPage() {
-  const { currentUser, users, schools, registerUser, deleteUser } = useStore();
+  const { currentUser, users = [], schools = [], registerUser, deleteUser, loading = false } = useStore();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
@@ -63,7 +63,7 @@ function UsersPage() {
     email: "",
     phone: "",
     role: "teacher" as Role,
-    schoolId: schools[0]?.id ?? "",
+    schoolId: schools?.[0]?.id ?? "",
     password: "",
   });
 
@@ -74,7 +74,7 @@ function UsersPage() {
       email: "",
       phone: "",
       role: "teacher" as Role,
-      schoolId: schools[0]?.id ?? "",
+      schoolId: schools?.[0]?.id ?? "",
       password: "",
     });
   };
@@ -158,7 +158,7 @@ function UsersPage() {
         email: "",
         phone: "",
         role: "teacher",
-        schoolId: schools[0]?.id ?? "",
+        schoolId: schools?.[0]?.id ?? "",
         password: "",
       });
     } catch (error: any) {
@@ -179,6 +179,17 @@ function UsersPage() {
       }
     }
   };
+
+  if (loading && !currentUser) {
+    return (
+      <AppShell title="User Directory">
+        <div className="min-h-[50vh] flex flex-col items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mb-3" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading users...</p>
+        </div>
+      </AppShell>
+    );
+  }
 
   if (!isSuperAdmin) {
     return (

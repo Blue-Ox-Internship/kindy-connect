@@ -60,9 +60,9 @@ export const Route = createFileRoute("/app/teachers")({
 function TeachersPage() {
   const {
     currentUser,
-    users,
-    schools,
-    classes,
+    users = [],
+    schools = [],
+    classes = [],
     selectedSchoolId,
     approveTeacher,
     rejectTeacher,
@@ -70,6 +70,7 @@ function TeachersPage() {
     updateUser,
     deleteUser,
     getSchoolSubjects,
+    loading = false,
   } = useStore();
 
   const [q, setQ] = useState("");
@@ -93,7 +94,7 @@ function TeachersPage() {
     ? (schoolFilter !== "all" ? schoolFilter : selectedSchoolId || null)
     : (currentUser?.schoolId || null);
 
-  const currentSchool = schools?.find((s) => s.id === (effectiveSchoolId || currentUser?.schoolId));
+  const currentSchool = (schools || []).find((s) => s?.id === (effectiveSchoolId || currentUser?.schoolId));
 
   // Create User Form State
   const [createForm, setCreateForm] = useState({
@@ -102,7 +103,7 @@ function TeachersPage() {
     email: "",
     phone: "",
     role: "teacher" as Role,
-    schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
+    schoolId: currentUser?.schoolId ?? schools?.[0]?.id ?? "",
     classId: "",
     password: "",
     subjects: [] as string[],
@@ -920,6 +921,17 @@ function TeachersPage() {
     );
   };
 
+  if (loading && !currentUser) {
+    return (
+      <AppShell title="Teachers & Staff">
+        <div className="min-h-[50vh] flex flex-col items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mb-3" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading teachers directory...</p>
+        </div>
+      </AppShell>
+    );
+  }
+
   if (!isAuthorized) {
     return (
       <AppShell title="Unauthorized">
@@ -1152,7 +1164,7 @@ function TeachersPage() {
                           onChange={(e) => setCreateForm({ ...createForm, schoolId: e.target.value })}
                           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         >
-                          {schools.map((s) => (
+                          {(schools || []).map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.name}
                             </option>
@@ -1349,7 +1361,7 @@ function TeachersPage() {
                           onChange={(e) => setEditForm({ ...editForm, schoolId: e.target.value })}
                           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         >
-                          {schools.map((s) => (
+                          {(schools || []).map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.name}
                             </option>
@@ -1533,7 +1545,7 @@ function TeachersPage() {
                       className="flex h-9 rounded-md border border-input bg-transparent px-2.5 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
                       <option value="all">All Schools</option>
-                      {schools.map((s) => (
+                      {(schools || []).map((s) => (
                         <option key={s.id} value={s.id}>
                           {s.name}
                         </option>

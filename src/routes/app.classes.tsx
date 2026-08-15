@@ -34,14 +34,15 @@ export const Route = createFileRoute("/app/classes")({
 function ClassesPage() {
   const {
     currentUser,
-    classes,
-    users,
-    pupils,
-    schools,
+    classes = [],
+    users = [],
+    pupils = [],
+    schools = [],
     addClass,
     updateClass,
     deleteClass,
     getSchoolSubjects,
+    loading = false,
   } = useStore();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
@@ -58,7 +59,7 @@ function ClassesPage() {
     isSuperAdmin || currentUser?.role === "admin" || currentUser?.role === "deputy";
 
   // Super Admin School filtering
-  const [superSchoolId, setSuperSchoolId] = useState<string>(schools[0]?.id ?? "");
+  const [superSchoolId, setSuperSchoolId] = useState<string>(schools?.[0]?.id ?? "");
 
   // Active target school ID for subject loading
   const activeSchoolId = isSuperAdmin
@@ -67,10 +68,10 @@ function ClassesPage() {
       : editingClass
         ? editingClass.schoolId
         : superSchoolId
-    : (currentUser?.schoolId ?? schools[0]?.id ?? "");
+    : (currentUser?.schoolId ?? schools?.[0]?.id ?? "");
 
   function formSchoolId() {
-    return form.schoolId || superSchoolId || currentUser?.schoolId || schools[0]?.id || "";
+    return form.schoolId || superSchoolId || currentUser?.schoolId || schools?.[0]?.id || "";
   }
 
   // Available subjects for the active school context
@@ -79,7 +80,7 @@ function ClassesPage() {
   }, [getSchoolSubjects, activeSchoolId]);
 
   const availableSubjectNames = useMemo(() => {
-    return schoolSubjects.map((s) => s.name);
+    return (schoolSubjects || []).map((s) => s.name);
   }, [schoolSubjects]);
 
   // Form states
@@ -91,7 +92,7 @@ function ClassesPage() {
   }>({
     name: "",
     teacherId: "",
-    schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
+    schoolId: currentUser?.schoolId ?? schools?.[0]?.id ?? "",
     subjects: [],
   });
 
@@ -108,8 +109,10 @@ function ClassesPage() {
   // When opening Create Class dialog, pre-select available school subjects by default
   useEffect(() => {
     if (open) {
-      const subjs = getSchoolSubjects(
-        isSuperAdmin ? form.schoolId || schools[0]?.id : currentUser?.schoolId,
+      const subjs = (
+        getSchoolSubjects(
+          isSuperAdmin ? form.schoolId || schools?.[0]?.id : currentUser?.schoolId,
+        ) || []
       ).map((s) => s.name);
       setForm((prev) => ({
         ...prev,
@@ -170,7 +173,7 @@ function ClassesPage() {
       setForm({
         name: "",
         teacherId: "",
-        schoolId: currentUser?.schoolId ?? schools[0]?.id ?? "",
+        schoolId: currentUser?.schoolId ?? schools?.[0]?.id ?? "",
         subjects: [],
       });
     } catch (err: any) {
@@ -251,6 +254,17 @@ function ClassesPage() {
     }
   };
 
+  if (loading && !currentUser) {
+    return (
+      <AppShell title="Classrooms">
+        <div className="min-h-[50vh] flex flex-col items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mb-3" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading classes...</p>
+        </div>
+      </AppShell>
+    );
+  }
+
   if (!isAuthorized) {
     return (
       <AppShell title="Unauthorized">
@@ -286,7 +300,7 @@ function ClassesPage() {
                     onChange={(e) => setSuperSchoolId(e.target.value)}
                     className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
-                    {schools.map((s) => (
+                    {(schools || []).map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name}
                       </option>
@@ -323,7 +337,7 @@ function ClassesPage() {
                         }
                         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1"
                       >
-                        {schools.map((s) => (
+                        {(schools || []).map((s) => (
                           <option key={s.id} value={s.id}>
                             {s.name}
                           </option>
