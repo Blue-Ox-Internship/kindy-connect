@@ -77,7 +77,7 @@ function TeachersPage() {
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [roleFilter, setRoleFilter] = useState<string>("teacher");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
   const [schoolFilter, setSchoolFilter] = useState<string>("all");
   const [classFilter, setClassFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
@@ -87,11 +87,15 @@ function TeachersPage() {
 
   const isSuperAdmin = currentUser?.role === "super_admin";
   const isSchoolAdmin = currentUser?.role === "admin";
-  const isAuthorized = isSuperAdmin || isSchoolAdmin || currentUser?.role === "deputy";
+  const isDeputy = currentUser?.role === "deputy";
+  const isTeacher = currentUser?.role === "teacher";
+  const isAuthorized = isSuperAdmin || isSchoolAdmin || isDeputy || isTeacher;
+  const canManage = isSuperAdmin || isSchoolAdmin;
+  const canApprove = isSuperAdmin || isSchoolAdmin || isDeputy;
 
-  // Effective school ID: School admins are locked to their own school, super admins can switch
+  // Effective school ID: School admins and teachers are scoped to their own school, super admins can switch
   const effectiveSchoolId = isSuperAdmin
-    ? (schoolFilter !== "all" ? schoolFilter : selectedSchoolId || null)
+    ? (schoolFilter !== "all" ? schoolFilter : null)
     : (currentUser?.schoolId || null);
 
   const currentSchool = (schools || []).find((s) => s?.id === (effectiveSchoolId || currentUser?.schoolId));
@@ -268,12 +272,14 @@ function TeachersPage() {
   const listToDisplay = useMemo(() => {
     let list = users || [];
 
-    // Filter by school scope (School admins are locked to their own school, super admin can filter or view all)
+    // Filter by school scope (School admins and teachers are scoped to their own school, super admin can filter or view all)
     if (effectiveSchoolId) {
-      list = list.filter((u) => u?.schoolId === effectiveSchoolId);
+      list = list.filter(
+        (u) => u?.schoolId === effectiveSchoolId || (!u?.schoolId && u?.role === "teacher"),
+      );
     }
 
-    // Filter by role if set (defaults to "teacher" for Teachers page)
+    // Filter by role if set
     if (roleFilter !== "all") {
       list = list.filter((u) => u?.role === roleFilter);
     }
@@ -301,7 +307,10 @@ function TeachersPage() {
   }, [users, roleFilter, effectiveSchoolId, classFilter, q, classes]);
 
   const activeTeachers = useMemo(
-    () => (listToDisplay || []).filter((t) => t?.status === "verified" || !t?.status),
+    () =>
+      (listToDisplay || []).filter(
+        (t) => t?.status === "verified" || !t?.status || t?.status === "active",
+      ),
     [listToDisplay],
   );
   const pendingTeachers = useMemo(
@@ -429,11 +438,13 @@ function TeachersPage() {
           </div>
           <h3 className="text-lg font-semibold mb-1">No Teachers Found</h3>
           <p className="text-sm text-muted-foreground max-w-sm mb-6">
-            There are no teacher records matching your current filter criteria. You can add a new teacher right now.
+            There are no teacher records matching your current filter criteria.
           </p>
-          <Button onClick={() => setOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" /> Add Teacher
-          </Button>
+          {(canManage || canApprove) && (
+            <Button onClick={() => setOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" /> Add Teacher
+            </Button>
+          )}
         </div>
       );
     }
@@ -908,9 +919,11 @@ function TeachersPage() {
                   <div className="flex flex-col items-center justify-center gap-2">
                     <GraduationCap className="h-8 w-8 text-muted-foreground/50" />
                     <span>No teacher accounts found matching your filter criteria.</span>
-                    <Button size="sm" variant="outline" onClick={() => setOpen(true)} className="mt-2">
-                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Teacher
-                    </Button>
+                    {(canManage || canApprove) && (
+                      <Button size="sm" variant="outline" onClick={() => setOpen(true)} className="mt-2">
+                        <Plus className="h-3.5 w-3.5 mr-1" /> Add Teacher
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
@@ -962,14 +975,16 @@ function TeachersPage() {
   // Teacher Metrics (scoped to current school for School Admins, or selected school for Super Admin)
   const schoolScopedUsers = useMemo(() => {
     if (effectiveSchoolId) {
-      return (users || []).filter((u) => u?.schoolId === effectiveSchoolId);
+      return (users || []).filter(
+        (u) => u?.schoolId === effectiveSchoolId || (!u?.schoolId && u?.role === "teacher"),
+      );
     }
     return users || [];
   }, [users, effectiveSchoolId]);
 
   const totalTeachers = schoolScopedUsers.filter((u) => u?.role === "teacher").length;
   const pendingTeachersCount = schoolScopedUsers.filter((u) => u?.role === "teacher" && u?.status === "pending").length;
-  const verifiedTeachersCount = schoolScopedUsers.filter((u) => u?.role === "teacher" && (u?.status === "verified" || !u?.status)).length;
+  const verifiedTeachersCount = schoolScopedUsers.filter((u) => u?.role === "teacher" && (u?.status === "verified" || !u?.status || u?.status === "active")).length;
 
   return (
     <AppShell title="Teachers & Staff">
@@ -1027,18 +1042,19 @@ function TeachersPage() {
             </div>
 
             {/* Create Teacher Dialog */}
-            <Dialog open={open} onOpenChange={handleOpenChange}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-1.5 shadow-sm font-medium">
-                  <UserPlus className="h-4 w-4" /> Add New Teacher
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <UserPlus className="h-5 w-5 text-primary" /> Register New Teacher Account
-                  </DialogTitle>
-                </DialogHeader>
+            {(canManage || canApprove) && (
+              <Dialog open={open} onOpenChange={handleOpenChange}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center gap-1.5 shadow-sm font-medium">
+                    <UserPlus className="h-4 w-4" /> Add New Teacher
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <UserPlus className="h-5 w-5 text-primary" /> Register New Teacher Account
+                    </DialogTitle>
+                  </DialogHeader>
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -1288,6 +1304,7 @@ function TeachersPage() {
                 </form>
               </DialogContent>
             </Dialog>
+            )}
 
             {/* Edit Teacher Dialog */}
             <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -1614,30 +1631,30 @@ function TeachersPage() {
               {/* Available Active Teachers */}
               <TabsContent value="active" className="mt-0">
                 {viewMode === "grid"
-                  ? renderCards(activeTeachers, false, true)
-                  : renderTable(activeTeachers, false, true)}
+                  ? renderCards(activeTeachers, false, canManage)
+                  : renderTable(activeTeachers, false, canManage)}
               </TabsContent>
 
               {/* Pending Approvals */}
               <TabsContent value="pending" className="mt-0">
                 {viewMode === "grid"
-                  ? renderCards(pendingTeachers, true, false)
-                  : renderTable(pendingTeachers, true, false)}
+                  ? renderCards(pendingTeachers, canApprove, false)
+                  : renderTable(pendingTeachers, canApprove, false)}
               </TabsContent>
 
               {/* All Staff */}
               <TabsContent value="all" className="mt-0">
                 {viewMode === "grid"
-                  ? renderCards(listToDisplay, false, true)
-                  : renderTable(listToDisplay, false, true)}
+                  ? renderCards(listToDisplay, false, canManage)
+                  : renderTable(listToDisplay, false, canManage)}
               </TabsContent>
 
               {/* Rejected */}
               {rejectedTeachers.length > 0 && (
                 <TabsContent value="rejected" className="mt-0">
                   {viewMode === "grid"
-                    ? renderCards(rejectedTeachers, false, true)
-                    : renderTable(rejectedTeachers, false, true)}
+                    ? renderCards(rejectedTeachers, false, canManage)
+                    : renderTable(rejectedTeachers, false, canManage)}
                 </TabsContent>
               )}
             </Tabs>
