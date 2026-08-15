@@ -575,15 +575,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const filteredAudit = useMemo(() => {
     if (!currentUser) return [];
+    const nonCacheAudit = (state.audit || []).filter((a) => {
+      if (!a) return false;
+      const action = (a.action || "").toLowerCase();
+      const target = (a.target || "").toLowerCase();
+      const actorName = (a.actorName || "").toLowerCase();
+      return !action.includes("cache") && !target.includes("cache") && !actorName.includes("cache");
+    });
     if (currentUser.role === "super_admin") {
       if (state.selectedSchoolId) {
-        return state.audit.filter(
+        return nonCacheAudit.filter(
           (a) => state.users.find((u) => u.id === a.actorId)?.schoolId === state.selectedSchoolId,
         );
       }
-      return state.audit;
+      return nonCacheAudit;
     }
-    return state.audit.filter(
+    return nonCacheAudit.filter(
       (a) => state.users.find((u) => u.id === a.actorId)?.schoolId === currentUser.schoolId,
     );
   }, [state.audit, state.users, currentUser, state.selectedSchoolId]);

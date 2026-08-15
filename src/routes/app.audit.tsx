@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useMemo } from "react";
 
 export const Route = createFileRoute("/app/audit")({
   head: () => ({ meta: [{ title: "Audit log - Noble Edu" }] }),
@@ -22,6 +23,16 @@ function AuditPage() {
   const isSuperAdmin = currentUser?.role === "super_admin";
   const isSchoolAdmin = currentUser?.role === "admin";
   const isAuthorized = isSuperAdmin || isSchoolAdmin;
+
+  const displayAudit = useMemo(() => {
+    return (audit || []).filter((a) => {
+      if (!a) return false;
+      const action = (a.action || "").toLowerCase();
+      const target = (a.target || "").toLowerCase();
+      const actor = (a.actorName || "").toLowerCase();
+      return !action.includes("cache") && !target.includes("cache") && !actor.includes("cache");
+    });
+  }, [audit]);
 
   if (!isAuthorized) {
     return (
@@ -47,7 +58,7 @@ function AuditPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {audit.map((a) => (
+              {displayAudit.map((a) => (
                 <TableRow key={a.id}>
                   <TableCell className="text-xs text-muted-foreground">
                     {new Date(a.timestamp).toLocaleString()}
@@ -57,6 +68,13 @@ function AuditPage() {
                   <TableCell>{a.target}</TableCell>
                 </TableRow>
               ))}
+              {displayAudit.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                    No audit log records found.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
