@@ -23,9 +23,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SchoolSelector } from "@/components/school-selector";
 import { useEffect, type ReactNode } from "react";
 
-// Only render debug tools in development
-const isDevelopment = import.meta.env.DEV;
-
 export function AppShell({ children, title }: { children: ReactNode; title: string }) {
   const { currentUser, users, logout, schools } = useStore();
   const { isLocked } = useStore() as any;
