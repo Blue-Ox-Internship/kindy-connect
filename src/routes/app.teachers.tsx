@@ -71,6 +71,8 @@ function TeachersPage() {
     deleteUser,
     getSchoolSubjects,
     loading = false,
+    loadError,
+    attemptLoad,
   } = useStore();
 
   const [q, setQ] = useState("");
@@ -272,10 +274,12 @@ function TeachersPage() {
   const listToDisplay = useMemo(() => {
     let list = users || [];
 
-    // Filter by school scope (School admins and teachers are scoped to their own school, super admin can filter or view all)
-    if (effectiveSchoolId) {
+    // Filter by school scope
+    if (isSuperAdmin && schoolFilter !== "all") {
+      list = list.filter((u) => u?.schoolId === schoolFilter);
+    } else if (!isSuperAdmin && currentUser?.schoolId) {
       list = list.filter(
-        (u) => u?.schoolId === effectiveSchoolId || (!u?.schoolId && u?.role === "teacher"),
+        (u) => !u?.schoolId || u?.schoolId === currentUser.schoolId || u?.role === "teacher",
       );
     }
 
@@ -304,7 +308,7 @@ function TeachersPage() {
     }
 
     return list;
-  }, [users, roleFilter, effectiveSchoolId, classFilter, q, classes]);
+  }, [users, roleFilter, isSuperAdmin, schoolFilter, currentUser?.schoolId, classFilter, q, classes]);
 
   const activeTeachers = useMemo(
     () =>
@@ -934,7 +938,7 @@ function TeachersPage() {
     );
   };
 
-  if (loading && !currentUser) {
+  if (loading && (!users || users.length === 0)) {
     return (
       <AppShell title="Teachers & Staff">
         <div className="min-h-[50vh] flex flex-col items-center justify-center">
@@ -964,7 +968,7 @@ function TeachersPage() {
               </Badge>
             </div>
             <div className="text-sm text-muted-foreground">
-              <strong>Required roles:</strong> Admin, Super Admin, or Deputy
+              <strong>Required roles:</strong> Admin, Super Admin, Deputy, or Teacher
             </div>
           </CardContent>
         </Card>
@@ -974,13 +978,16 @@ function TeachersPage() {
 
   // Teacher Metrics (scoped to current school for School Admins, or selected school for Super Admin)
   const schoolScopedUsers = useMemo(() => {
-    if (effectiveSchoolId) {
+    if (isSuperAdmin && schoolFilter !== "all") {
+      return (users || []).filter((u) => u?.schoolId === schoolFilter);
+    }
+    if (!isSuperAdmin && currentUser?.schoolId) {
       return (users || []).filter(
-        (u) => u?.schoolId === effectiveSchoolId || (!u?.schoolId && u?.role === "teacher"),
+        (u) => !u?.schoolId || u?.schoolId === currentUser.schoolId || u?.role === "teacher",
       );
     }
     return users || [];
-  }, [users, effectiveSchoolId]);
+  }, [users, isSuperAdmin, schoolFilter, currentUser?.schoolId]);
 
   const totalTeachers = schoolScopedUsers.filter((u) => u?.role === "teacher").length;
   const pendingTeachersCount = schoolScopedUsers.filter((u) => u?.role === "teacher" && u?.status === "pending").length;
@@ -989,6 +996,18 @@ function TeachersPage() {
   return (
     <AppShell title="Teachers & Staff">
       <div className="space-y-6">
+        {loadError && (
+          <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 flex items-center justify-between gap-3 text-sm">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+              <RefreshCw className="h-4 w-4 shrink-0 animate-spin" />
+              <span>{loadError}</span>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => attemptLoad()} className="shrink-0 gap-1.5">
+              <RefreshCw className="h-3.5 w-3.5" /> Retry
+            </Button>
+          </div>
+        )}
+
         {/* Metrics Grid */}
         <div className="grid gap-4 sm:grid-cols-3">
           <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent">

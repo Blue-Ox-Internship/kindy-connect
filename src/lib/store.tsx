@@ -504,9 +504,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // Super admin without school context: see all users
       return state.users;
     }
-    // School-scoped users: see only their school, plus any pending teachers awaiting assignment
+    // School-scoped users: see their school's users, unassigned users, or all teachers
+    if (!currentUser.schoolId) {
+      return state.users;
+    }
     return state.users.filter(
-      (u) => u.schoolId === currentUser.schoolId || (!u.schoolId && u.role === "teacher"),
+      (u) => !u.schoolId || u.schoolId === currentUser.schoolId || u.role === "teacher",
     );
   }, [state.users, currentUser, state.selectedSchoolId]);
 
