@@ -63,6 +63,7 @@ function TeachersPage() {
     users,
     schools,
     classes,
+    selectedSchoolId,
     approveTeacher,
     rejectTeacher,
     registerUser,
@@ -86,6 +87,13 @@ function TeachersPage() {
   const isSuperAdmin = currentUser?.role === "super_admin";
   const isSchoolAdmin = currentUser?.role === "admin";
   const isAuthorized = isSuperAdmin || isSchoolAdmin || currentUser?.role === "deputy";
+
+  // Effective school ID: School admins are locked to their own school, super admins can switch
+  const effectiveSchoolId = isSuperAdmin
+    ? (schoolFilter !== "all" ? schoolFilter : selectedSchoolId || null)
+    : (currentUser?.schoolId || null);
+
+  const currentSchool = schools?.find((s) => s.id === (effectiveSchoolId || currentUser?.schoolId));
 
   // Create User Form State
   const [createForm, setCreateForm] = useState({
@@ -132,7 +140,7 @@ function TeachersPage() {
 
   // Available subjects for Create Modal
   const targetSchoolForSubjects =
-    createForm.schoolId || (schoolFilter !== "all" ? schoolFilter : undefined) || currentUser?.schoolId;
+    createForm.schoolId || effectiveSchoolId || currentUser?.schoolId;
   const rawSubjects =
     typeof getSchoolSubjects === "function" ? getSchoolSubjects(targetSchoolForSubjects) : [];
   const availableSubjects = useMemo(() => {
@@ -143,14 +151,21 @@ function TeachersPage() {
   }, [rawSubjects, createForm.subjects]);
 
   // Available classes for target school
+  const scopedClasses = useMemo(() => {
+    if (effectiveSchoolId) {
+      return (classes || []).filter((c) => c.schoolId === effectiveSchoolId);
+    }
+    return classes || [];
+  }, [classes, effectiveSchoolId]);
+
   const availableClasses = useMemo(() => {
     const sId = targetSchoolForSubjects;
-    if (!sId) return classes || [];
+    if (!sId) return scopedClasses;
     return (classes || []).filter((c) => c.schoolId === sId);
-  }, [classes, targetSchoolForSubjects]);
+  }, [classes, targetSchoolForSubjects, scopedClasses]);
 
   // Available subjects for Edit Modal
-  const targetEditSchool = editForm.schoolId || currentUser?.schoolId;
+  const targetEditSchool = editForm.schoolId || effectiveSchoolId || currentUser?.schoolId;
   const rawEditSubjects =
     typeof getSchoolSubjects === "function" ? getSchoolSubjects(targetEditSchool) : [];
   const availableEditSubjects = useMemo(() => {
@@ -159,9 +174,9 @@ function TeachersPage() {
   }, [rawEditSubjects, editForm.subjects]);
 
   const availableEditClasses = useMemo(() => {
-    if (!targetEditSchool) return classes || [];
+    if (!targetEditSchool) return scopedClasses;
     return (classes || []).filter((c) => c.schoolId === targetEditSchool);
-  }, [classes, targetEditSchool]);
+  }, [classes, targetEditSchool, scopedClasses]);
 
   const togglePasswordVisibility = (userId: string) => {
     setVisiblePasswords((prev) => ({
@@ -252,16 +267,14 @@ function TeachersPage() {
   const listToDisplay = useMemo(() => {
     let list = users || [];
 
+    // Filter by school scope (School admins are locked to their own school, super admin can filter or view all)
+    if (effectiveSchoolId) {
+      list = list.filter((u) => u?.schoolId === effectiveSchoolId);
+    }
+
     // Filter by role if set (defaults to "teacher" for Teachers page)
     if (roleFilter !== "all") {
       list = list.filter((u) => u?.role === roleFilter);
-    }
-
-    // Filter by school scope
-    if (!isSuperAdmin) {
-      list = list.filter((u) => u?.schoolId === currentUser?.schoolId);
-    } else if (schoolFilter !== "all") {
-      list = list.filter((u) => u?.schoolId === schoolFilter);
     }
 
     // Filter by class
@@ -284,7 +297,7 @@ function TeachersPage() {
     }
 
     return list;
-  }, [users, roleFilter, isSuperAdmin, currentUser, schoolFilter, classFilter, q, classes]);
+  }, [users, roleFilter, effectiveSchoolId, classFilter, q, classes]);
 
   const activeTeachers = useMemo(
     () => (listToDisplay || []).filter((t) => t?.status === "verified" || !t?.status),
@@ -934,10 +947,17 @@ function TeachersPage() {
     );
   }
 
-  // Teacher Metrics
-  const totalTeachers = (users || []).filter((u) => u?.role === "teacher").length;
-  const pendingTeachersCount = (users || []).filter((u) => u?.role === "teacher" && u?.status === "pending").length;
-  const verifiedTeachersCount = (users || []).filter((u) => u?.role === "teacher" && (u?.status === "verified" || !u?.status)).length;
+  // Teacher Metrics (scoped to current school for School Admins, or selected school for Super Admin)
+  const schoolScopedUsers = useMemo(() => {
+    if (effectiveSchoolId) {
+      return (users || []).filter((u) => u?.schoolId === effectiveSchoolId);
+    }
+    return users || [];
+  }, [users, effectiveSchoolId]);
+
+  const totalTeachers = schoolScopedUsers.filter((u) => u?.role === "teacher").length;
+  const pendingTeachersCount = schoolScopedUsers.filter((u) => u?.role === "teacher" && u?.status === "pending").length;
+  const verifiedTeachersCount = schoolScopedUsers.filter((u) => u?.role === "teacher" && (u?.status === "verified" || !u?.status)).length;
 
   return (
     <AppShell title="Teachers & Staff">
@@ -1481,7 +1501,7 @@ function TeachersPage() {
                     className="flex h-9 rounded-md border border-input bg-transparent px-2.5 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
                     <option value="all">All Classes</option>
-                    {classes.map((c) => (
+                    {scopedClasses.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
                       </option>

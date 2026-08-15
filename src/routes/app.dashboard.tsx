@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { useStore } from "@/lib/store";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Baby,
   GraduationCap,
@@ -18,7 +18,13 @@ import {
   Clock,
   Lock,
   BookMarked,
+  Building2,
+  Phone,
+  Mail,
+  ArrowRight,
+  UserCheck,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -56,17 +62,18 @@ export const Route = createFileRoute("/app/dashboard")({
 function Dashboard() {
   const {
     currentUser,
-    pupils,
-    classes,
-    users,
-    attendance,
-    notifications,
+    pupils = [],
+    classes = [],
+    users = [],
+    attendance = [],
+    notifications = [],
     markArrival,
     markDeparture,
-    parents,
-    schools,
-    audit,
-    subjects,
+    parents = [],
+    schools = [],
+    audit = [],
+    subjects = [],
+    loading,
   } = useStore();
   const [arrivalDialogOpen, setArrivalDialogOpen] = useState(false);
   const [departureDialogOpen, setDepartureDialogOpen] = useState(false);
@@ -86,6 +93,17 @@ function Dashboard() {
     phone: "",
   });
   const [teacherFilter, setTeacherFilter] = useState<"all" | "present" | "absent">("all");
+
+  if (loading && !currentUser) {
+    return (
+      <AppShell title="Dashboard">
+        <div className="min-h-[50vh] flex flex-col items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mb-3" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading dashboard...</p>
+        </div>
+      </AppShell>
+    );
+  }
 
   if (!currentUser) return null;
 
@@ -213,23 +231,25 @@ function Dashboard() {
     });
     setDepartureDialogOpen(true);
   };
-  const isStaff = currentUser.role !== "teacher";
+  const isStaff = currentUser?.role !== "teacher";
   const today = new Date().toISOString().slice(0, 10);
-  const todayAtt = attendance.filter((a) => a.date === today);
-  const presentIds = new Set(todayAtt.filter((a) => a.arrival).map((a) => a.pupilId));
-  const pending = (users || []).filter((u) => u?.role === "teacher" && u?.status === "pending").length;
+  const todayAtt = (attendance || []).filter((a) => a && a.date === today);
+  const presentIds = new Set(todayAtt.filter((a) => a && a.arrival).map((a) => a.pupilId));
+  const pending = (users || []).filter((u) => u && u.role === "teacher" && u.status === "pending").length;
+
+  const activePupilsCount = (pupils || []).filter((p) => p && p.active).length;
 
   const stats = isStaff
     ? [
         {
           label: "Total pupils",
-          value: pupils.filter((p) => p.active).length,
+          value: activePupilsCount,
           icon: Baby,
           color: "bg-primary/15 text-primary",
         },
         {
           label: "Classes",
-          value: classes.length,
+          value: (classes || []).length,
           icon: Sun,
           color: "bg-secondary/20 text-secondary-foreground",
         },
@@ -241,32 +261,36 @@ function Dashboard() {
         },
         {
           label: "Absent today",
-          value: pupils.filter((p) => p.active).length - presentIds.size,
+          value: Math.max(0, activePupilsCount - presentIds.size),
           icon: GraduationCap,
           color: "bg-accent/15 text-accent",
         },
       ]
     : [];
 
-  const myClassPupils = pupils.filter((p) => p.classId === currentUser.classId && p.active);
+  const myClassPupils = (pupils || []).filter(
+    (p) => p && p.classId === currentUser?.classId && p.active,
+  );
 
   const teacherTotalCount = myClassPupils.length;
   const teacherPresentCount = myClassPupils.filter((p) => {
-    const att = todayAtt.find((a) => a.pupilId === p.id);
+    const att = todayAtt.find((a) => a && a.pupilId === p.id);
     return !!att?.arrival;
   }).length;
-  const teacherAbsentCount = teacherTotalCount - teacherPresentCount;
+  const teacherAbsentCount = Math.max(0, teacherTotalCount - teacherPresentCount);
 
   const filteredTeacherPupils = myClassPupils.filter((p) => {
-    const att = todayAtt.find((a) => a.pupilId === p.id);
+    const att = todayAtt.find((a) => a && a.pupilId === p.id);
     const isPresent = !!att?.arrival;
     if (teacherFilter === "present") return isPresent;
     if (teacherFilter === "absent") return !isPresent;
     return true;
   });
 
+  const userGreetingName = (currentUser?.name || "User").trim().split(" ")[0] || "User";
+
   return (
-    <AppShell title={`Hello, ${currentUser.name.split(" ")[0]}`}>
+    <AppShell title={`Hello, ${userGreetingName}`}>
       {isStaff ? (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -377,6 +401,132 @@ function Dashboard() {
               </CardContent>
             </Card>
           </div>
+
+          {/* School Teachers Directory Card for School Admins / Staff */}
+          <Card className="mt-6">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 gap-2">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5 text-primary" />
+                  School Teachers ({(users || []).filter((u) => u && u.role === "teacher").length})
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Teaching staff assigned to your school and their active classroom streams.
+                </CardDescription>
+              </div>
+              <Button asChild size="sm" variant="outline" className="gap-1 text-xs">
+                <Link to="/app/teachers">
+                  Manage Teachers <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {(users || []).filter((u) => u && u.role === "teacher").length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {(users || [])
+                    .filter((u) => u && u.role === "teacher")
+                    .slice(0, 6)
+                    .map((teacher) => {
+                      const assignedClass = classes.find((c) => c.id === teacher.classId)?.name;
+                      const initials = (teacher.name || "T")
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2);
+
+                      return (
+                        <div
+                          key={teacher.id}
+                          className="rounded-xl border p-3.5 bg-card hover:shadow-sm transition-all flex flex-col justify-between"
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <Avatar className="h-9 w-9 border shrink-0">
+                                {teacher.photo && (
+                                  <AvatarImage src={teacher.photo} alt={teacher.name} />
+                                )}
+                                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
+                                  {initials}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <div className="font-semibold text-sm truncate">{teacher.name}</div>
+                                <div className="text-[11px] font-mono text-muted-foreground">
+                                  {teacher.id}
+                                </div>
+                              </div>
+                            </div>
+                            <Badge
+                              variant={
+                                teacher.status === "verified" || !teacher.status
+                                  ? "default"
+                                  : teacher.status === "rejected"
+                                    ? "destructive"
+                                    : "secondary"
+                              }
+                              className="capitalize text-[10px] px-1.5 py-0 font-normal shrink-0"
+                            >
+                              {teacher.status || "Active"}
+                            </Badge>
+                          </div>
+
+                          <div className="space-y-1.5 text-xs text-muted-foreground pt-2 border-t">
+                            <div className="flex items-center gap-1.5">
+                              <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
+                              <span className="truncate">
+                                {assignedClass ? (
+                                  <span className="font-medium text-foreground">{assignedClass}</span>
+                                ) : (
+                                  <span className="italic">No class assigned</span>
+                                )}
+                              </span>
+                            </div>
+
+                            {teacher.subjects && teacher.subjects.length > 0 && (
+                              <div className="flex items-center gap-1 flex-wrap pt-0.5">
+                                {teacher.subjects.slice(0, 3).map((sub) => (
+                                  <Badge
+                                    key={sub}
+                                    variant="outline"
+                                    className="text-[10px] py-0 px-1 font-normal bg-secondary/30"
+                                  >
+                                    {sub}
+                                  </Badge>
+                                ))}
+                                {teacher.subjects.length > 3 && (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    +{teacher.subjects.length - 3} more
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {teacher.phone && (
+                              <div className="flex items-center gap-1.5 text-[11px]">
+                                <Phone className="h-3 w-3 text-muted-foreground shrink-0" />
+                                <span>{teacher.phone}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-sm text-muted-foreground border rounded-xl bg-muted/20">
+                  <GraduationCap className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="font-medium text-foreground">No teachers registered yet</p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Add teaching staff to your school to begin assigning classes and recording marks.
+                  </p>
+                  <Button asChild size="sm">
+                    <Link to="/app/teachers">Add Teacher</Link>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </>
       ) : (
         <div className="space-y-6">
@@ -800,29 +950,36 @@ function Dashboard() {
   );
 }
 
-function SuperAdminDashboard({ schools, users, pupils, classes, audit, subjects }: any) {
+function SuperAdminDashboard({
+  schools = [],
+  users = [],
+  pupils = [],
+  classes = [],
+  audit = [],
+  subjects = [],
+}: any) {
   const totalTeachers = (users || []).filter(
-    (u: any) => u?.role === "teacher" && u?.status === "verified",
+    (u: any) => u && u.role === "teacher" && u.status === "verified",
   ).length;
   const pendingTeachers = (users || []).filter(
-    (u: any) => u?.role === "teacher" && u?.status === "pending",
+    (u: any) => u && u.role === "teacher" && u.status === "pending",
   ).length;
   const totalAdmins = (users || []).filter(
-    (u: any) => (u?.role === "admin" || u?.role === "deputy") && u?.status === "verified",
+    (u: any) => u && (u.role === "admin" || u.role === "deputy") && u.status === "verified",
   ).length;
-  const activePupils = (pupils || []).filter((p: any) => p?.active).length;
+  const activePupils = (pupils || []).filter((p: any) => p && p.active).length;
 
   const stats = [
     {
       label: "Total Schools",
-      value: schools.length,
+      value: (schools || []).length,
       icon: Building,
       color: "bg-blue-500/15 text-blue-600",
       link: "/app/schools",
     },
     {
       label: "System Users",
-      value: users.length,
+      value: (users || []).length,
       icon: ShieldCheck,
       color: "bg-purple-500/15 text-purple-600",
       link: "/app/teachers",
@@ -836,7 +993,7 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit, subjects 
     },
     {
       label: "Total Classes",
-      value: classes.length,
+      value: (classes || []).length,
       icon: GraduationCap,
       color: "bg-orange-500/15 text-orange-600",
       link: "/app/classes",
@@ -848,7 +1005,7 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit, subjects 
     { label: "Verified Teachers", value: totalTeachers },
     { label: "Pending Approvals", value: pendingTeachers, highlight: pendingTeachers > 0 },
     { label: "Total Subjects", value: (subjects || []).length },
-    { label: "System Logs", value: audit.length },
+    { label: "System Logs", value: (audit || []).length },
   ];
 
   return (
@@ -939,18 +1096,21 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit, subjects 
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {schools.map((s: any) => {
-                    const pupilsCount = pupils.filter(
-                      (p: any) => p.schoolId === s.id && p.active,
+                  {(schools || []).map((s: any) => {
+                    if (!s) return null;
+                    const pupilsCount = (pupils || []).filter(
+                      (p: any) => p && p.schoolId === s.id && p.active,
                     ).length;
-                    const classesCount = classes.filter((c: any) => c.schoolId === s.id).length;
-                    const staffCount = users.filter(
-                      (u: any) => u.schoolId === s.id && u.status === "verified",
+                    const classesCount = (classes || []).filter(
+                      (c: any) => c && c.schoolId === s.id,
+                    ).length;
+                    const staffCount = (users || []).filter(
+                      (u: any) => u && u.schoolId === s.id && u.status === "verified",
                     ).length;
                     const status = pupilsCount > 0 ? "Active" : "New";
                     return (
-                      <TableRow key={s.id}>
-                        <TableCell className="font-semibold">{s.name}</TableCell>
+                      <TableRow key={s.id || Math.random().toString()}>
+                        <TableCell className="font-semibold">{s.name || "Unnamed School"}</TableCell>
                         <TableCell className="text-muted-foreground">{pupilsCount}</TableCell>
                         <TableCell className="text-muted-foreground">{classesCount}</TableCell>
                         <TableCell className="text-muted-foreground">{staffCount}</TableCell>
@@ -965,7 +1125,7 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit, subjects 
                       </TableRow>
                     );
                   })}
-                  {schools.length === 0 && (
+                  {(schools || []).length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                         No schools registered yet.{" "}
@@ -989,30 +1149,38 @@ function SuperAdminDashboard({ schools, users, pupils, classes, audit, subjects 
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              {audit.slice(0, 8).map((a: any) => {
-                const timestamp = new Date(a.timestamp);
-                const isToday = timestamp.toDateString() === new Date().toDateString();
+              {(audit || []).slice(0, 8).map((a: any) => {
+                if (!a) return null;
+                const timestamp = a?.timestamp ? new Date(a.timestamp) : new Date();
+                const isValidDate = !isNaN(timestamp.getTime());
+                const isToday = isValidDate && timestamp.toDateString() === new Date().toDateString();
                 return (
-                  <div key={a.id} className="text-sm pb-3 border-b last:border-0 last:pb-0">
+                  <div key={a.id || Math.random().toString()} className="text-sm pb-3 border-b last:border-0 last:pb-0">
                     <div className="flex justify-between items-start mb-1">
                       <span className="font-medium text-xs truncate max-w-[140px]">
-                        {a.actorName}
+                        {a.actorName || "System"}
                       </span>
                       <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
-                        {isToday
-                          ? timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                          : timestamp.toLocaleDateString([], { month: "short", day: "numeric" })}
+                        {isValidDate
+                          ? isToday
+                            ? timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                            : timestamp.toLocaleDateString([], { month: "short", day: "numeric" })
+                          : "Recently"}
                       </span>
                     </div>
                     <div className="text-muted-foreground text-xs leading-relaxed">
-                      <span className="text-foreground font-medium">{a.action}</span>
-                      <br />
-                      <span className="text-[11px]">{a.target}</span>
+                      <span className="text-foreground font-medium">{a.action || "Action"}</span>
+                      {a.target && (
+                        <>
+                          <br />
+                          <span className="text-[11px]">{a.target}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 );
               })}
-              {audit.length === 0 && (
+              {(audit || []).length === 0 && (
                 <p className="text-xs text-center text-muted-foreground py-4">
                   No system activity yet.
                 </p>

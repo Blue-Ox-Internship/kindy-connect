@@ -24,16 +24,27 @@ import { SchoolSelector } from "@/components/school-selector";
 import { useEffect, type ReactNode } from "react";
 
 export function AppShell({ children, title }: { children: ReactNode; title: string }) {
-  const { currentUser, users = [], logout, schools = [] } = useStore();
+  const { currentUser, users = [], logout, schools = [], loading = false } = useStore();
   const { isLocked } = useStore() as any;
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!loading && !currentUser) {
       navigate({ to: "/" });
     }
-  }, [currentUser, navigate]);
+  }, [loading, currentUser, navigate]);
+
+  if (loading && !currentUser) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading Noble Edu...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!currentUser) {
     return null;

@@ -192,6 +192,11 @@ interface Store {
   getSchoolSubjects: (schoolId?: string) => Subject[];
   refreshData: () => Promise<void>;
   lastSyncTime: string | null;
+  loading: boolean;
+  loadError: string | null;
+  isPausedError: boolean;
+  retryIn: number;
+  attemptLoad: () => Promise<void>;
   isLocked: boolean;
   lock: () => void;
   unlock: (password: string) => Promise<boolean>;
@@ -499,8 +504,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // Super admin without school context: see all users
       return state.users;
     }
-    // School-scoped users: see only their school
-    return state.users.filter((u) => u.schoolId === currentUser.schoolId);
+    // School-scoped users: see only their school, plus any pending teachers awaiting assignment
+    return state.users.filter(
+      (u) => u.schoolId === currentUser.schoolId || (!u.schoolId && u.role === "teacher"),
+    );
   }, [state.users, currentUser, state.selectedSchoolId]);
 
   const filteredClasses = useMemo(() => {
