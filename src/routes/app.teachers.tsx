@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { useStore, type User, type Role } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -35,7 +35,6 @@ import {
   EyeOff,
   Copy,
   GraduationCap,
-  BookMarked,
   Mail,
   Phone,
   Building2,
@@ -49,7 +48,7 @@ import {
   RefreshCw,
   School,
 } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/teachers")({
@@ -63,7 +62,6 @@ function TeachersPage() {
     users = [],
     schools = [],
     classes = [],
-    selectedSchoolId,
     approveTeacher,
     rejectTeacher,
     registerUser,
@@ -100,7 +98,9 @@ function TeachersPage() {
     ? (schoolFilter !== "all" ? schoolFilter : null)
     : (currentUser?.schoolId || null);
 
-  const currentSchool = (schools || []).find((s) => s?.id === (effectiveSchoolId || currentUser?.schoolId));
+  const safeSchools = useMemo(() => (Array.isArray(schools) ? schools : []), [schools]);
+  const safeClasses = useMemo(() => (Array.isArray(classes) ? classes : []), [classes]);
+  const safeUsers = useMemo(() => (Array.isArray(users) ? users : []), [users]);
 
   // Create User Form State
   const [createForm, setCreateForm] = useState({
@@ -109,7 +109,7 @@ function TeachersPage() {
     email: "",
     phone: "",
     role: "teacher" as Role,
-    schoolId: currentUser?.schoolId ?? schools?.[0]?.id ?? "",
+    schoolId: currentUser?.schoolId ?? safeSchools?.[0]?.id ?? "",
     classId: "",
     password: "",
     subjects: [] as string[],
@@ -148,44 +148,69 @@ function TeachersPage() {
   // Available subjects for Create Modal
   const targetSchoolForSubjects =
     createForm.schoolId || effectiveSchoolId || currentUser?.schoolId;
-  const rawSubjects =
-    typeof getSchoolSubjects === "function" ? getSchoolSubjects(targetSchoolForSubjects) : [];
+  const rawSubjects = useMemo(() => {
+    if (typeof getSchoolSubjects === "function") {
+      try {
+        return getSchoolSubjects(targetSchoolForSubjects) || [];
+      } catch (err) {
+        console.error("Error getting school subjects:", err);
+        return [];
+      }
+    }
+    return [];
+  }, [getSchoolSubjects, targetSchoolForSubjects]);
+
   const availableSubjects = useMemo(() => {
-    const fromDb = (rawSubjects || []).map((s) => s.name);
-    // Merge any custom subjects added during creation
-    const merged = Array.from(new Set([...fromDb, ...createForm.subjects]));
-    return merged;
+    const fromDb = (Array.isArray(rawSubjects) ? rawSubjects : [])
+      .map((s) => (typeof s === "string" ? s : s?.name))
+      .filter((s): s is string => Boolean(s) && typeof s === "string");
+    const customSubs = Array.isArray(createForm.subjects) ? createForm.subjects : [];
+    return Array.from(new Set([...fromDb, ...customSubs]));
   }, [rawSubjects, createForm.subjects]);
 
   // Available classes for target school
   const scopedClasses = useMemo(() => {
     if (effectiveSchoolId) {
-      return (classes || []).filter((c) => c.schoolId === effectiveSchoolId);
+      return safeClasses.filter((c) => c && c.schoolId === effectiveSchoolId);
     }
-    return classes || [];
-  }, [classes, effectiveSchoolId]);
+    return safeClasses;
+  }, [safeClasses, effectiveSchoolId]);
 
   const availableClasses = useMemo(() => {
     const sId = targetSchoolForSubjects;
     if (!sId) return scopedClasses;
-    return (classes || []).filter((c) => c.schoolId === sId);
-  }, [classes, targetSchoolForSubjects, scopedClasses]);
+    return scopedClasses.filter((c) => c && c.schoolId === sId);
+  }, [targetSchoolForSubjects, scopedClasses]);
 
   // Available subjects for Edit Modal
   const targetEditSchool = editForm.schoolId || effectiveSchoolId || currentUser?.schoolId;
-  const rawEditSubjects =
-    typeof getSchoolSubjects === "function" ? getSchoolSubjects(targetEditSchool) : [];
+  const rawEditSubjects = useMemo(() => {
+    if (typeof getSchoolSubjects === "function") {
+      try {
+        return getSchoolSubjects(targetEditSchool) || [];
+      } catch (err) {
+        console.error("Error getting edit subjects:", err);
+        return [];
+      }
+    }
+    return [];
+  }, [getSchoolSubjects, targetEditSchool]);
+
   const availableEditSubjects = useMemo(() => {
-    const fromDb = (rawEditSubjects || []).map((s) => s.name);
-    return Array.from(new Set([...fromDb, ...editForm.subjects]));
+    const fromDb = (Array.isArray(rawEditSubjects) ? rawEditSubjects : [])
+      .map((s) => (typeof s === "string" ? s : s?.name))
+      .filter((s): s is string => Boolean(s) && typeof s === "string");
+    const customSubs = Array.isArray(editForm.subjects) ? editForm.subjects : [];
+    return Array.from(new Set([...fromDb, ...customSubs]));
   }, [rawEditSubjects, editForm.subjects]);
 
   const availableEditClasses = useMemo(() => {
     if (!targetEditSchool) return scopedClasses;
-    return (classes || []).filter((c) => c.schoolId === targetEditSchool);
-  }, [classes, targetEditSchool, scopedClasses]);
+    return scopedClasses.filter((c) => c && c.schoolId === targetEditSchool);
+  }, [targetEditSchool, scopedClasses]);
 
   const togglePasswordVisibility = (userId: string) => {
+    if (!userId) return;
     setVisiblePasswords((prev) => ({
       ...prev,
       [userId]: !prev[userId],
@@ -224,7 +249,7 @@ function TeachersPage() {
       email: "",
       phone: "",
       role: "teacher" as Role,
-      schoolId: currentUser?.schoolId ?? schools?.[0]?.id ?? "",
+      schoolId: currentUser?.schoolId ?? safeSchools?.[0]?.id ?? "",
       classId: "",
       password: generatePassword(),
       subjects: [],
@@ -241,6 +266,7 @@ function TeachersPage() {
   };
 
   const handleOpenEdit = (user: User) => {
+    if (!user) return;
     setEditingUser(user);
     setEditForm({
       name: user.name || "",
@@ -260,19 +286,21 @@ function TeachersPage() {
     const trimmed = customSubjectInput.trim();
     if (!trimmed) return;
     if (isEdit) {
-      if (!editForm.subjects.includes(trimmed)) {
-        setEditForm((prev) => ({ ...prev, subjects: [...prev.subjects, trimmed] }));
+      const currentSubs = Array.isArray(editForm.subjects) ? editForm.subjects : [];
+      if (!currentSubs.includes(trimmed)) {
+        setEditForm((prev) => ({ ...prev, subjects: [...currentSubs, trimmed] }));
       }
     } else {
-      if (!createForm.subjects.includes(trimmed)) {
-        setCreateForm((prev) => ({ ...prev, subjects: [...prev.subjects, trimmed] }));
+      const currentSubs = Array.isArray(createForm.subjects) ? createForm.subjects : [];
+      if (!currentSubs.includes(trimmed)) {
+        setCreateForm((prev) => ({ ...prev, subjects: [...currentSubs, trimmed] }));
       }
     }
     setCustomSubjectInput("");
   };
 
   const listToDisplay = useMemo(() => {
-    let list = users || [];
+    let list = safeUsers;
 
     // Filter by school scope
     if (isSuperAdmin && schoolFilter !== "all") {
@@ -296,33 +324,36 @@ function TeachersPage() {
     // Filter by search query
     if (q.trim()) {
       const searchLower = q.toLowerCase();
-      list = list.filter(
-        (u) =>
-          (u?.name || "").toLowerCase().includes(searchLower) ||
-          (u?.email || "").toLowerCase().includes(searchLower) ||
-          (u?.id || "").toLowerCase().includes(searchLower) ||
-          (u?.phone || "").toLowerCase().includes(searchLower) ||
-          (u?.subjects || []).some((s) => s.toLowerCase().includes(searchLower)) ||
-          (classes?.find((c) => c.id === u?.classId)?.name || "").toLowerCase().includes(searchLower),
-      );
+      list = list.filter((u) => {
+        if (!u) return false;
+        const nameMatch = (u.name || "").toLowerCase().includes(searchLower);
+        const emailMatch = (u.email || "").toLowerCase().includes(searchLower);
+        const idMatch = (u.id || "").toLowerCase().includes(searchLower);
+        const phoneMatch = (u.phone || "").toLowerCase().includes(searchLower);
+        const subs = Array.isArray(u.subjects) ? u.subjects : [];
+        const subjectMatch = subs.some((s) => typeof s === "string" && s.toLowerCase().includes(searchLower));
+        const className = safeClasses.find((c) => c?.id === u.classId)?.name || "";
+        const classMatch = className.toLowerCase().includes(searchLower);
+        return nameMatch || emailMatch || idMatch || phoneMatch || subjectMatch || classMatch;
+      });
     }
 
     return list;
-  }, [users, roleFilter, isSuperAdmin, schoolFilter, currentUser?.schoolId, classFilter, q, classes]);
+  }, [safeUsers, roleFilter, isSuperAdmin, schoolFilter, currentUser?.schoolId, classFilter, q, safeClasses]);
 
   const activeTeachers = useMemo(
     () =>
       (listToDisplay || []).filter(
-        (t) => t?.status === "verified" || !t?.status || t?.status === "active",
+        (t) => t && (t.status === "verified" || !t.status || t.status === "active"),
       ),
     [listToDisplay],
   );
   const pendingTeachers = useMemo(
-    () => (listToDisplay || []).filter((t) => t?.status === "pending"),
+    () => (listToDisplay || []).filter((t) => t && t.status === "pending"),
     [listToDisplay],
   );
   const rejectedTeachers = useMemo(
-    () => (listToDisplay || []).filter((t) => t?.status === "rejected"),
+    () => (listToDisplay || []).filter((t) => t && t.status === "rejected"),
     [listToDisplay],
   );
 
@@ -344,13 +375,13 @@ function TeachersPage() {
       return toast.error("Please fill in all required fields (ID, Name, Email, Phone, Password)");
     }
 
-    if (users.some((u) => (u?.id || "").trim().toLowerCase() === userId.toLowerCase())) {
+    if (safeUsers.some((u) => (u?.id || "").trim().toLowerCase() === userId.toLowerCase())) {
       return toast.error(`User ID '${userId}' is already assigned. Please choose another.`);
     }
-    if (users.some((u) => (u?.email || "").trim().toLowerCase() === email.toLowerCase())) {
+    if (safeUsers.some((u) => (u?.email || "").trim().toLowerCase() === email.toLowerCase())) {
       return toast.error(`Email address '${email}' is already registered.`);
     }
-    if (users.some((u) => u?.phone && u.phone.trim() === phone)) {
+    if (safeUsers.some((u) => u?.phone && u.phone.trim() === phone)) {
       return toast.error(`Phone number '${phone}' is already registered.`);
     }
 
@@ -394,14 +425,14 @@ function TeachersPage() {
     }
 
     if (
-      (users || []).some(
+      safeUsers.some(
         (u) => u?.id !== editingUser.id && (u?.email || "").trim().toLowerCase() === email.toLowerCase(),
       )
     ) {
       return toast.error(`Email address '${email}' is registered to another user`);
     }
     if (
-      (users || []).some((u) => u?.id !== editingUser.id && u?.phone && u.phone.trim() === phone)
+      safeUsers.some((u) => u?.id !== editingUser.id && u?.phone && u.phone.trim() === phone)
     ) {
       return toast.error(`Phone number '${phone}' is registered to another user`);
     }
@@ -432,6 +463,15 @@ function TeachersPage() {
     }
   };
 
+  // Helper for safe initials calculation
+  const getInitials = (name?: string) => {
+    const str = String(name || "T").trim();
+    const parts = str.split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "T";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
   // Render Grid/Card View for Available Teachers
   const renderCards = (list: typeof users, withActions = false, showManage = false) => {
     if (!list || list.length === 0) {
@@ -457,26 +497,22 @@ function TeachersPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {list.map((t) => {
           if (!t) return null;
-          const schoolName = schools?.find((s) => s.id === t.schoolId)?.name || "System Wide";
-          const assignedClass = classes?.find((c) => c.id === t.classId)?.name;
+          const schoolName = safeSchools.find((s) => s?.id === t.schoolId)?.name || "System Wide";
+          const assignedClass = safeClasses.find((c) => c?.id === t.classId)?.name;
           const canDelete = isSuperAdmin && t.id !== currentUser?.id;
-          const initials = (t.name || "T")
-            .split(" ")
-            .map((n) => n[0])
-            .join("")
-            .toUpperCase()
-            .slice(0, 2);
+          const initials = getInitials(t.name);
+          const tSubjects = Array.isArray(t.subjects) ? t.subjects.filter((s): s is string => typeof s === "string") : [];
 
           return (
             <Card
-              key={t.id}
+              key={t.id || Math.random().toString()}
               className="border shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden"
             >
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12 border-2 border-primary/20 shadow-sm">
-                      {t.photo && <AvatarImage src={t.photo} alt={t.name} />}
+                      {t.photo && <AvatarImage src={t.photo} alt={t.name || "Teacher"} />}
                       <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm">
                         {initials}
                       </AvatarFallback>
@@ -491,19 +527,21 @@ function TeachersPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 font-mono">
-                        <span>{t.id}</span>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-5 w-5 text-muted-foreground hover:text-foreground"
-                          onClick={() => {
-                            navigator.clipboard.writeText(t.id);
-                            toast.success("User ID copied");
-                          }}
-                          title="Copy ID"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
+                        <span>{t.id || "N/A"}</span>
+                        {t.id && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-5 w-5 text-muted-foreground hover:text-foreground"
+                            onClick={() => {
+                              navigator.clipboard.writeText(t.id);
+                              toast.success("User ID copied");
+                            }}
+                            title="Copy ID"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -557,9 +595,9 @@ function TeachersPage() {
                   {/* Teaching Subjects */}
                   <div className="pt-2">
                     <span className="text-muted-foreground font-medium block mb-1.5">Subjects:</span>
-                    {t.subjects && t.subjects.length > 0 ? (
+                    {tSubjects.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
-                        {t.subjects.map((sub) => (
+                        {tSubjects.map((sub) => (
                           <Badge
                             key={sub}
                             variant="outline"
@@ -575,7 +613,7 @@ function TeachersPage() {
                   </div>
 
                   {/* Credentials / Password for Admins */}
-                  {(isSuperAdmin || isSchoolAdmin) && (
+                  {(isSuperAdmin || isSchoolAdmin) && t.id && (
                     <div className="mt-3 pt-3 border-t flex items-center justify-between bg-muted/40 p-2 rounded-lg">
                       <div className="flex items-center gap-2">
                         <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
@@ -618,7 +656,7 @@ function TeachersPage() {
               </CardContent>
 
               {/* Actions Footer */}
-              {(withActions || showManage) && (
+              {(withActions || showManage) && t.id && (
                 <div className="p-3 bg-muted/30 border-t flex items-center justify-end gap-2">
                   {withActions && (
                     <>
@@ -716,15 +754,11 @@ function TeachersPage() {
           <TableBody>
             {(list || []).map((t) => {
               if (!t) return null;
-              const schoolName = schools?.find((s) => s.id === t.schoolId)?.name || "System Wide";
-              const assignedClass = classes?.find((c) => c.id === t.classId)?.name || "Unassigned";
+              const schoolName = safeSchools.find((s) => s?.id === t.schoolId)?.name || "System Wide";
+              const assignedClass = safeClasses.find((c) => c?.id === t.classId)?.name || "Unassigned";
               const canDelete = isSuperAdmin && t.id !== currentUser?.id;
-              const initials = (t.name || "T")
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()
-                .slice(0, 2);
+              const initials = getInitials(t.name);
+              const tSubjects = Array.isArray(t.subjects) ? t.subjects.filter((s): s is string => typeof s === "string") : [];
 
               return (
                 <TableRow key={t.id || Math.random().toString()} className="group hover:bg-muted/40">
@@ -732,25 +766,27 @@ function TeachersPage() {
                     <TableCell className="font-mono text-xs font-semibold">
                       <div className="flex items-center gap-1">
                         <span>{t.id || "N/A"}</span>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => {
-                            navigator.clipboard.writeText(t.id);
-                            toast.success("User ID copied");
-                          }}
-                          title="Copy ID"
-                        >
-                          <Copy className="h-3 w-3 text-muted-foreground" />
-                        </Button>
+                        {t.id && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => {
+                              navigator.clipboard.writeText(t.id);
+                              toast.success("User ID copied");
+                            }}
+                            title="Copy ID"
+                          >
+                            <Copy className="h-3 w-3 text-muted-foreground" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   )}
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9 border">
-                        {t.photo && <AvatarImage src={t.photo} alt={t.name} />}
+                        {t.photo && <AvatarImage src={t.photo} alt={t.name || "Teacher"} />}
                         <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
                           {initials}
                         </AvatarFallback>
@@ -787,9 +823,9 @@ function TeachersPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="max-w-[200px]">
-                    {t.subjects && t.subjects.length > 0 ? (
+                    {tSubjects.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
-                        {t.subjects.map((sub) => (
+                        {tSubjects.map((sub) => (
                           <Badge key={sub} variant="outline" className="text-[11px] py-0 px-1.5 font-normal bg-secondary/50">
                             {sub}
                           </Badge>
@@ -801,36 +837,40 @@ function TeachersPage() {
                   </TableCell>
                   {(isSuperAdmin || isSchoolAdmin) && (
                     <TableCell className="font-mono text-xs">
-                      <div className="flex items-center gap-1">
-                        <span>{visiblePasswords[t.id] ? t.password || "N/A" : "••••••••"}</span>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6"
-                          onClick={() => togglePasswordVisibility(t.id)}
-                          title={visiblePasswords[t.id] ? "Hide password" : "Show password"}
-                        >
-                          {visiblePasswords[t.id] ? (
-                            <EyeOff className="h-3 w-3 text-muted-foreground" />
-                          ) : (
-                            <Eye className="h-3 w-3 text-muted-foreground" />
-                          )}
-                        </Button>
-                        {t.password && (
+                      {t.id ? (
+                        <div className="flex items-center gap-1">
+                          <span>{visiblePasswords[t.id] ? t.password || "N/A" : "••••••••"}</span>
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => {
-                              navigator.clipboard.writeText(t.password || "");
-                              toast.success("Password copied");
-                            }}
-                            title="Copy password"
+                            className="h-6 w-6"
+                            onClick={() => togglePasswordVisibility(t.id)}
+                            title={visiblePasswords[t.id] ? "Hide password" : "Show password"}
                           >
-                            <Copy className="h-3 w-3 text-muted-foreground" />
+                            {visiblePasswords[t.id] ? (
+                              <EyeOff className="h-3 w-3 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-3 w-3 text-muted-foreground" />
+                            )}
                           </Button>
-                        )}
-                      </div>
+                          {t.password && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => {
+                                navigator.clipboard.writeText(t.password || "");
+                                toast.success("Password copied");
+                              }}
+                              title="Copy password"
+                            >
+                              <Copy className="h-3 w-3 text-muted-foreground" />
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        "N/A"
+                      )}
                     </TableCell>
                   )}
                   <TableCell className="text-xs text-muted-foreground">{formatRegisteredAt(t.registeredAt)}</TableCell>
@@ -850,7 +890,7 @@ function TeachersPage() {
                   </TableCell>
                   {(withActions || showManage) && (
                     <TableCell className="text-right space-x-1">
-                      {withActions && (
+                      {withActions && t.id && (
                         <>
                           <Button
                             size="sm"
@@ -875,7 +915,7 @@ function TeachersPage() {
                           </Button>
                         </>
                       )}
-                      {showManage && (
+                      {showManage && t.id && (
                         <>
                           <Button
                             size="sm"
@@ -917,7 +957,7 @@ function TeachersPage() {
                 </TableRow>
               );
             })}
-            {list.length === 0 && (
+            {(!list || list.length === 0) && (
               <TableRow>
                 <TableCell colSpan={totalCols} className="text-center text-muted-foreground py-10">
                   <div className="flex flex-col items-center justify-center gap-2">
@@ -938,7 +978,7 @@ function TeachersPage() {
     );
   };
 
-  if (loading && (!users || users.length === 0)) {
+  if (loading && safeUsers.length === 0) {
     return (
       <AppShell title="Teachers & Staff">
         <div className="min-h-[50vh] flex flex-col items-center justify-center">
@@ -979,15 +1019,15 @@ function TeachersPage() {
   // Teacher Metrics (scoped to current school for School Admins, or selected school for Super Admin)
   const schoolScopedUsers = useMemo(() => {
     if (isSuperAdmin && schoolFilter !== "all") {
-      return (users || []).filter((u) => u?.schoolId === schoolFilter);
+      return safeUsers.filter((u) => u?.schoolId === schoolFilter);
     }
     if (!isSuperAdmin && currentUser?.schoolId) {
-      return (users || []).filter(
+      return safeUsers.filter(
         (u) => !u?.schoolId || u?.schoolId === currentUser.schoolId || u?.role === "teacher",
       );
     }
-    return users || [];
-  }, [users, isSuperAdmin, schoolFilter, currentUser?.schoolId]);
+    return safeUsers;
+  }, [safeUsers, isSuperAdmin, schoolFilter, currentUser?.schoolId]);
 
   const totalTeachers = schoolScopedUsers.filter((u) => u?.role === "teacher").length;
   const pendingTeachersCount = schoolScopedUsers.filter((u) => u?.role === "teacher" && u?.status === "pending").length;
@@ -1074,255 +1114,256 @@ function TeachersPage() {
                       <UserPlus className="h-5 w-5 text-primary" /> Register New Teacher Account
                     </DialogTitle>
                   </DialogHeader>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    submitCreateUser();
-                  }}
-                  autoComplete="off"
-                  className="space-y-4 py-2 text-sm"
-                >
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <Label htmlFor="create-id">Teacher ID *</Label>
-                        <button
-                          type="button"
-                          onClick={() => setCreateForm((prev) => ({ ...prev, id: generateTeacherId() }))}
-                          className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
-                        >
-                          <RefreshCw className="h-3 w-3" /> Auto
-                        </button>
-                      </div>
-                      <Input
-                        id="create-id"
-                        value={createForm.id}
-                        onChange={(e) => setCreateForm({ ...createForm, id: e.target.value })}
-                        placeholder="e.g. TCH-1024"
-                        autoComplete="off"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <Label htmlFor="create-pwd">Password *</Label>
-                        <button
-                          type="button"
-                          onClick={() => setCreateForm((prev) => ({ ...prev, password: generatePassword() }))}
-                          className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
-                        >
-                          <Sparkles className="h-3 w-3" /> Generate
-                        </button>
-                      </div>
-                      <div className="relative">
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      submitCreateUser();
+                    }}
+                    autoComplete="off"
+                    className="space-y-4 py-2 text-sm"
+                  >
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <Label htmlFor="create-id">Teacher ID *</Label>
+                          <button
+                            type="button"
+                            onClick={() => setCreateForm((prev) => ({ ...prev, id: generateTeacherId() }))}
+                            className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
+                          >
+                            <RefreshCw className="h-3 w-3" /> Auto
+                          </button>
+                        </div>
                         <Input
-                          id="create-pwd"
-                          type={showCreatePassword ? "text" : "password"}
-                          value={createForm.password}
-                          onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                          placeholder="Password"
-                          autoComplete="new-password"
-                          className="pr-9"
+                          id="create-id"
+                          value={createForm.id}
+                          onChange={(e) => setCreateForm({ ...createForm, id: e.target.value })}
+                          placeholder="e.g. TCH-1024"
+                          autoComplete="off"
                           required
                         />
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          className="absolute right-0 top-0 h-9 w-9 text-muted-foreground"
-                          onClick={() => setShowCreatePassword(!showCreatePassword)}
-                        >
-                          {showCreatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <Label htmlFor="create-pwd">Password *</Label>
+                          <button
+                            type="button"
+                            onClick={() => setCreateForm((prev) => ({ ...prev, password: generatePassword() }))}
+                            className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
+                          >
+                            <Sparkles className="h-3 w-3" /> Generate
+                          </button>
+                        </div>
+                        <div className="relative">
+                          <Input
+                            id="create-pwd"
+                            type={showCreatePassword ? "text" : "password"}
+                            value={createForm.password}
+                            onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                            placeholder="Password"
+                            autoComplete="new-password"
+                            className="pr-9"
+                            required
+                          />
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="absolute right-0 top-0 h-9 w-9 text-muted-foreground"
+                            onClick={() => setShowCreatePassword(!showCreatePassword)}
+                          >
+                            {showCreatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <Label htmlFor="create-name">Full Name *</Label>
-                    <Input
-                      id="create-name"
-                      value={createForm.name}
-                      onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                      placeholder="e.g. Sarah Johnson"
-                      autoComplete="off"
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label htmlFor="create-email">Email Address *</Label>
+                      <Label htmlFor="create-name">Full Name *</Label>
                       <Input
-                        id="create-email"
-                        type="email"
-                        value={createForm.email}
-                        onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                        placeholder="sarah@school.com"
+                        id="create-name"
+                        value={createForm.name}
+                        onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                        placeholder="e.g. Sarah Johnson"
                         autoComplete="off"
                         required
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="create-phone">Phone Number *</Label>
-                      <Input
-                        id="create-phone"
-                        value={createForm.phone}
-                        onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
-                        placeholder="+256 700 000000"
-                        autoComplete="off"
-                        required
-                      />
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="create-role">System Role</Label>
-                      <select
-                        id="create-role"
-                        value={createForm.role}
-                        onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as Role })}
-                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                      >
-                        <option value="teacher">Teacher</option>
-                        <option value="deputy">Deputy Head</option>
-                        {isSuperAdmin && <option value="admin">School Admin</option>}
-                      </select>
-                    </div>
-                    {isSuperAdmin && (
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <Label htmlFor="create-school">Assigned School</Label>
+                        <Label htmlFor="create-email">Email Address *</Label>
+                        <Input
+                          id="create-email"
+                          type="email"
+                          value={createForm.email}
+                          onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                          placeholder="sarah@school.com"
+                          autoComplete="off"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="create-phone">Phone Number *</Label>
+                        <Input
+                          id="create-phone"
+                          value={createForm.phone}
+                          onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
+                          placeholder="+256 700 000000"
+                          autoComplete="off"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="create-role">System Role</Label>
                         <select
-                          id="create-school"
-                          value={createForm.schoolId}
-                          onChange={(e) => setCreateForm({ ...createForm, schoolId: e.target.value })}
+                          id="create-role"
+                          value={createForm.role}
+                          onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as Role })}
                           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         >
-                          {(schools || []).map((s) => (
-                            <option key={s.id} value={s.id}>
-                              {s.name}
-                            </option>
-                          ))}
+                          <option value="teacher">Teacher</option>
+                          <option value="deputy">Deputy Head</option>
+                          {isSuperAdmin && <option value="admin">School Admin</option>}
                         </select>
                       </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="create-class">Assigned Class (Optional)</Label>
-                    <select
-                      id="create-class"
-                      value={createForm.classId}
-                      onChange={(e) => setCreateForm({ ...createForm, classId: e.target.value })}
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                      <option value="">-- No Class Assigned --</option>
-                      {availableClasses.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {createForm.role === "teacher" && (
-                    <div className="space-y-2">
-                      <Label>Teaching Subjects</Label>
-                      <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg max-h-36 overflow-y-auto bg-muted/20">
-                        {availableSubjects.map((subject) => (
-                          <label
-                            key={subject}
-                            className="flex items-center gap-2 cursor-pointer text-xs p-1 rounded hover:bg-muted/50 transition-colors"
+                      {isSuperAdmin && (
+                        <div>
+                          <Label htmlFor="create-school">Assigned School</Label>
+                          <select
+                            id="create-school"
+                            value={createForm.schoolId}
+                            onChange={(e) => setCreateForm({ ...createForm, schoolId: e.target.value })}
+                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                           >
-                            <input
-                              type="checkbox"
-                              checked={createForm.subjects.includes(subject)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setCreateForm({ ...createForm, subjects: [...createForm.subjects, subject] });
-                                } else {
-                                  setCreateForm({
-                                    ...createForm,
-                                    subjects: createForm.subjects.filter((s) => s !== subject),
-                                  });
-                                }
-                              }}
-                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                            />
-                            <span className="truncate">{subject}</span>
-                          </label>
-                        ))}
-                      </div>
-
-                      {/* Add Custom Subject Inline */}
-                      <div className="flex gap-2 pt-1">
-                        <Input
-                          placeholder="Add custom subject (e.g. Music, Art)"
-                          value={customSubjectInput}
-                          onChange={(e) => setCustomSubjectInput(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleAddCustomSubject(false);
-                            }
-                          }}
-                          className="h-8 text-xs"
-                        />
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="h-8 text-xs shrink-0"
-                          onClick={() => handleAddCustomSubject(false)}
-                        >
-                          <Plus className="h-3 w-3 mr-1" /> Add
-                        </Button>
-                      </div>
+                            {safeSchools.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                     </div>
-                  )}
 
-                  <div>
-                    <Label htmlFor="create-photo">Profile Photo (Optional)</Label>
-                    <Input
-                      id="create-photo"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handlePhotoChange(e, false)}
-                      className="mt-1"
-                    />
-                    {createForm.photo && (
-                      <div className="mt-2 flex items-center gap-3 p-2 border rounded-lg bg-muted/20">
-                        <img
-                          src={createForm.photo}
-                          alt="Preview"
-                          className="w-10 h-10 object-cover rounded-full border"
-                        />
-                        <span className="text-xs text-muted-foreground">Photo preview loaded</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs text-destructive h-7 ml-auto"
-                          onClick={() => setCreateForm((prev) => ({ ...prev, photo: "" }))}
-                        >
-                          Remove
-                        </Button>
+                    <div>
+                      <Label htmlFor="create-class">Assigned Class (Optional)</Label>
+                      <select
+                        id="create-class"
+                        value={createForm.classId}
+                        onChange={(e) => setCreateForm({ ...createForm, classId: e.target.value })}
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      >
+                        <option value="">-- No Class Assigned --</option>
+                        {availableClasses.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {createForm.role === "teacher" && (
+                      <div className="space-y-2">
+                        <Label>Teaching Subjects</Label>
+                        <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg max-h-36 overflow-y-auto bg-muted/20">
+                          {availableSubjects.map((subject) => (
+                            <label
+                              key={subject}
+                              className="flex items-center gap-2 cursor-pointer text-xs p-1 rounded hover:bg-muted/50 transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={(createForm.subjects || []).includes(subject)}
+                                onChange={(e) => {
+                                  const currentSubs = Array.isArray(createForm.subjects) ? createForm.subjects : [];
+                                  if (e.target.checked) {
+                                    setCreateForm({ ...createForm, subjects: [...currentSubs, subject] });
+                                  } else {
+                                    setCreateForm({
+                                      ...createForm,
+                                      subjects: currentSubs.filter((s) => s !== subject),
+                                    });
+                                  }
+                                }}
+                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                              />
+                              <span className="truncate">{subject}</span>
+                            </label>
+                          ))}
+                        </div>
+
+                        {/* Add Custom Subject Inline */}
+                        <div className="flex gap-2 pt-1">
+                          <Input
+                            placeholder="Add custom subject (e.g. Music, Art)"
+                            value={customSubjectInput}
+                            onChange={(e) => setCustomSubjectInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleAddCustomSubject(false);
+                              }
+                            }}
+                            className="h-8 text-xs"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs shrink-0"
+                            onClick={() => handleAddCustomSubject(false)}
+                          >
+                            <Plus className="h-3 w-3 mr-1" /> Add
+                          </Button>
+                        </div>
                       </div>
                     )}
-                  </div>
 
-                  <DialogFooter className="pt-3">
-                    <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button type="submit" className="gap-1.5">
-                      <UserPlus className="h-4 w-4" /> Create Teacher Account
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+                    <div>
+                      <Label htmlFor="create-photo">Profile Photo (Optional)</Label>
+                      <Input
+                        id="create-photo"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handlePhotoChange(e, false)}
+                        className="mt-1"
+                      />
+                      {createForm.photo && (
+                        <div className="mt-2 flex items-center gap-3 p-2 border rounded-lg bg-muted/20">
+                          <img
+                            src={createForm.photo}
+                            alt="Preview"
+                            className="w-10 h-10 object-cover rounded-full border"
+                          />
+                          <span className="text-xs text-muted-foreground">Photo preview loaded</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-destructive h-7 ml-auto"
+                            onClick={() => setCreateForm((prev) => ({ ...prev, photo: "" }))}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    <DialogFooter className="pt-3">
+                      <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit" className="gap-1.5">
+                        <UserPlus className="h-4 w-4" /> Create Teacher Account
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
             )}
 
             {/* Edit Teacher Dialog */}
@@ -1397,7 +1438,7 @@ function TeachersPage() {
                           onChange={(e) => setEditForm({ ...editForm, schoolId: e.target.value })}
                           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         >
-                          {(schools || []).map((s) => (
+                          {safeSchools.map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.name}
                             </option>
@@ -1444,14 +1485,15 @@ function TeachersPage() {
                           >
                             <input
                               type="checkbox"
-                              checked={editForm.subjects.includes(subject)}
+                              checked={(editForm.subjects || []).includes(subject)}
                               onChange={(e) => {
+                                const currentSubs = Array.isArray(editForm.subjects) ? editForm.subjects : [];
                                 if (e.target.checked) {
-                                  setEditForm({ ...editForm, subjects: [...editForm.subjects, subject] });
+                                  setEditForm({ ...editForm, subjects: [...currentSubs, subject] });
                                 } else {
                                   setEditForm({
                                     ...editForm,
-                                    subjects: editForm.subjects.filter((s) => s !== subject),
+                                    subjects: currentSubs.filter((s) => s !== subject),
                                   });
                                 }
                               }}
@@ -1581,7 +1623,7 @@ function TeachersPage() {
                       className="flex h-9 rounded-md border border-input bg-transparent px-2.5 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
                       <option value="all">All Schools</option>
-                      {(schools || []).map((s) => (
+                      {safeSchools.map((s) => (
                         <option key={s.id} value={s.id}>
                           {s.name}
                         </option>
@@ -1683,3 +1725,4 @@ function TeachersPage() {
     </AppShell>
   );
 }
+
