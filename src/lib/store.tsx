@@ -626,6 +626,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     marks: filteredMarks,
     schools: state.schools,
     lastSyncTime,
+    loading,
+    loadError,
+    isPausedError,
+    retryIn,
+    attemptLoad,
 
     login: async (id, password) => {
       const u = await loginUser({ data: { id, password } });

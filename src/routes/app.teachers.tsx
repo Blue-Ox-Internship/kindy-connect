@@ -344,7 +344,7 @@ function TeachersPage() {
   const activeTeachers = useMemo(
     () =>
       (listToDisplay || []).filter(
-        (t) => t && (t.status === "verified" || !t.status || t.status === "active"),
+        (t) => t && (t.status === "verified" || !t.status || (t.status as string) === "active"),
       ),
     [listToDisplay],
   );
@@ -1031,7 +1031,7 @@ function TeachersPage() {
 
   const totalTeachers = schoolScopedUsers.filter((u) => u?.role === "teacher").length;
   const pendingTeachersCount = schoolScopedUsers.filter((u) => u?.role === "teacher" && u?.status === "pending").length;
-  const verifiedTeachersCount = schoolScopedUsers.filter((u) => u?.role === "teacher" && (u?.status === "verified" || !u?.status || u?.status === "active")).length;
+  const verifiedTeachersCount = schoolScopedUsers.filter((u) => u?.role === "teacher" && (u?.status === "verified" || !u?.status || (u?.status as string) === "active")).length;
 
   return (
     <AppShell title="Teachers & Staff">
