@@ -20,7 +20,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { useEffect, useState, type ReactNode } from "react";
 
 export function AppShell({ children, title }: { children: ReactNode; title: string }) {
-  const { currentUser, users, logout } = useStore();
+  const { currentUser, users, logout, loading } = useStore();
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const [mobileOpen, setMobileOpen] = useState(false);
