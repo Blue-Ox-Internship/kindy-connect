@@ -24,8 +24,8 @@ export const Route = createFileRoute("/app/teachers")({
 function TeachersPage() {
   const { currentUser, users, approveTeacher, rejectTeacher } = useStore();
 
-  const isCurrentUserAdmin = currentUser?.role === "admin";
-  const listToDisplay = isCurrentUserAdmin ? users : users.filter((u) => u.role === "teacher");
+  const isStaffAdmin = currentUser?.role === "admin" || currentUser?.role === "superadmin";
+  const listToDisplay = isStaffAdmin ? users : users.filter((u) => u.role === "teacher");
 
   const pending = listToDisplay.filter((t) => t.status === "pending");
   const verified = listToDisplay.filter((t) => t.status === "verified");
@@ -38,8 +38,8 @@ function TeachersPage() {
           <TableHead>Name</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Phone</TableHead>
-          {isCurrentUserAdmin && <TableHead>Role</TableHead>}
-          {isCurrentUserAdmin && <TableHead>Password</TableHead>}
+          {isStaffAdmin && <TableHead>Role</TableHead>}
+          {isStaffAdmin && <TableHead>Password</TableHead>}
           <TableHead>Registered</TableHead>
           <TableHead>Status</TableHead>
           {withActions && <TableHead>Actions</TableHead>}
@@ -51,8 +51,8 @@ function TeachersPage() {
             <TableCell className="font-medium">{t.name}</TableCell>
             <TableCell>{t.email}</TableCell>
             <TableCell>{t.phone}</TableCell>
-            {isCurrentUserAdmin && <TableCell className="capitalize">{t.role}</TableCell>}
-            {isCurrentUserAdmin && (
+            {isStaffAdmin && <TableCell className="capitalize">{t.role}</TableCell>}
+            {isStaffAdmin && (
               <TableCell className="font-mono text-xs">{t.password || "N/A"}</TableCell>
             )}
             <TableCell>{t.registeredAt}</TableCell>
@@ -100,7 +100,7 @@ function TeachersPage() {
         {list.length === 0 && (
           <TableRow>
             <TableCell
-              colSpan={withActions ? (isCurrentUserAdmin ? 8 : 6) : isCurrentUserAdmin ? 7 : 5}
+              colSpan={withActions ? (isStaffAdmin ? 8 : 6) : isStaffAdmin ? 7 : 5}
               className="text-center text-muted-foreground py-8"
             >
               No accounts in this category.
@@ -112,7 +112,7 @@ function TeachersPage() {
   );
 
   return (
-    <AppShell title={isCurrentUserAdmin ? "User accounts" : "Teacher accounts"}>
+    <AppShell title={isStaffAdmin ? "User accounts" : "Teacher accounts"}>
       <Card className="border-0 shadow-sm">
         <CardContent className="p-5">
           <Tabs defaultValue="pending">
