@@ -72,19 +72,19 @@
 :root {
   --radius: 1rem;
   /* Sunny & Playful kindergarten palette */
-  --background: oklch(0.987 0.018 95);          /* cream #FFF8E7 */
-  --foreground: oklch(0.28 0.04 60);            /* deep warm brown */
+  --background: oklch(0.987 0.018 95); /* cream #FFF8E7 */
+  --foreground: oklch(0.28 0.04 60); /* deep warm brown */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.28 0.04 60);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.28 0.04 60);
-  --primary: oklch(0.81 0.165 78);              /* sunny yellow #FFB627 */
+  --primary: oklch(0.81 0.165 78); /* sunny yellow #FFB627 */
   --primary-foreground: oklch(0.28 0.04 60);
-  --secondary: oklch(0.79 0.13 195);            /* mint #4ECDC4 */
+  --secondary: oklch(0.79 0.13 195); /* mint #4ECDC4 */
   --secondary-foreground: oklch(0.22 0.04 200);
   --muted: oklch(0.96 0.025 90);
   --muted-foreground: oklch(0.5 0.04 60);
-  --accent: oklch(0.72 0.18 22);                /* coral #FF6B6B */
+  --accent: oklch(0.72 0.18 22); /* coral #FF6B6B */
   --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0.62 0.22 27);
   --destructive-foreground: oklch(1 0 0);
@@ -154,7 +154,12 @@
     color: var(--color-foreground);
     font-family: "Nunito", system-ui, sans-serif;
   }
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: "Fredoka", "Nunito", system-ui, sans-serif;
     letter-spacing: -0.01em;
   }
