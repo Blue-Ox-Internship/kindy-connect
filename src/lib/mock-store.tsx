@@ -131,66 +131,368 @@ const seedClasses: ClassRoom[] = [
 ];
 
 const seedUsers: User[] = [
-  { id: "u0", name: "Super Admin", email: "super@kinder.app", role: "superadmin", status: "verified", phone: "+254700000000", password: "super123", registeredAt: "2025-01-01" },
-  { id: "u1", name: "Amina Okello", email: "admin@kinder.app", role: "admin", status: "verified", phone: "+254700000001", password: "admin123", schoolId: "s1", registeredAt: "2025-01-10" },
-  { id: "u2", name: "Brian Mwangi", email: "deputy@kinder.app", role: "deputy", status: "verified", phone: "+254700000002", password: "deputy123", schoolId: "s1", registeredAt: "2025-01-12" },
-  { id: "u3", name: "Grace Wanjiku", email: "grace@kinder.app", role: "teacher", status: "verified", phone: "+254700000003", classId: "c1", schoolId: "s1", password: "grace123", registeredAt: "2025-02-01" },
-  { id: "u4", name: "Peter Otieno", email: "peter@kinder.app", role: "teacher", status: "verified", phone: "+254700000004", classId: "c2", schoolId: "s1", password: "peter123", registeredAt: "2025-02-03" },
-  { id: "u5", name: "Lucy Achieng", email: "lucy@kinder.app", role: "teacher", status: "pending", phone: "+254700000005", schoolId: "s1", password: "lucy123", registeredAt: "2025-06-15" },
-  { id: "u6", name: "James Kariuki", email: "james@kinder.app", role: "teacher", status: "pending", phone: "+254700000006", schoolId: "s1", password: "james123", registeredAt: "2025-06-16" },
+  {
+    id: "u0",
+    name: "Super Admin",
+    email: "super@kinder.app",
+    role: "superadmin",
+    status: "verified",
+    phone: "+254700000000",
+    password: "super123",
+    registeredAt: "2025-01-01",
+  },
+  {
+    id: "u1",
+    name: "Amina Okello",
+    email: "admin@kinder.app",
+    role: "admin",
+    status: "verified",
+    phone: "+254700000001",
+    password: "admin123",
+    schoolId: "s1",
+    registeredAt: "2025-01-10",
+  },
+  {
+    id: "u2",
+    name: "Brian Mwangi",
+    email: "deputy@kinder.app",
+    role: "deputy",
+    status: "verified",
+    phone: "+254700000002",
+    password: "deputy123",
+    schoolId: "s1",
+    registeredAt: "2025-01-12",
+  },
+  {
+    id: "u3",
+    name: "Grace Wanjiku",
+    email: "grace@kinder.app",
+    role: "teacher",
+    status: "verified",
+    phone: "+254700000003",
+    classId: "c1",
+    schoolId: "s1",
+    password: "grace123",
+    registeredAt: "2025-02-01",
+  },
+  {
+    id: "u4",
+    name: "Peter Otieno",
+    email: "peter@kinder.app",
+    role: "teacher",
+    status: "verified",
+    phone: "+254700000004",
+    classId: "c2",
+    schoolId: "s1",
+    password: "peter123",
+    registeredAt: "2025-02-03",
+  },
+  {
+    id: "u5",
+    name: "Lucy Achieng",
+    email: "lucy@kinder.app",
+    role: "teacher",
+    status: "pending",
+    phone: "+254700000005",
+    schoolId: "s1",
+    password: "lucy123",
+    registeredAt: "2025-06-15",
+  },
+  {
+    id: "u6",
+    name: "James Kariuki",
+    email: "james@kinder.app",
+    role: "teacher",
+    status: "pending",
+    phone: "+254700000006",
+    schoolId: "s1",
+    password: "james123",
+    registeredAt: "2025-06-16",
+  },
 ];
 
 const seedSchools: School[] = [
-  { id: "s1", name: "Little Stars Kindergarten", location: "Nairobi", phone: "+254700111111", email: "info@littlestars.app", createdAt: "2025-01-01", active: true },
+  {
+    id: "s1",
+    name: "Little Stars Kindergarten",
+    location: "Nairobi",
+    phone: "+254700111111",
+    email: "info@littlestars.app",
+    createdAt: "2025-01-01",
+    active: true,
+  },
 ];
 
 const seedParents: Parent[] = [
-  { id: "p1", name: "Mary Atieno", phone: "+254712000001", email: "mary@example.com", relationship: "Mother" },
-  { id: "p2", name: "John Kamau", phone: "+254712000002", email: "john@example.com", relationship: "Father" },
-  { id: "p3", name: "Sarah Njeri", phone: "+254712000003", email: "sarah@example.com", relationship: "Mother" },
-  { id: "p4", name: "David Mutua", phone: "+254712000004", email: "david@example.com", relationship: "Father" },
-  { id: "p5", name: "Esther Wambui", phone: "+254712000005", email: "esther@example.com", relationship: "Guardian" },
+  {
+    id: "p1",
+    name: "Mary Atieno",
+    phone: "+254712000001",
+    email: "mary@example.com",
+    relationship: "Mother",
+  },
+  {
+    id: "p2",
+    name: "John Kamau",
+    phone: "+254712000002",
+    email: "john@example.com",
+    relationship: "Father",
+  },
+  {
+    id: "p3",
+    name: "Sarah Njeri",
+    phone: "+254712000003",
+    email: "sarah@example.com",
+    relationship: "Mother",
+  },
+  {
+    id: "p4",
+    name: "David Mutua",
+    phone: "+254712000004",
+    email: "david@example.com",
+    relationship: "Father",
+  },
+  {
+    id: "p5",
+    name: "Esther Wambui",
+    phone: "+254712000005",
+    email: "esther@example.com",
+    relationship: "Guardian",
+  },
 ];
 
 const seedPupils: Pupil[] = [
-  { id: "k1", admissionNo: "KG-001", firstName: "Liam", lastName: "Atieno", gender: "M", dob: "2020-05-12", classId: "c1", active: true, parentIds: ["p1"] },
-  { id: "k2", admissionNo: "KG-002", firstName: "Zuri", lastName: "Kamau", gender: "F", dob: "2020-08-22", classId: "c1", active: true, parentIds: ["p2"] },
-  { id: "k3", admissionNo: "KG-003", firstName: "Noah", lastName: "Njeri", gender: "M", dob: "2019-11-03", classId: "c2", active: true, parentIds: ["p3"] },
-  { id: "k4", admissionNo: "KG-004", firstName: "Ava", lastName: "Mutua", gender: "F", dob: "2020-02-19", classId: "c2", active: true, parentIds: ["p4"] },
-  { id: "k5", admissionNo: "KG-005", firstName: "Eli", lastName: "Wambui", gender: "M", dob: "2019-09-30", classId: "c3", active: true, parentIds: ["p5"] },
-  { id: "k6", admissionNo: "KG-006", firstName: "Maya", lastName: "Atieno", gender: "F", dob: "2020-07-14", classId: "c1", active: true, parentIds: ["p1"] },
+  {
+    id: "k1",
+    admissionNo: "KG-001",
+    firstName: "Liam",
+    lastName: "Atieno",
+    gender: "M",
+    dob: "2020-05-12",
+    classId: "c1",
+    active: true,
+    parentIds: ["p1"],
+  },
+  {
+    id: "k2",
+    admissionNo: "KG-002",
+    firstName: "Zuri",
+    lastName: "Kamau",
+    gender: "F",
+    dob: "2020-08-22",
+    classId: "c1",
+    active: true,
+    parentIds: ["p2"],
+  },
+  {
+    id: "k3",
+    admissionNo: "KG-003",
+    firstName: "Noah",
+    lastName: "Njeri",
+    gender: "M",
+    dob: "2019-11-03",
+    classId: "c2",
+    active: true,
+    parentIds: ["p3"],
+  },
+  {
+    id: "k4",
+    admissionNo: "KG-004",
+    firstName: "Ava",
+    lastName: "Mutua",
+    gender: "F",
+    dob: "2020-02-19",
+    classId: "c2",
+    active: true,
+    parentIds: ["p4"],
+  },
+  {
+    id: "k5",
+    admissionNo: "KG-005",
+    firstName: "Eli",
+    lastName: "Wambui",
+    gender: "M",
+    dob: "2019-09-30",
+    classId: "c3",
+    active: true,
+    parentIds: ["p5"],
+  },
+  {
+    id: "k6",
+    admissionNo: "KG-006",
+    firstName: "Maya",
+    lastName: "Atieno",
+    gender: "F",
+    dob: "2020-07-14",
+    classId: "c1",
+    active: true,
+    parentIds: ["p1"],
+  },
 ];
 
 function seedAttendance(): Attendance[] {
   return [
-    { id: "a1", pupilId: "k1", date: today(), arrival: "07:55", arrivalTransport: "Car", arrivalVehicleReg: "KAA 123B", arrivalPersonName: "Mary Atieno", arrivalPersonRelation: "Mother", arrivalPhone: "+254712000001" },
-    { id: "a2", pupilId: "k2", date: today(), arrival: "08:02", arrivalTransport: "School Bus", arrivalVehicleReg: "KBZ 456C", arrivalPersonName: "John Kariuki", arrivalPersonRelation: "Driver", arrivalPhone: "+254700000004" },
-    { id: "a3", pupilId: "k3", date: today(), arrival: "07:48", departure: "16:30", arrivalTransport: "Motorcycle", arrivalVehicleReg: "KMCA 789D", arrivalPersonName: "David Mutua", arrivalPersonRelation: "Father", arrivalPhone: "+254712000004", departureTransport: "Car", departureVehicleReg: "KAB 321E", departurePersonName: "Sarah Njeri", departurePersonRelation: "Mother", departurePhone: "+254712000003" },
+    {
+      id: "a1",
+      pupilId: "k1",
+      date: today(),
+      arrival: "07:55",
+      arrivalTransport: "Car",
+      arrivalVehicleReg: "KAA 123B",
+      arrivalPersonName: "Mary Atieno",
+      arrivalPersonRelation: "Mother",
+      arrivalPhone: "+254712000001",
+    },
+    {
+      id: "a2",
+      pupilId: "k2",
+      date: today(),
+      arrival: "08:02",
+      arrivalTransport: "School Bus",
+      arrivalVehicleReg: "KBZ 456C",
+      arrivalPersonName: "John Kariuki",
+      arrivalPersonRelation: "Driver",
+      arrivalPhone: "+254700000004",
+    },
+    {
+      id: "a3",
+      pupilId: "k3",
+      date: today(),
+      arrival: "07:48",
+      departure: "16:30",
+      arrivalTransport: "Motorcycle",
+      arrivalVehicleReg: "KMCA 789D",
+      arrivalPersonName: "David Mutua",
+      arrivalPersonRelation: "Father",
+      arrivalPhone: "+254712000004",
+      departureTransport: "Car",
+      departureVehicleReg: "KAB 321E",
+      departurePersonName: "Sarah Njeri",
+      departurePersonRelation: "Mother",
+      departurePhone: "+254712000003",
+    },
   ];
 }
 
 function seedNotifications(): Notification[] {
   return [
-    { id: "n1", pupilId: "k1", parentId: "p1", channel: "sms", type: "arrival", status: "sent", message: "Liam arrived at 07:55", timestamp: now(), phoneNumber: "+254712000001" },
-    { id: "n2", pupilId: "k1", parentId: "p1", channel: "email", type: "arrival", status: "sent", message: "Liam arrived at 07:55", timestamp: now(), phoneNumber: "+254712000001" },
-    { id: "n3", pupilId: "k2", parentId: "p2", channel: "sms", type: "arrival", status: "sent", message: "Zuri arrived at 08:02", timestamp: now(), phoneNumber: "+254712000002" },
-    { id: "n4", pupilId: "k3", parentId: "p3", channel: "sms", type: "departure", status: "failed", message: "Departure SMS failed", timestamp: now(), phoneNumber: "+254712000003" },
+    {
+      id: "n1",
+      pupilId: "k1",
+      parentId: "p1",
+      channel: "sms",
+      type: "arrival",
+      status: "sent",
+      message: "Liam arrived at 07:55",
+      timestamp: now(),
+      phoneNumber: "+254712000001",
+    },
+    {
+      id: "n2",
+      pupilId: "k1",
+      parentId: "p1",
+      channel: "email",
+      type: "arrival",
+      status: "sent",
+      message: "Liam arrived at 07:55",
+      timestamp: now(),
+      phoneNumber: "+254712000001",
+    },
+    {
+      id: "n3",
+      pupilId: "k2",
+      parentId: "p2",
+      channel: "sms",
+      type: "arrival",
+      status: "sent",
+      message: "Zuri arrived at 08:02",
+      timestamp: now(),
+      phoneNumber: "+254712000002",
+    },
+    {
+      id: "n4",
+      pupilId: "k3",
+      parentId: "p3",
+      channel: "sms",
+      type: "departure",
+      status: "failed",
+      message: "Departure SMS failed",
+      timestamp: now(),
+      phoneNumber: "+254712000003",
+    },
   ];
 }
 
 function seedAudit(): AuditLog[] {
   return [
-    { id: "l1", actorId: "u1", actorName: "Amina Okello", action: "Created pupil", target: "Liam Atieno (KG-001)", timestamp: now() },
-    { id: "l2", actorId: "u2", actorName: "Brian Mwangi", action: "Approved teacher", target: "Grace Wanjiku", timestamp: now() },
-    { id: "l3", actorId: "u3", actorName: "Grace Wanjiku", action: "Marked arrival", target: "Liam Atieno", timestamp: now() },
+    {
+      id: "l1",
+      actorId: "u1",
+      actorName: "Amina Okello",
+      action: "Created pupil",
+      target: "Liam Atieno (KG-001)",
+      timestamp: now(),
+    },
+    {
+      id: "l2",
+      actorId: "u2",
+      actorName: "Brian Mwangi",
+      action: "Approved teacher",
+      target: "Grace Wanjiku",
+      timestamp: now(),
+    },
+    {
+      id: "l3",
+      actorId: "u3",
+      actorName: "Grace Wanjiku",
+      action: "Marked arrival",
+      target: "Liam Atieno",
+      timestamp: now(),
+    },
   ];
 }
 
 function seedMarks(): Mark[] {
   return [
-    { id: "m1", pupilId: "k1", subject: "Reading", term: "Term 1", year: "2025", score: 85, maxScore: 100, grade: "A", teacherComment: "Excellent progress!", recordedBy: "u3", recordedAt: "2025-03-15T10:30:00Z" },
-    { id: "m2", pupilId: "k1", subject: "Math", term: "Term 1", year: "2025", score: 78, maxScore: 100, grade: "B", teacherComment: "Good work", recordedBy: "u3", recordedAt: "2025-03-15T10:35:00Z" },
-    { id: "m3", pupilId: "k2", subject: "Reading", term: "Term 1", year: "2025", score: 92, maxScore: 100, grade: "A", teacherComment: "Outstanding!", recordedBy: "u3", recordedAt: "2025-03-15T10:40:00Z" },
+    {
+      id: "m1",
+      pupilId: "k1",
+      subject: "Reading",
+      term: "Term 1",
+      year: "2025",
+      score: 85,
+      maxScore: 100,
+      grade: "A",
+      teacherComment: "Excellent progress!",
+      recordedBy: "u3",
+      recordedAt: "2025-03-15T10:30:00Z",
+    },
+    {
+      id: "m2",
+      pupilId: "k1",
+      subject: "Math",
+      term: "Term 1",
+      year: "2025",
+      score: 78,
+      maxScore: 100,
+      grade: "B",
+      teacherComment: "Good work",
+      recordedBy: "u3",
+      recordedAt: "2025-03-15T10:35:00Z",
+    },
+    {
+      id: "m3",
+      pupilId: "k2",
+      subject: "Reading",
+      term: "Term 1",
+      year: "2025",
+      score: 92,
+      maxScore: 100,
+      grade: "A",
+      teacherComment: "Outstanding!",
+      recordedBy: "u3",
+      recordedAt: "2025-03-15T10:40:00Z",
+    },
   ];
 }
 
@@ -209,11 +511,25 @@ interface Store {
   login: (email: string, password?: string) => User | null;
   loginAs: (role: Role) => void;
   logout: () => void;
-  registerUser: (data: { name: string; email: string; phone: string; password?: string; role: Role }) => void;
-  createSchool: (data: { name: string; location?: string; phone?: string; email?: string }) => School;
+  registerUser: (data: {
+    name: string;
+    email: string;
+    phone: string;
+    password?: string;
+    role: Role;
+  }) => void;
+  createSchool: (data: {
+    name: string;
+    location?: string;
+    phone?: string;
+    email?: string;
+  }) => School;
   updateSchool: (id: string, data: Partial<Omit<School, "id" | "createdAt">>) => void;
   deactivateSchool: (id: string) => void;
-  createSchoolAdmin: (schoolId: string, data: { name: string; email: string; phone: string; password: string }) => User | null;
+  createSchoolAdmin: (
+    schoolId: string,
+    data: { name: string; email: string; phone: string; password: string },
+  ) => User | null;
   assignAdminToSchool: (userId: string, schoolId: string) => void;
   unassignAdmin: (userId: string) => void;
   approveTeacher: (id: string) => void;
@@ -222,8 +538,26 @@ interface Store {
   updatePupil: (id: string, data: Partial<Pupil>) => void;
   deactivatePupil: (id: string) => void;
   addParent: (data: Omit<Parent, "id">) => void;
-  markArrival: (pupilId: string, transportDetails?: { transport: string; vehicleReg?: string; personName: string; personRelation: string; phone?: string }) => void;
-  markDeparture: (pupilId: string, transportDetails?: { transport: string; vehicleReg?: string; personName: string; personRelation: string; phone?: string }) => void;
+  markArrival: (
+    pupilId: string,
+    transportDetails?: {
+      transport: string;
+      vehicleReg?: string;
+      personName: string;
+      personRelation: string;
+      phone?: string;
+    },
+  ) => void;
+  markDeparture: (
+    pupilId: string,
+    transportDetails?: {
+      transport: string;
+      vehicleReg?: string;
+      personName: string;
+      personRelation: string;
+      phone?: string;
+    },
+  ) => void;
   addMark: (data: Omit<Mark, "id" | "recordedBy" | "recordedAt">) => void;
   updateMark: (id: string, data: Partial<Omit<Mark, "id" | "recordedBy" | "recordedAt">>) => void;
   deleteMark: (id: string) => void;
@@ -238,7 +572,9 @@ function loadInitial() {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch (e) {
+    console.error(e);
+  }
   return null;
 }
 
@@ -289,7 +625,11 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+    } catch (e) {
+      console.error(e);
+    }
   }, [state]);
 
   // Reset attendance at midnight
@@ -299,40 +639,43 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(0, 0, 0, 0);
-      
+
       const msUntilMidnight = tomorrow.getTime() - now.getTime();
-      
+
       const timer = setTimeout(() => {
         // At midnight, clear today's attendance records
         setState((s: any) => {
           const currentDate = today();
           return {
             ...s,
-            attendance: s.attendance.filter((a: Attendance) => a.date < currentDate)
+            attendance: s.attendance.filter((a: Attendance) => a.date < currentDate),
           };
         });
-        
+
         // Check again for next midnight
         checkMidnight();
       }, msUntilMidnight);
-      
+
       return timer;
     };
-    
+
     const timer = checkMidnight();
     return () => clearTimeout(timer);
   }, []);
 
   const currentUser = useMemo(
     () => state.users.find((u: User) => u.id === state.currentUserId) ?? null,
-    [state]
+    [state],
   );
 
   const logAction = (actor: User | null, action: string, target: string) => {
     if (!actor) return;
     setState((s: any) => ({
       ...s,
-      audit: [{ id: uid(), actorId: actor.id, actorName: actor.name, action, target, timestamp: now() }, ...s.audit],
+      audit: [
+        { id: uid(), actorId: actor.id, actorName: actor.name, action, target, timestamp: now() },
+        ...s.audit,
+      ],
     }));
   };
 
@@ -344,29 +687,29 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
         type === "arrival"
           ? `Dear ${p.name}, your child ${pupil.firstName} ${pupil.lastName} has arrived safely at school today at ${t}.`
           : `Dear ${p.name}, your child ${pupil.firstName} ${pupil.lastName} has left school today at ${t}.`;
-      
+
       // Send SMS notification
-      newNotifs.push({ 
-        id: uid(), 
-        pupilId: pupil.id, 
-        parentId: p.id, 
-        channel: "sms", 
-        type, 
-        status: "sent", 
-        message: msg, 
+      newNotifs.push({
+        id: uid(),
+        pupilId: pupil.id,
+        parentId: p.id,
+        channel: "sms",
+        type,
+        status: "sent",
+        message: msg,
         timestamp: now(),
         phoneNumber: p.phone,
       });
-      
+
       // Send Email notification
-      newNotifs.push({ 
-        id: uid(), 
-        pupilId: pupil.id, 
-        parentId: p.id, 
-        channel: "email", 
-        type, 
-        status: "sent", 
-        message: msg, 
+      newNotifs.push({
+        id: uid(),
+        pupilId: pupil.id,
+        parentId: p.id,
+        channel: "email",
+        type,
+        status: "sent",
+        message: msg,
         timestamp: now(),
         phoneNumber: p.phone,
       });
@@ -412,18 +755,32 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
       setState((s: any) => ({ ...s, users: [...s.users, u] }));
     },
     createSchool: ({ name, location, phone, email }) => {
-      const school: School = { id: uid(), name, location, phone, email, createdAt: today(), active: true };
+      const school: School = {
+        id: uid(),
+        name,
+        location,
+        phone,
+        email,
+        createdAt: today(),
+        active: true,
+      };
       setState((s: any) => ({ ...s, schools: [...s.schools, school] }));
       logAction(currentUser, "Created school", name);
       return school;
     },
     updateSchool: (id, data) => {
-      setState((s: any) => ({ ...s, schools: s.schools.map((sc: School) => (sc.id === id ? { ...sc, ...data } : sc)) }));
+      setState((s: any) => ({
+        ...s,
+        schools: s.schools.map((sc: School) => (sc.id === id ? { ...sc, ...data } : sc)),
+      }));
       const sc = state.schools.find((x: School) => x.id === id);
       if (sc) logAction(currentUser, "Updated school", sc.name);
     },
     deactivateSchool: (id) => {
-      setState((s: any) => ({ ...s, schools: s.schools.map((sc: School) => (sc.id === id ? { ...sc, active: false } : sc)) }));
+      setState((s: any) => ({
+        ...s,
+        schools: s.schools.map((sc: School) => (sc.id === id ? { ...sc, active: false } : sc)),
+      }));
       const sc = state.schools.find((x: School) => x.id === id);
       if (sc) logAction(currentUser, "Deactivated school", sc.name);
     },
@@ -448,24 +805,37 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     assignAdminToSchool: (userId, schoolId) => {
       setState((s: any) => ({
         ...s,
-        users: s.users.map((u: User) => (u.id === userId ? { ...u, schoolId, role: u.role === "admin" ? u.role : "admin", status: "verified" } : u)),
+        users: s.users.map((u: User) =>
+          u.id === userId
+            ? { ...u, schoolId, role: u.role === "admin" ? u.role : "admin", status: "verified" }
+            : u,
+        ),
       }));
       const u = state.users.find((x: User) => x.id === userId);
       const sc = state.schools.find((x: School) => x.id === schoolId);
       if (u && sc) logAction(currentUser, "Assigned admin", `${u.name} → ${sc.name}`);
     },
     unassignAdmin: (userId) => {
-      setState((s: any) => ({ ...s, users: s.users.map((u: User) => (u.id === userId ? { ...u, schoolId: undefined } : u)) }));
+      setState((s: any) => ({
+        ...s,
+        users: s.users.map((u: User) => (u.id === userId ? { ...u, schoolId: undefined } : u)),
+      }));
       const u = state.users.find((x: User) => x.id === userId);
       if (u) logAction(currentUser, "Unassigned admin", u.name);
     },
     approveTeacher: (id) => {
-      setState((s: any) => ({ ...s, users: s.users.map((u: User) => (u.id === id ? { ...u, status: "verified" } : u)) }));
+      setState((s: any) => ({
+        ...s,
+        users: s.users.map((u: User) => (u.id === id ? { ...u, status: "verified" } : u)),
+      }));
       const t = state.users.find((u: User) => u.id === id);
       if (t) logAction(currentUser, "Approved teacher", t.name);
     },
     rejectTeacher: (id) => {
-      setState((s: any) => ({ ...s, users: s.users.map((u: User) => (u.id === id ? { ...u, status: "rejected" } : u)) }));
+      setState((s: any) => ({
+        ...s,
+        users: s.users.map((u: User) => (u.id === id ? { ...u, status: "rejected" } : u)),
+      }));
       const t = state.users.find((u: User) => u.id === id);
       if (t) logAction(currentUser, "Rejected teacher", t.name);
     },
@@ -475,10 +845,16 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
       logAction(currentUser, "Registered pupil", `${p.firstName} ${p.lastName} (${p.admissionNo})`);
     },
     updatePupil: (id, data) => {
-      setState((s: any) => ({ ...s, pupils: s.pupils.map((p: Pupil) => (p.id === id ? { ...p, ...data } : p)) }));
+      setState((s: any) => ({
+        ...s,
+        pupils: s.pupils.map((p: Pupil) => (p.id === id ? { ...p, ...data } : p)),
+      }));
     },
     deactivatePupil: (id) => {
-      setState((s: any) => ({ ...s, pupils: s.pupils.map((p: Pupil) => (p.id === id ? { ...p, active: false } : p)) }));
+      setState((s: any) => ({
+        ...s,
+        pupils: s.pupils.map((p: Pupil) => (p.id === id ? { ...p, active: false } : p)),
+      }));
     },
     addParent: (data) => {
       const p: Parent = { ...data, id: uid() };
@@ -488,30 +864,32 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     markArrival: (pupilId, transportDetails) => {
       const t = time();
       const d = today();
-      const existing = state.attendance.find((a: Attendance) => a.pupilId === pupilId && a.date === d);
+      const existing = state.attendance.find(
+        (a: Attendance) => a.pupilId === pupilId && a.date === d,
+      );
       if (existing && existing.arrival) return;
       if (existing) {
-        setState((s: any) => ({ 
-          ...s, 
-          attendance: s.attendance.map((a: Attendance) => 
-            a.id === existing.id 
-              ? { 
-                  ...a, 
+        setState((s: any) => ({
+          ...s,
+          attendance: s.attendance.map((a: Attendance) =>
+            a.id === existing.id
+              ? {
+                  ...a,
                   arrival: t,
                   arrivalTransport: transportDetails?.transport,
                   arrivalVehicleReg: transportDetails?.vehicleReg,
                   arrivalPersonName: transportDetails?.personName,
                   arrivalPersonRelation: transportDetails?.personRelation,
                   arrivalPhone: transportDetails?.phone,
-                } 
-              : a
-          ) 
+                }
+              : a,
+          ),
         }));
       } else {
-        const rec: Attendance = { 
-          id: uid(), 
-          pupilId, 
-          date: d, 
+        const rec: Attendance = {
+          id: uid(),
+          pupilId,
+          date: d,
           arrival: t,
           arrivalTransport: transportDetails?.transport,
           arrivalVehicleReg: transportDetails?.vehicleReg,
@@ -530,30 +908,32 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     markDeparture: (pupilId, transportDetails) => {
       const t = time();
       const d = today();
-      const existing = state.attendance.find((a: Attendance) => a.pupilId === pupilId && a.date === d);
+      const existing = state.attendance.find(
+        (a: Attendance) => a.pupilId === pupilId && a.date === d,
+      );
       if (existing && existing.departure) return;
       if (existing) {
-        setState((s: any) => ({ 
-          ...s, 
-          attendance: s.attendance.map((a: Attendance) => 
-            a.id === existing.id 
-              ? { 
-                  ...a, 
+        setState((s: any) => ({
+          ...s,
+          attendance: s.attendance.map((a: Attendance) =>
+            a.id === existing.id
+              ? {
+                  ...a,
                   departure: t,
                   departureTransport: transportDetails?.transport,
                   departureVehicleReg: transportDetails?.vehicleReg,
                   departurePersonName: transportDetails?.personName,
                   departurePersonRelation: transportDetails?.personRelation,
                   departurePhone: transportDetails?.phone,
-                } 
-              : a
-          ) 
+                }
+              : a,
+          ),
         }));
       } else {
-        const rec: Attendance = { 
-          id: uid(), 
-          pupilId, 
-          date: d, 
+        const rec: Attendance = {
+          id: uid(),
+          pupilId,
+          date: d,
           departure: t,
           departureTransport: transportDetails?.transport,
           departureVehicleReg: transportDetails?.vehicleReg,
@@ -581,7 +961,11 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
       setState((s: any) => ({ ...s, marks: [...s.marks, mark] }));
       const pupil = state.pupils.find((p: Pupil) => p.id === data.pupilId);
       if (pupil) {
-        logAction(currentUser, "Added mark", `${pupil.firstName} ${pupil.lastName} - ${data.subject} (${data.score}/${data.maxScore})`);
+        logAction(
+          currentUser,
+          "Added mark",
+          `${pupil.firstName} ${pupil.lastName} - ${data.subject} (${data.score}/${data.maxScore})`,
+        );
       }
     },
     updateMark: (id, data) => {
@@ -589,14 +973,26 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
         ...s,
         marks: s.marks.map((m: Mark) =>
           m.id === id
-            ? { ...m, ...data, grade: data.grade || (data.score !== undefined && data.maxScore !== undefined ? calculateGrade(data.score, data.maxScore) : m.grade) }
-            : m
+            ? {
+                ...m,
+                ...data,
+                grade:
+                  data.grade ||
+                  (data.score !== undefined && data.maxScore !== undefined
+                    ? calculateGrade(data.score, data.maxScore)
+                    : m.grade),
+              }
+            : m,
         ),
       }));
       const mark = state.marks.find((m: Mark) => m.id === id);
       const pupil = mark ? state.pupils.find((p: Pupil) => p.id === mark.pupilId) : null;
       if (pupil) {
-        logAction(currentUser, "Updated mark", `${pupil.firstName} ${pupil.lastName} - ${mark!.subject}`);
+        logAction(
+          currentUser,
+          "Updated mark",
+          `${pupil.firstName} ${pupil.lastName} - ${mark!.subject}`,
+        );
       }
     },
     deleteMark: (id) => {
@@ -604,7 +1000,11 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
       const pupil = mark ? state.pupils.find((p: Pupil) => p.id === mark.pupilId) : null;
       setState((s: any) => ({ ...s, marks: s.marks.filter((m: Mark) => m.id !== id) }));
       if (pupil && mark) {
-        logAction(currentUser, "Deleted mark", `${pupil.firstName} ${pupil.lastName} - ${mark.subject}`);
+        logAction(
+          currentUser,
+          "Deleted mark",
+          `${pupil.firstName} ${pupil.lastName} - ${mark.subject}`,
+        );
       }
     },
   };

@@ -123,11 +123,25 @@ interface Store {
   login: (email: string, password?: string) => Promise<User | null>;
   loginAs: (role: Role) => void;
   logout: () => Promise<void>;
-  registerUser: (data: { name: string; email: string; phone: string; password?: string; role: Role }) => Promise<void>;
-  createSchool: (data: { name: string; location?: string; phone?: string; email?: string }) => Promise<School>;
+  registerUser: (data: {
+    name: string;
+    email: string;
+    phone: string;
+    password?: string;
+    role: Role;
+  }) => Promise<void>;
+  createSchool: (data: {
+    name: string;
+    location?: string;
+    phone?: string;
+    email?: string;
+  }) => Promise<School>;
   updateSchool: (id: string, data: Partial<Omit<School, "id" | "createdAt">>) => Promise<void>;
   deactivateSchool: (id: string) => Promise<void>;
-  createSchoolAdmin: (schoolId: string, data: { name: string; email: string; phone: string; password: string }) => Promise<User | null>;
+  createSchoolAdmin: (
+    schoolId: string,
+    data: { name: string; email: string; phone: string; password: string },
+  ) => Promise<User | null>;
   assignAdminToSchool: (userId: string, schoolId: string) => Promise<void>;
   unassignAdmin: (userId: string) => Promise<void>;
   approveTeacher: (id: string) => Promise<void>;
@@ -136,10 +150,31 @@ interface Store {
   updatePupil: (id: string, data: Partial<Pupil>) => Promise<void>;
   deactivatePupil: (id: string) => Promise<void>;
   addParent: (data: Omit<Parent, "id">) => Promise<void>;
-  markArrival: (pupilId: string, transportDetails?: { transport: string; vehicleReg?: string; personName: string; personRelation: string; phone?: string }) => Promise<void>;
-  markDeparture: (pupilId: string, transportDetails?: { transport: string; vehicleReg?: string; personName: string; personRelation: string; phone?: string }) => Promise<void>;
+  markArrival: (
+    pupilId: string,
+    transportDetails?: {
+      transport: string;
+      vehicleReg?: string;
+      personName: string;
+      personRelation: string;
+      phone?: string;
+    },
+  ) => Promise<void>;
+  markDeparture: (
+    pupilId: string,
+    transportDetails?: {
+      transport: string;
+      vehicleReg?: string;
+      personName: string;
+      personRelation: string;
+      phone?: string;
+    },
+  ) => Promise<void>;
   addMark: (data: Omit<Mark, "id" | "recordedBy" | "recordedAt">) => Promise<void>;
-  updateMark: (id: string, data: Partial<Omit<Mark, "id" | "recordedBy" | "recordedAt">>) => Promise<void>;
+  updateMark: (
+    id: string,
+    data: Partial<Omit<Mark, "id" | "recordedBy" | "recordedAt">>,
+  ) => Promise<void>;
   deleteMark: (id: string) => Promise<void>;
 }
 
@@ -363,7 +398,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (currentUser) {
       loadAllData();
     }
-  }, [currentUser?.id]);
+  }, [currentUser]);
 
   const logAction = async (actor: User | null, action: string, target: string) => {
     if (!actor) return;
@@ -467,10 +502,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
       if (data.user) {
         // Update profile with phone and role
-        await supabase
-          .from("profiles")
-          .update({ phone, role, name })
-          .eq("id", data.user.id);
+        await supabase.from("profiles").update({ phone, role, name }).eq("id", data.user.id);
       }
     },
     createSchool: async ({ name, location, phone, email }) => {
@@ -555,18 +587,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         .eq("id", userId);
       setUsers((prev) =>
         prev.map((u) =>
-          u.id === userId ? { ...u, schoolId, role: u.role === "admin" ? u.role : "admin", status: "verified" } : u
-        )
+          u.id === userId
+            ? { ...u, schoolId, role: u.role === "admin" ? u.role : "admin", status: "verified" }
+            : u,
+        ),
       );
       const u = users.find((x) => x.id === userId);
       const sc = schools.find((x) => x.id === schoolId);
       if (u && sc) await logAction(currentUser, "Assigned admin", `${u.name} -> ${sc.name}`);
     },
     unassignAdmin: async (userId) => {
-      await supabase
-        .from("profiles")
-        .update({ school_id: null })
-        .eq("id", userId);
+      await supabase.from("profiles").update({ school_id: null }).eq("id", userId);
       setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, schoolId: undefined } : u)));
       const u = users.find((x) => x.id === userId);
       if (u) await logAction(currentUser, "Unassigned admin", u.name);
@@ -602,7 +633,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         active: true,
       };
       setPupils((prev) => [...prev, mapped]);
-      await logAction(currentUser, "Registered pupil", `${mapped.firstName} ${mapped.lastName} (${mapped.admissionNo})`);
+      await logAction(
+        currentUser,
+        "Registered pupil",
+        `${mapped.firstName} ${mapped.lastName} (${mapped.admissionNo})`,
+      );
     },
     updatePupil: async (id, data) => {
       const update: any = {};
@@ -663,8 +698,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                   arrivalPersonRelation: transportDetails?.personRelation,
                   arrivalPhone: transportDetails?.phone,
                 }
-              : a
-          )
+              : a,
+          ),
         );
       } else {
         const rec = {
@@ -723,8 +758,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                   departurePersonRelation: transportDetails?.personRelation,
                   departurePhone: transportDetails?.phone,
                 }
-              : a
-          )
+              : a,
+          ),
         );
       } else {
         const rec = {
@@ -781,7 +816,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setMarks((prev) => [...prev, mapped]);
       const pupil = pupils.find((p) => p.id === data.pupilId);
       if (pupil) {
-        await logAction(currentUser, "Added mark", `${pupil.firstName} ${pupil.lastName} - ${data.subject} (${data.score}/${data.maxScore})`);
+        await logAction(
+          currentUser,
+          "Added mark",
+          `${pupil.firstName} ${pupil.lastName} - ${data.subject} (${data.score}/${data.maxScore})`,
+        );
       }
     },
     updateMark: async (id, data) => {
@@ -799,15 +838,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             ? {
                 ...m,
                 ...data,
-                grade: data.score !== undefined && data.maxScore !== undefined ? calculateGrade(data.score, data.maxScore) : m.grade,
+                grade:
+                  data.score !== undefined && data.maxScore !== undefined
+                    ? calculateGrade(data.score, data.maxScore)
+                    : m.grade,
               }
-            : m
-        )
+            : m,
+        ),
       );
       const mark = marks.find((m) => m.id === id);
       const pupil = mark ? pupils.find((p) => p.id === mark.pupilId) : null;
       if (pupil && mark) {
-        await logAction(currentUser, "Updated mark", `${pupil.firstName} ${pupil.lastName} - ${mark.subject}`);
+        await logAction(
+          currentUser,
+          "Updated mark",
+          `${pupil.firstName} ${pupil.lastName} - ${mark.subject}`,
+        );
       }
     },
     deleteMark: async (id) => {
@@ -816,7 +862,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       await supabase.from("marks").delete().eq("id", id);
       setMarks((prev) => prev.filter((m) => m.id !== id));
       if (pupil && mark) {
-        await logAction(currentUser, "Deleted mark", `${pupil.firstName} ${pupil.lastName} - ${mark.subject}`);
+        await logAction(
+          currentUser,
+          "Deleted mark",
+          `${pupil.firstName} ${pupil.lastName} - ${mark.subject}`,
+        );
       }
     },
   };

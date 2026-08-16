@@ -6,8 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Building2, Plus, UserPlus, Ban, UserMinus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -15,7 +29,16 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/app/schools")({ component: SchoolsPage });
 
 function SchoolsPage() {
-  const { currentUser, schools, users, createSchool, deactivateSchool, createSchoolAdmin, assignAdminToSchool, unassignAdmin } = useStore();
+  const {
+    currentUser,
+    schools,
+    users,
+    createSchool,
+    deactivateSchool,
+    createSchoolAdmin,
+    assignAdminToSchool,
+    unassignAdmin,
+  } = useStore();
 
   const [newOpen, setNewOpen] = useState(false);
   const [form, setForm] = useState({ name: "", location: "", phone: "", email: "" });
@@ -29,12 +52,17 @@ function SchoolsPage() {
   if (!currentUser || currentUser.role !== "superadmin") {
     return (
       <AppShell title="Schools">
-        <Card><CardContent className="p-6 text-sm text-muted-foreground">Only the super admin can manage schools.</CardContent></Card>
+        <Card>
+          <CardContent className="p-6 text-sm text-muted-foreground">
+            Only the super admin can manage schools.
+          </CardContent>
+        </Card>
       </AppShell>
     );
   }
 
-  const adminsFor = (schoolId: string) => users.filter((u) => u.role === "admin" && u.schoolId === schoolId);
+  const adminsFor = (schoolId: string) =>
+    users.filter((u) => u.role === "admin" && u.schoolId === schoolId);
   const unassignedAdmins = users.filter((u) => u.role === "admin" && !u.schoolId);
 
   const submitSchool = async () => {
@@ -47,7 +75,8 @@ function SchoolsPage() {
 
   const submitAdmin = async () => {
     if (!adminOpenFor) return;
-    if (!adminForm.name || !adminForm.email || !adminForm.password) return toast.error("Name, email and password are required");
+    if (!adminForm.name || !adminForm.email || !adminForm.password)
+      return toast.error("Name, email and password are required");
     const u = await createSchoolAdmin(adminOpenFor, adminForm);
     if (!u) return toast.error("Email already in use");
     toast.success(`Admin account created for ${u.name}`);
@@ -66,29 +95,66 @@ function SchoolsPage() {
   return (
     <AppShell title="Schools">
       <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-muted-foreground">Create schools and assign admins to manage them.</p>
+        <p className="text-sm text-muted-foreground">
+          Create schools and assign admins to manage them.
+        </p>
         <Dialog open={newOpen} onOpenChange={setNewOpen}>
           <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-1" /> New school</Button>
+            <Button>
+              <Plus className="h-4 w-4 mr-1" /> New school
+            </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Create school</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Create school</DialogTitle>
+            </DialogHeader>
             <div className="space-y-3">
-              <div><Label>School name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div><Label>Location</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
+              <div>
+                <Label>School name</Label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Location</Label>
+                <Input
+                  value={form.location}
+                  onChange={(e) => setForm({ ...form, location: e.target.value })}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-                <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+                <div>
+                  <Label>Phone</Label>
+                  <Input
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  />
+                </div>
               </div>
             </div>
-            <DialogFooter><Button onClick={submitSchool}>Create school</Button></DialogFooter>
+            <DialogFooter>
+              <Button onClick={submitSchool}>Create school</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="grid gap-4">
         {schools.length === 0 && (
-          <Card><CardContent className="p-6 text-sm text-muted-foreground">No schools yet — create the first one.</CardContent></Card>
+          <Card>
+            <CardContent className="p-6 text-sm text-muted-foreground">
+              No schools yet — create the first one.
+            </CardContent>
+          </Card>
         )}
         {schools.map((s) => {
           const admins = adminsFor(s.id);
@@ -100,37 +166,90 @@ function SchoolsPage() {
                     <Building2 className="h-5 w-5" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">{s.name} {!s.active && <Badge variant="outline" className="ml-2">Inactive</Badge>}</CardTitle>
+                    <CardTitle className="text-lg">
+                      {s.name}{" "}
+                      {!s.active && (
+                        <Badge variant="outline" className="ml-2">
+                          Inactive
+                        </Badge>
+                      )}
+                    </CardTitle>
                     <div className="text-xs text-muted-foreground mt-1">
                       {s.location || "—"} · {s.phone || "no phone"} · {s.email || "no email"}
                     </div>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 justify-end">
-                  <Dialog open={adminOpenFor === s.id} onOpenChange={(o) => setAdminOpenFor(o ? s.id : null)}>
+                  <Dialog
+                    open={adminOpenFor === s.id}
+                    onOpenChange={(o) => setAdminOpenFor(o ? s.id : null)}
+                  >
                     <DialogTrigger asChild>
-                      <Button size="sm"><UserPlus className="h-4 w-4 mr-1" /> Create admin</Button>
+                      <Button size="sm">
+                        <UserPlus className="h-4 w-4 mr-1" /> Create admin
+                      </Button>
                     </DialogTrigger>
                     <DialogContent>
-                      <DialogHeader><DialogTitle>Create admin for {s.name}</DialogTitle></DialogHeader>
+                      <DialogHeader>
+                        <DialogTitle>Create admin for {s.name}</DialogTitle>
+                      </DialogHeader>
                       <div className="space-y-3">
-                        <div><Label>Full name</Label><Input value={adminForm.name} onChange={(e) => setAdminForm({ ...adminForm, name: e.target.value })} /></div>
-                        <div><Label>Email</Label><Input type="email" value={adminForm.email} onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })} /></div>
-                        <div><Label>Phone</Label><Input value={adminForm.phone} onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })} /></div>
-                        <div><Label>Temporary password</Label><Input type="text" value={adminForm.password} onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })} /></div>
+                        <div>
+                          <Label>Full name</Label>
+                          <Input
+                            value={adminForm.name}
+                            onChange={(e) => setAdminForm({ ...adminForm, name: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Email</Label>
+                          <Input
+                            type="email"
+                            value={adminForm.email}
+                            onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Phone</Label>
+                          <Input
+                            value={adminForm.phone}
+                            onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Temporary password</Label>
+                          <Input
+                            type="text"
+                            value={adminForm.password}
+                            onChange={(e) =>
+                              setAdminForm({ ...adminForm, password: e.target.value })
+                            }
+                          />
+                        </div>
                       </div>
-                      <DialogFooter><Button onClick={submitAdmin}>Create admin</Button></DialogFooter>
+                      <DialogFooter>
+                        <Button onClick={submitAdmin}>Create admin</Button>
+                      </DialogFooter>
                     </DialogContent>
                   </Dialog>
 
-                  <Dialog open={assignOpenFor === s.id} onOpenChange={(o) => setAssignOpenFor(o ? s.id : null)}>
+                  <Dialog
+                    open={assignOpenFor === s.id}
+                    onOpenChange={(o) => setAssignOpenFor(o ? s.id : null)}
+                  >
                     <DialogTrigger asChild>
-                      <Button size="sm" variant="outline">Assign existing admin</Button>
+                      <Button size="sm" variant="outline">
+                        Assign existing admin
+                      </Button>
                     </DialogTrigger>
                     <DialogContent>
-                      <DialogHeader><DialogTitle>Assign admin to {s.name}</DialogTitle></DialogHeader>
+                      <DialogHeader>
+                        <DialogTitle>Assign admin to {s.name}</DialogTitle>
+                      </DialogHeader>
                       {unassignedAdmins.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No unassigned admins available.</p>
+                        <p className="text-sm text-muted-foreground">
+                          No unassigned admins available.
+                        </p>
                       ) : (
                         <div>
                           <Label>Choose admin</Label>
@@ -141,17 +260,30 @@ function SchoolsPage() {
                           >
                             <option value="">Select…</option>
                             {unassignedAdmins.map((u) => (
-                              <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                              <option key={u.id} value={u.id}>
+                                {u.name} ({u.email})
+                              </option>
                             ))}
                           </select>
                         </div>
                       )}
-                      <DialogFooter><Button onClick={submitAssign} disabled={!assignUserId}>Assign</Button></DialogFooter>
+                      <DialogFooter>
+                        <Button onClick={submitAssign} disabled={!assignUserId}>
+                          Assign
+                        </Button>
+                      </DialogFooter>
                     </DialogContent>
                   </Dialog>
 
                   {s.active && (
-                    <Button size="sm" variant="ghost" onClick={async () => { await deactivateSchool(s.id); toast.success("School deactivated"); }}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={async () => {
+                        await deactivateSchool(s.id);
+                        toast.success("School deactivated");
+                      }}
+                    >
                       <Ban className="h-4 w-4 mr-1" /> Deactivate
                     </Button>
                   )}
@@ -178,7 +310,14 @@ function SchoolsPage() {
                           <TableCell>{a.email}</TableCell>
                           <TableCell>{a.phone || "—"}</TableCell>
                           <TableCell className="text-right">
-                            <Button size="sm" variant="ghost" onClick={async () => { await unassignAdmin(a.id); toast.success("Admin unassigned"); }}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={async () => {
+                                await unassignAdmin(a.id);
+                                toast.success("Admin unassigned");
+                              }}
+                            >
                               <UserMinus className="h-4 w-4" />
                             </Button>
                           </TableCell>
