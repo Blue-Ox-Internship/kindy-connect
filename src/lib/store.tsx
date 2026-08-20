@@ -240,20 +240,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [retryIn, setRetryIn] = useState(0); // seconds until next auto-retry
   const retryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
-  const [state, setState] = useState(() => ({
-    currentUserId: null as string | null,
-    selectedSchoolId: null as string | null,
-    users: [] as User[],
-    pupils: [] as Pupil[],
-    parents: [] as Parent[],
-    classes: [] as ClassRoom[],
-    attendance: [] as Attendance[],
-    notifications: [] as Notification[],
-    audit: [] as AuditLog[],
-    marks: [] as Mark[],
-    schools: [] as School[],
-    subjects: [] as Subject[],
-  }));
+  const [state, setState] = useState(() => {
+    let initialUserId = null;
+    try {
+      initialUserId = sessionStorage.getItem(SESSION_KEY);
+    } catch {}
+    
+    let initialSchoolId = null;
+    try {
+      initialSchoolId = sessionStorage.getItem(SCHOOL_CONTEXT_KEY);
+    } catch {}
+
+    return {
+      currentUserId: initialUserId,
+      selectedSchoolId: initialSchoolId,
+      users: [] as User[],
+      pupils: [] as Pupil[],
+      parents: [] as Parent[],
+      classes: [] as ClassRoom[],
+      attendance: [] as Attendance[],
+      notifications: [] as Notification[],
+      audit: [] as AuditLog[],
+      marks: [] as Mark[],
+      schools: [] as School[],
+      subjects: [] as Subject[],
+    };
+  });
 
 
 
@@ -604,6 +616,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     login: async (id, password) => {
       const u = await loginUser({ data: { id, password } });
       if (u) {
+        try {
+          sessionStorage.setItem(SESSION_KEY, u.id);
+        } catch {}
         setState((s) => ({ ...s, currentUserId: u.id }));
       }
       return u;
@@ -613,11 +628,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setState((s) => ({ ...s, currentUserId: null, selectedSchoolId: null }));
       setIsLocked(false);
       try {
+        sessionStorage.removeItem(SESSION_KEY);
+        sessionStorage.removeItem(SCHOOL_CONTEXT_KEY);
         sessionStorage.removeItem("kinder.locked");
       } catch {}
     },
 
     setSchoolContext: (schoolId: string | null) => {
+      try {
+        if (schoolId) {
+          sessionStorage.setItem(SCHOOL_CONTEXT_KEY, schoolId);
+        } else {
+          sessionStorage.removeItem(SCHOOL_CONTEXT_KEY);
+        }
+      } catch {}
       setState((s) => ({ ...s, selectedSchoolId: schoolId }));
     },
 
