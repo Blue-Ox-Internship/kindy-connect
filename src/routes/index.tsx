@@ -187,19 +187,16 @@ function Landing() {
                     <Label htmlFor="login-id">Assigned ID</Label>
                     <Input
                       id="login-id"
-                      name="login-id"
+                      name="username"
                       value={assignedId}
                       onChange={(event) => setAssignedId(event.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder="e.g. KC001"
                       disabled={isLoading}
-                      autoComplete="off"
+                      autoComplete="username"
                       autoCapitalize="none"
                       autoCorrect="off"
                       spellCheck={false}
-                      data-lpignore="true"
-                      data-bwignore="true"
-                      data-1p-ignore="true"
                     />
                   </div>
 
@@ -207,18 +204,14 @@ function Landing() {
                     <Label htmlFor="login-password">Password</Label>
                     <Input
                       id="login-password"
-                      name="login-password"
+                      name="password"
                       type="password"
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder="Enter your password"
                       disabled={isLoading}
-                      autoComplete="new-password"
-                      data-lpignore="true"
-                      data-bwignore="true"
-                      data-1p-ignore="true"
-                      data-form-type="other"
+                      autoComplete="current-password"
                     />
                   </div>
 
