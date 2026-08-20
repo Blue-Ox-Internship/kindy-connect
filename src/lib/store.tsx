@@ -255,20 +255,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     subjects: [] as Subject[],
   }));
 
-  // Hydrate saved session on client post-mount to prevent SSR hydration mismatch (Error #418)
-  useEffect(() => {
-    try {
-      const savedUserId = localStorage.getItem(SESSION_KEY);
-      const savedSchoolId = sessionStorage.getItem(SCHOOL_CONTEXT_KEY);
-      if (savedUserId || savedSchoolId) {
-        setState((s) => ({
-          ...s,
-          ...(savedUserId ? { currentUserId: savedUserId } : {}),
-          ...(savedSchoolId ? { selectedSchoolId: savedSchoolId } : {}),
-        }));
-      }
-    } catch {}
-  }, []);
+
 
   // ── Auto-retry countdown timer ───────────────────────────────────────────────
   const startRetryCountdown = useCallback((seconds: number, onFire: () => void) => {
@@ -390,16 +377,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [state.currentUserId]);
 
-  // Sync user session to local storage
-  useEffect(() => {
-    try {
-      if (state.currentUserId) {
-        localStorage.setItem(SESSION_KEY, state.currentUserId);
-      } else {
-        localStorage.removeItem(SESSION_KEY);
-      }
-    } catch {}
-  }, [state.currentUserId]);
+
 
   // ── Inactivity / Auto-lock logic ───────────────────────────────────────────
   const clearIdleTimer = useCallback(() => {
@@ -478,16 +456,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [state.currentUserId, startIdleTimer],
   );
 
-  // Sync school context to session storage
-  useEffect(() => {
-    try {
-      if (state.selectedSchoolId) {
-        sessionStorage.setItem(SCHOOL_CONTEXT_KEY, state.selectedSchoolId);
-      } else {
-        sessionStorage.removeItem(SCHOOL_CONTEXT_KEY);
-      }
-    } catch {}
-  }, [state.selectedSchoolId]);
+
 
   const currentUser = useMemo(
     () => state.users.find((u: User) => u.id === state.currentUserId) ?? null,
