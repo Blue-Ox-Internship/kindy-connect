@@ -38,7 +38,6 @@ import {
   Mail,
   Phone,
   Building2,
-  Sparkles,
   LayoutGrid,
   List,
   UserPlus,
@@ -1151,7 +1150,7 @@ function TeachersPage() {
                             onClick={() => setCreateForm((prev) => ({ ...prev, password: generatePassword() }))}
                             className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
                           >
-                            <Sparkles className="h-3 w-3" /> Generate
+                            Generate
                           </button>
                         </div>
                         <div className="relative">
