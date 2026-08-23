@@ -205,8 +205,8 @@ interface Store {
 
 const Ctx = createContext<Store | null>(null);
 
-const SESSION_KEY = "kinder.currentUserId";
-const SCHOOL_CONTEXT_KEY = "kinder.selectedSchoolId";
+const LEGACY_SESSION_KEY = "kinder.currentUserId";
+const LEGACY_SCHOOL_CONTEXT_KEY = "kinder.selectedSchoolId";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 function classifyDbError(err: any): { isPaused: boolean; message: string } {
@@ -224,14 +224,7 @@ function classifyDbError(err: any): { isPaused: boolean; message: string } {
 export function StoreProvider({ children }: { children: ReactNode }) {
   // Idle timeout for auto-lock (default 4 minutes)
   const IDLE_DEFAULT = 4 * 60 * 1000;
-  const [isLocked, setIsLocked] = useState(() => {
-    try {
-      const storedLocked = sessionStorage.getItem("kinder.locked");
-      return storedLocked === "1";
-    } catch {
-      return false;
-    }
-  });
+  const [isLocked, setIsLocked] = useState(false);
   const idleTimeoutMsRef = useRef<number>(IDLE_DEFAULT);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -241,19 +234,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const retryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [state, setState] = useState(() => {
-    let initialUserId = null;
-    try {
-      initialUserId = sessionStorage.getItem(SESSION_KEY);
-    } catch {}
-    
-    let initialSchoolId = null;
-    try {
-      initialSchoolId = sessionStorage.getItem(SCHOOL_CONTEXT_KEY);
-    } catch {}
-
     return {
-      currentUserId: initialUserId,
-      selectedSchoolId: initialSchoolId,
+      // Authentication is intentionally kept in memory. A new visit or page
+      // refresh must go through the ID-and-password sign-in screen.
+      currentUserId: null as string | null,
+      selectedSchoolId: null as string | null,
       users: [] as User[],
       pupils: [] as Pupil[],
       parents: [] as Parent[],
@@ -266,6 +251,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       subjects: [] as Subject[],
     };
   });
+
+  useEffect(() => {
+    // Remove sessions created by earlier versions so they cannot bypass login.
+    try {
+      sessionStorage.removeItem(LEGACY_SESSION_KEY);
+      sessionStorage.removeItem(LEGACY_SCHOOL_CONTEXT_KEY);
+      sessionStorage.removeItem("kinder.locked");
+    } catch {}
+  }, []);
 
 
 
@@ -616,9 +610,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     login: async (id, password) => {
       const u = await loginUser({ data: { id, password } });
       if (u) {
-        try {
-          sessionStorage.setItem(SESSION_KEY, u.id);
-        } catch {}
         setState((s) => ({ ...s, currentUserId: u.id }));
       }
       return u;
@@ -628,20 +619,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setState((s) => ({ ...s, currentUserId: null, selectedSchoolId: null }));
       setIsLocked(false);
       try {
-        sessionStorage.removeItem(SESSION_KEY);
-        sessionStorage.removeItem(SCHOOL_CONTEXT_KEY);
+        sessionStorage.removeItem(LEGACY_SESSION_KEY);
+        sessionStorage.removeItem(LEGACY_SCHOOL_CONTEXT_KEY);
         sessionStorage.removeItem("kinder.locked");
       } catch {}
     },
 
     setSchoolContext: (schoolId: string | null) => {
-      try {
-        if (schoolId) {
-          sessionStorage.setItem(SCHOOL_CONTEXT_KEY, schoolId);
-        } else {
-          sessionStorage.removeItem(SCHOOL_CONTEXT_KEY);
-        }
-      } catch {}
       setState((s) => ({ ...s, selectedSchoolId: schoolId }));
     },
 
