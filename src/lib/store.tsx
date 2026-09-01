@@ -52,6 +52,12 @@ import {
   type Subject,
 } from "./db-functions";
 import { queryClient, queryKeys } from "./query-client";
+import {
+  clearLegacySessionKeys,
+  hasLoginLock,
+  releaseLoginLock,
+  setLoginLock,
+} from "./session-state";
 
 // Re-export types so we don't break existing imports in components
 export type {
@@ -205,9 +211,6 @@ interface Store {
 
 const Ctx = createContext<Store | null>(null);
 
-const LEGACY_SESSION_KEY = "kinder.currentUserId";
-const LEGACY_SCHOOL_CONTEXT_KEY = "kinder.selectedSchoolId";
-
 // ── Helpers ─────────────────────────────────────────────────────────────────
 function classifyDbError(err: any): { isPaused: boolean; message: string } {
   const msg: string = err?.message || err?.toString() || "Unknown error";
@@ -224,7 +227,7 @@ function classifyDbError(err: any): { isPaused: boolean; message: string } {
 export function StoreProvider({ children }: { children: ReactNode }) {
   // Idle timeout for auto-lock (default 4 minutes)
   const IDLE_DEFAULT = 4 * 60 * 1000;
-  const [isLocked, setIsLocked] = useState(false);
+  const [isLocked, setIsLocked] = useState(() => hasLoginLock());
   const idleTimeoutMsRef = useRef<number>(IDLE_DEFAULT);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -253,12 +256,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    // Remove sessions created by earlier versions so they cannot bypass login.
-    try {
-      sessionStorage.removeItem(LEGACY_SESSION_KEY);
-      sessionStorage.removeItem(LEGACY_SCHOOL_CONTEXT_KEY);
-      sessionStorage.removeItem("kinder.locked");
-    } catch {}
+    // Remove legacy session trackers from older versions without wiping the current lock state.
+    clearLegacySessionKeys();
+    if (hasLoginLock()) {
+      setIsLocked(true);
+    }
   }, []);
 
 
@@ -395,13 +397,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const startIdleTimer = useCallback(() => {
     clearIdleTimer();
-    // Only start when a user is signed in
+    // Only start when a user is signed in.
     if (!state.currentUserId) return;
     idleTimerRef.current = setTimeout(() => {
       setIsLocked(true);
-      try {
-        sessionStorage.setItem("kinder.locked", "1");
-      } catch {}
+      setLoginLock();
     }, idleTimeoutMsRef.current);
   }, [clearIdleTimer, state.currentUserId]);
 
@@ -434,23 +434,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // lock/unlock helpers
   const lock = useCallback(() => {
     setIsLocked(true);
-    try {
-      sessionStorage.setItem("kinder.locked", "1");
-    } catch {}
+    setLoginLock();
   }, []);
 
   const unlock = useCallback(
     async (password: string) => {
-      // Validate password for current user id
+      // Re-enter credentials to unlock the session, then continue without a silent resume.
       if (!state.currentUserId) return false;
       try {
         const u = await loginUser({ data: { id: state.currentUserId, password } });
         if (u) {
+          releaseLoginLock();
           setIsLocked(false);
-          try {
-            sessionStorage.removeItem("kinder.locked");
-          } catch {}
-          // refresh idle timer
           startIdleTimer();
           return true;
         }
@@ -618,11 +613,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     logout: () => {
       setState((s) => ({ ...s, currentUserId: null, selectedSchoolId: null }));
       setIsLocked(false);
-      try {
-        sessionStorage.removeItem(LEGACY_SESSION_KEY);
-        sessionStorage.removeItem(LEGACY_SCHOOL_CONTEXT_KEY);
-        sessionStorage.removeItem("kinder.locked");
-      } catch {}
+      clearLegacySessionKeys();
+      releaseLoginLock();
     },
 
     setSchoolContext: (schoolId: string | null) => {
