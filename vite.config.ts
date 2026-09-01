@@ -10,44 +10,51 @@ export default defineConfig(({ mode }) => {
   if (env.DATABASE_URL) {
     process.env.DATABASE_URL = env.DATABASE_URL;
   }
-  return {
-    plugins: [
-      tsConfigPaths({ projects: ["./tsconfig.json"] }),
-      tanstackStart({
-        importProtection: {
-          behavior: "error",
-          client: {
-            files: ["**/server/**"],
-            specifiers: ["server-only"],
-          },
-        },
-        server: { entry: "server" },
-      }),
-      tailwindcss(),
-      react(),
-      nitro({
-        preset: "vercel",
-        publicAssets: [
-          {
-            dir: "public",
-            maxAge: 0,
-          },
-        ],
-      }),
-      {
-        name: "mock-vercel-turborepo-summary",
-        configureServer(server) {
-          server.middlewares.use((req, res, next) => {
-            if (req.url && req.url.includes("/files/turborepo-summary")) {
-              res.writeHead(200, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ tasks: [] }));
-              return;
-            }
-            next();
-          });
+
+  const plugins = [
+    tsConfigPaths({ projects: ["./tsconfig.json"] }),
+    tanstackStart({
+      importProtection: {
+        behavior: "error",
+        client: {
+          files: ["**/server/**"],
+          specifiers: ["server-only"],
         },
       },
-    ],
+      server: { entry: "server" },
+    }),
+    tailwindcss(),
+    react(),
+    ...(process.env.VERCEL
+      ? [
+          nitro({
+            preset: "vercel",
+            publicAssets: [
+              {
+                dir: "public",
+                maxAge: 0,
+              },
+            ],
+          }),
+        ]
+      : []),
+    {
+      name: "mock-vercel-turborepo-summary",
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url && req.url.includes("/files/turborepo-summary")) {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ tasks: [] }));
+            return;
+          }
+          next();
+        });
+      },
+    },
+  ];
+
+  return {
+    plugins,
     resolve: {
       alias: {
         "@": "/src",
