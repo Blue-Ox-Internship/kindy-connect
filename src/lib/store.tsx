@@ -53,9 +53,12 @@ import {
 } from "./db-functions";
 import { queryClient, queryKeys } from "./query-client";
 import {
+  clearActiveUserId,
   clearLegacySessionKeys,
   hasLoginLock,
   releaseLoginLock,
+  resetAuthSession,
+  setActiveUserId,
   setLoginLock,
 } from "./session-state";
 
@@ -256,11 +259,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    // Remove legacy session trackers from older versions without wiping the current lock state.
+    // Each browser session starts signed out unless the current user explicitly signs in again.
+    resetAuthSession();
     clearLegacySessionKeys();
-    if (hasLoginLock()) {
-      setIsLocked(true);
-    }
+    clearActiveUserId();
+    setIsLocked(false);
+    setState((s) => ({ ...s, currentUserId: null, selectedSchoolId: null }));
   }, []);
 
 
@@ -395,15 +399,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const logout = useCallback(() => {
+    setState((s) => ({ ...s, currentUserId: null, selectedSchoolId: null }));
+    setIsLocked(false);
+    resetAuthSession();
+    clearLegacySessionKeys();
+    releaseLoginLock();
+    clearActiveUserId();
+    clearIdleTimer();
+  }, [clearIdleTimer]);
+
   const startIdleTimer = useCallback(() => {
     clearIdleTimer();
-    // Only start when a user is signed in.
     if (!state.currentUserId) return;
     idleTimerRef.current = setTimeout(() => {
-      setIsLocked(true);
-      setLoginLock();
+      logout();
     }, idleTimeoutMsRef.current);
-  }, [clearIdleTimer, state.currentUserId]);
+  }, [clearIdleTimer, logout, state.currentUserId]);
 
   const onUserActivity = useCallback(() => {
     // If locked, do not auto-unlock — require password
@@ -605,17 +617,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     login: async (id, password) => {
       const u = await loginUser({ data: { id, password } });
       if (u) {
+        setActiveUserId(u.id);
         setState((s) => ({ ...s, currentUserId: u.id }));
       }
       return u;
     },
 
-    logout: () => {
-      setState((s) => ({ ...s, currentUserId: null, selectedSchoolId: null }));
-      setIsLocked(false);
-      clearLegacySessionKeys();
-      releaseLoginLock();
-    },
+    logout,
 
     setSchoolContext: (schoolId: string | null) => {
       setState((s) => ({ ...s, selectedSchoolId: schoolId }));

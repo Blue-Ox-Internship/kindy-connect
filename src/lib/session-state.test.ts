@@ -3,11 +3,13 @@ import assert from "node:assert/strict";
 
 import {
   AUTH_LOCK_KEY,
+  AUTH_USER_KEY,
   LEGACY_SESSION_KEY,
   LEGACY_SCHOOL_CONTEXT_KEY,
   clearLegacySessionKeys,
   hasLoginLock,
   releaseLoginLock,
+  resetAuthSession,
   setLoginLock,
 } from "./session-state.ts";
 
@@ -23,6 +25,9 @@ function createStorage() {
     },
     removeItem(key: string) {
       values.delete(key);
+    },
+    clear() {
+      values.clear();
     },
   } as Storage;
 }
@@ -49,5 +54,19 @@ test("legacy auth keys are cleared without removing the current lock state", () 
 
   assert.equal(storage.getItem(LEGACY_SESSION_KEY), null);
   assert.equal(storage.getItem(LEGACY_SCHOOL_CONTEXT_KEY), null);
-  assert.equal(storage.getItem(AUTH_LOCK_KEY), "1");
+  assert.equal(storage.getItem(AUTH_LOCK_KEY), null);
+});
+
+test("resetAuthSession clears all auth state so a new browser visit requires credentials", () => {
+  const storage = createStorage();
+
+  storage.setItem(LEGACY_SESSION_KEY, "user-123");
+  storage.setItem(AUTH_USER_KEY, "user-123");
+  storage.setItem(AUTH_LOCK_KEY, "1");
+
+  resetAuthSession(storage);
+
+  assert.equal(storage.getItem(LEGACY_SESSION_KEY), null);
+  assert.equal(storage.getItem(AUTH_USER_KEY), null);
+  assert.equal(storage.getItem(AUTH_LOCK_KEY), null);
 });
