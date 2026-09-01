@@ -15,6 +15,7 @@ import {
   Building2,
   Phone,
   Mail,
+  Landmark,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +52,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
   }
 
   const isSuperAdmin = currentUser.role === "super_admin";
+  const isAdmin = currentUser.role === "super_admin" || currentUser.role === "admin";
   const isStaff = currentUser.role === "admin" || currentUser.role === "deputy";
   const pendingCount = (users || []).filter((u) => u?.role === "teacher" && u?.status === "pending").length;
   const currentSchool = (schools || []).find((s) => s?.id === currentUser.schoolId);
@@ -63,6 +65,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         { to: "/app/teachers", label: "Teachers", icon: GraduationCap, badge: pendingCount },
         { to: "/app/classes", label: "Classes", icon: Building2 },
         { to: "/app/subjects", label: "Subjects", icon: BookMarked },
+        { to: "/app/fees", label: "School Fees", icon: Landmark },
         { to: "/app/audit", label: "Audit log", icon: ScrollText },
       ]
     : isStaff
@@ -76,6 +79,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
           { to: "/app/attendance", label: "Attendance", icon: CalendarCheck },
           { to: "/app/marks", label: "Marks", icon: ClipboardList },
           { to: "/app/reports", label: "Reports", icon: BarChart3 },
+          ...(isAdmin ? [{ to: "/app/fees", label: "School Fees", icon: Landmark }] : []),
           { to: "/app/audit", label: "Audit log", icon: ScrollText },
         ]
       : [
