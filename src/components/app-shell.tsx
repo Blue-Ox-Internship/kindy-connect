@@ -57,6 +57,8 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
   const pendingCount = (users || []).filter((u) => u?.role === "teacher" && u?.status === "pending").length;
   const currentSchool = (schools || []).find((s) => s?.id === currentUser.schoolId);
 
+  const adminFeeItem = { to: "/app/fees", label: "School Fees", icon: Landmark };
+
   const items = isSuperAdmin
     ? [
         { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -65,7 +67,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         { to: "/app/teachers", label: "Teachers", icon: GraduationCap, badge: pendingCount },
         { to: "/app/classes", label: "Classes", icon: Building2 },
         { to: "/app/subjects", label: "Subjects", icon: BookMarked },
-        { to: "/app/fees", label: "School Fees", icon: Landmark },
+        adminFeeItem,
         { to: "/app/audit", label: "Audit log", icon: ScrollText },
       ]
     : isStaff
@@ -79,7 +81,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
           { to: "/app/attendance", label: "Attendance", icon: CalendarCheck },
           { to: "/app/marks", label: "Marks", icon: ClipboardList },
           { to: "/app/reports", label: "Reports", icon: BarChart3 },
-          ...(isAdmin ? [{ to: "/app/fees", label: "School Fees", icon: Landmark }] : []),
+          ...(isAdmin ? [adminFeeItem] : []),
           { to: "/app/audit", label: "Audit log", icon: ScrollText },
         ]
       : [
