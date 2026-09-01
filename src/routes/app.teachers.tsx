@@ -306,7 +306,7 @@ function TeachersPage() {
       list = list.filter((u) => u?.schoolId === schoolFilter);
     } else if (!isSuperAdmin && currentUser?.schoolId) {
       list = list.filter(
-        (u) => !u?.schoolId || u?.schoolId === currentUser.schoolId || u?.role === "teacher",
+        (u) => !u?.schoolId || u?.schoolId === currentUser.schoolId,
       );
     }
 
@@ -1022,7 +1022,7 @@ function TeachersPage() {
     }
     if (!isSuperAdmin && currentUser?.schoolId) {
       return safeUsers.filter(
-        (u) => !u?.schoolId || u?.schoolId === currentUser.schoolId || u?.role === "teacher",
+        (u) => !u?.schoolId || u?.schoolId === currentUser.schoolId,
       );
     }
     return safeUsers;
@@ -1136,7 +1136,7 @@ function TeachersPage() {
                         <Input
                           id="create-id"
                           value={createForm.id}
-                          onChange={(e) => setCreateForm({ ...createForm, id: e.target.value })}
+                          onChange={(e) => setCreateForm((prev) => ({ ...prev, id: e.target.value }))}
                           placeholder="e.g. TCH-1024"
                           autoComplete="off"
                           required
@@ -1158,7 +1158,7 @@ function TeachersPage() {
                             id="create-pwd"
                             type={showCreatePassword ? "text" : "password"}
                             value={createForm.password}
-                            onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                            onChange={(e) => setCreateForm((prev) => ({ ...prev, password: e.target.value }))}
                             placeholder="Password"
                             autoComplete="new-password"
                             className="pr-9"
@@ -1182,7 +1182,7 @@ function TeachersPage() {
                       <Input
                         id="create-name"
                         value={createForm.name}
-                        onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, name: e.target.value }))}
                         placeholder="e.g. Sarah Johnson"
                         autoComplete="off"
                         required
@@ -1196,7 +1196,7 @@ function TeachersPage() {
                           id="create-email"
                           type="email"
                           value={createForm.email}
-                          onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                          onChange={(e) => setCreateForm((prev) => ({ ...prev, email: e.target.value }))}
                           placeholder="sarah@school.com"
                           autoComplete="off"
                           required
@@ -1207,7 +1207,7 @@ function TeachersPage() {
                         <Input
                           id="create-phone"
                           value={createForm.phone}
-                          onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
+                          onChange={(e) => setCreateForm((prev) => ({ ...prev, phone: e.target.value }))}
                           placeholder="+256 700 000000"
                           autoComplete="off"
                           required
@@ -1221,7 +1221,7 @@ function TeachersPage() {
                         <select
                           id="create-role"
                           value={createForm.role}
-                          onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as Role })}
+                          onChange={(e) => setCreateForm((prev) => ({ ...prev, role: e.target.value as Role }))}
                           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         >
                           <option value="teacher">Teacher</option>
@@ -1235,7 +1235,7 @@ function TeachersPage() {
                           <select
                             id="create-school"
                             value={createForm.schoolId}
-                            onChange={(e) => setCreateForm({ ...createForm, schoolId: e.target.value })}
+                            onChange={(e) => setCreateForm((prev) => ({ ...prev, schoolId: e.target.value }))}
                             className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                           >
                             {safeSchools.map((s) => (
@@ -1253,7 +1253,7 @@ function TeachersPage() {
                       <select
                         id="create-class"
                         value={createForm.classId}
-                        onChange={(e) => setCreateForm({ ...createForm, classId: e.target.value })}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, classId: e.target.value }))}
                         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                       >
                         <option value="">-- No Class Assigned --</option>
@@ -1280,12 +1280,12 @@ function TeachersPage() {
                                 onChange={(e) => {
                                   const currentSubs = Array.isArray(createForm.subjects) ? createForm.subjects : [];
                                   if (e.target.checked) {
-                                    setCreateForm({ ...createForm, subjects: [...currentSubs, subject] });
+                                    setCreateForm((prev) => ({ ...prev, subjects: [...currentSubs, subject] }));
                                   } else {
-                                    setCreateForm({
-                                      ...createForm,
+                                    setCreateForm((prev) => ({
+                                      ...prev,
                                       subjects: currentSubs.filter((s) => s !== subject),
-                                    });
+                                    }));
                                   }
                                 }}
                                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
@@ -1386,7 +1386,7 @@ function TeachersPage() {
                     <Input
                       id="edit-name"
                       value={editForm.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
                       autoComplete="off"
                       required
                     />
@@ -1398,7 +1398,7 @@ function TeachersPage() {
                         id="edit-email"
                         type="email"
                         value={editForm.email}
-                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
                         autoComplete="off"
                         required
                       />
@@ -1408,7 +1408,7 @@ function TeachersPage() {
                       <Input
                         id="edit-phone"
                         value={editForm.phone}
-                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, phone: e.target.value }))}
                         autoComplete="off"
                         required
                       />
@@ -1420,7 +1420,7 @@ function TeachersPage() {
                       <select
                         id="edit-role"
                         value={editForm.role}
-                        onChange={(e) => setEditForm({ ...editForm, role: e.target.value as Role })}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, role: e.target.value as Role }))}
                         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                       >
                         <option value="teacher">Teacher</option>
@@ -1434,7 +1434,7 @@ function TeachersPage() {
                         <select
                           id="edit-school"
                           value={editForm.schoolId}
-                          onChange={(e) => setEditForm({ ...editForm, schoolId: e.target.value })}
+                          onChange={(e) => setEditForm((prev) => ({ ...prev, schoolId: e.target.value }))}
                           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         >
                           {safeSchools.map((s) => (
@@ -1451,7 +1451,7 @@ function TeachersPage() {
                     <select
                       id="edit-class"
                       value={editForm.classId}
-                      onChange={(e) => setEditForm({ ...editForm, classId: e.target.value })}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, classId: e.target.value }))}
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
                       <option value="">-- No Class Assigned --</option>
@@ -1468,7 +1468,7 @@ function TeachersPage() {
                       id="edit-pwd"
                       type="password"
                       value={editForm.password}
-                      onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, password: e.target.value }))}
                       placeholder="Enter new password if updating"
                       autoComplete="new-password"
                     />
@@ -1488,12 +1488,12 @@ function TeachersPage() {
                               onChange={(e) => {
                                 const currentSubs = Array.isArray(editForm.subjects) ? editForm.subjects : [];
                                 if (e.target.checked) {
-                                  setEditForm({ ...editForm, subjects: [...currentSubs, subject] });
+                                  setEditForm((prev) => ({ ...prev, subjects: [...currentSubs, subject] }));
                                 } else {
-                                  setEditForm({
-                                    ...editForm,
+                                  setEditForm((prev) => ({
+                                    ...prev,
                                     subjects: currentSubs.filter((s) => s !== subject),
-                                  });
+                                  }));
                                 }
                               }}
                               className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
@@ -1549,7 +1549,7 @@ function TeachersPage() {
                           variant="ghost"
                           size="sm"
                           className="text-xs text-destructive h-7"
-                          onClick={() => setEditForm({ ...editForm, photo: "" })}
+                          onClick={() => setEditForm((prev) => ({ ...prev, photo: "" }))}
                         >
                           Remove photo
                         </Button>
