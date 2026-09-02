@@ -55,6 +55,7 @@ import { queryClient, queryKeys } from "./query-client";
 import {
   clearActiveUserId,
   clearLegacySessionKeys,
+  hasActiveSession,
   hasLoginLock,
   releaseLoginLock,
   resetAuthSession,
@@ -259,10 +260,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    // Each browser session starts signed out unless the current user explicitly signs in again.
-    resetAuthSession();
-    clearLegacySessionKeys();
-    clearActiveUserId();
+    // A fresh browser visit must not silently resume the last session.
+    // If a stale auth key exists, clear it and force a clean sign-in.
+    const shouldDropSession = !hasActiveSession();
+    if (shouldDropSession) {
+      resetAuthSession();
+      clearLegacySessionKeys();
+      clearActiveUserId();
+    }
     setIsLocked(false);
     setState((s) => ({ ...s, currentUserId: null, selectedSchoolId: null }));
   }, []);

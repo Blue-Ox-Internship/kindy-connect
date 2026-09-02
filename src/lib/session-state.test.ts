@@ -7,6 +7,7 @@ import {
   LEGACY_SESSION_KEY,
   LEGACY_SCHOOL_CONTEXT_KEY,
   clearLegacySessionKeys,
+  hasActiveSession,
   hasLoginLock,
   releaseLoginLock,
   resetAuthSession,
@@ -69,4 +70,17 @@ test("resetAuthSession clears all auth state so a new browser visit requires cre
   assert.equal(storage.getItem(LEGACY_SESSION_KEY), null);
   assert.equal(storage.getItem(AUTH_USER_KEY), null);
   assert.equal(storage.getItem(AUTH_LOCK_KEY), null);
+});
+
+test("hasActiveSession only trusts a fresh authenticated browser session", () => {
+  const storage = createStorage();
+
+  assert.equal(hasActiveSession(storage), false);
+
+  storage.setItem(AUTH_USER_KEY, "user-123");
+  assert.equal(hasActiveSession(storage), true);
+
+  storage.removeItem(AUTH_USER_KEY);
+  storage.setItem(LEGACY_SESSION_KEY, "user-123");
+  assert.equal(hasActiveSession(storage), false);
 });

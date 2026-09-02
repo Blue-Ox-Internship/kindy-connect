@@ -14,6 +14,19 @@ export function clearLegacySessionKeys(storage: Storage = sessionStorage) {
   } catch {}
 }
 
+export function hasActiveSession(storage: Storage = sessionStorage): boolean {
+  try {
+    const currentId = storage.getItem(AUTH_USER_KEY);
+    if (currentId && currentId.trim().length > 0) return true;
+    if (storage.getItem(LEGACY_SESSION_KEY)) {
+      return false;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export function resetAuthSession(storage: Storage = sessionStorage) {
   try {
     if (typeof (storage as Storage & { clear?: () => void }).clear === "function") {

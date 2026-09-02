@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SchoolSelector } from "@/components/school-selector";
 import { useEffect, type ReactNode } from "react";
+import { hasActiveSession, resetAuthSession, clearLegacySessionKeys, clearActiveUserId } from "@/lib/session-state";
 
 export function AppShell({ children, title }: { children: ReactNode; title: string }) {
   const { currentUser, users = [], logout, schools = [], loading = false } = useStore();
@@ -31,7 +32,11 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
-    if (!loading && !currentUser) {
+    const hasValidSession = hasActiveSession();
+    if (!loading && (!currentUser || !hasValidSession)) {
+      resetAuthSession();
+      clearLegacySessionKeys();
+      clearActiveUserId();
       navigate({ to: "/" });
     }
   }, [loading, currentUser, navigate]);
