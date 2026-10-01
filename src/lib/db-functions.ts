@@ -273,8 +273,8 @@ export const getInitialData = createServerFn({ method: "GET" })
           ? (marks as any[]).filter(
               (mark) =>
                 assignedSubjects.has(mark.subject) &&
-                (studentsRaw as any[]).find((student) => student.id === mark.student_id)?.class_id ===
-                  currentUser.class_id,
+                (studentsRaw as any[]).find((student) => student.id === mark.student_id)
+                  ?.class_id === currentUser.class_id,
             )
           : marks;
       const visibleSubjects =
@@ -376,8 +376,19 @@ export const getInitialData = createServerFn({ method: "GET" })
 export const loginUser = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string; password: string }) => d)
   .handler(async ({ data }) => {
-    const db = requireDatabase();
     const { id, password } = data;
+
+    if (!sql) {
+      const { mockUsers } = await import("./mock-data");
+      const mockUser = mockUsers.find(
+        (candidate) => candidate.id.toLowerCase() === id.trim().toLowerCase(),
+      );
+      if (!mockUser || mockUser.password !== password) return null;
+      if (mockUser.role === "teacher" && mockUser.status !== "verified") return null;
+      return mockUser;
+    }
+
+    const db = sql;
     try {
       const results = await db`
         SELECT * FROM users 
@@ -933,7 +944,8 @@ export const markArrival = createServerFn({ method: "POST" })
     try {
       const result = await sql.begin(async (sql) => {
         // Fetch student details
-        const students = await sql`SELECT first_name, last_name FROM students WHERE id = ${studentId}`;
+        const students =
+          await sql`SELECT first_name, last_name FROM students WHERE id = ${studentId}`;
         if (students.length === 0) throw new Error("student not found");
         const student = students[0];
 
@@ -1076,7 +1088,8 @@ export const markDeparture = createServerFn({ method: "POST" })
     try {
       const result = await sql.begin(async (sql) => {
         // Fetch student details
-        const students = await sql`SELECT first_name, last_name FROM students WHERE id = ${studentId}`;
+        const students =
+          await sql`SELECT first_name, last_name FROM students WHERE id = ${studentId}`;
         if (students.length === 0) throw new Error("student not found");
         const student = students[0];
 
@@ -1467,7 +1480,9 @@ export const saveBulkMarks = createServerFn({ method: "POST" })
 
         const student = await sql`SELECT class_id FROM students WHERE id = ${item.studentId}`;
         if (student.length === 0 || user.classId !== student[0].class_id) {
-          throw new Error("Unauthorized: You can only save marks for students in your assigned class");
+          throw new Error(
+            "Unauthorized: You can only save marks for students in your assigned class",
+          );
         }
       }
 
