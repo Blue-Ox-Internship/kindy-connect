@@ -33,8 +33,7 @@ const isInvalidConnectionString =
 
 if (!connectionString && typeof process !== "undefined") {
   console.warn(
-    "⚠️  WARNING: DATABASE_URL is not defined. Running in mock data mode for development.\n" +
-      "To use a real database, set DATABASE_URL in your .env file.",
+    "DATABASE_URL is not defined. Database access will remain unavailable until it is configured.",
   );
 }
 

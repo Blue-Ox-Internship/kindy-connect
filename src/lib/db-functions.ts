@@ -6,11 +6,6 @@ import { serverCache } from "./cache";
 
 type SqlClient = typeof sql;
 
-// Helper to check if database is available
-function isDatabaseAvailable(): boolean {
-  return sql !== null;
-}
-
 // Helper to throw error when database is required but not available
 function requireDatabase(): typeof sql {
   if (!sql) {
@@ -192,14 +187,8 @@ async function safeInsertAuditLog(
 export const getInitialData = createServerFn({ method: "GET" })
   .inputValidator((d: { userId?: string } | undefined) => d ?? {})
   .handler(async ({ data }) => {
-    // Check if we should use mock data (development mode)
-    if (!sql) {
-      const { mockData } = await import("./mock-data");
-      console.log("📝 Using mock data for development (no database connection)");
-      return mockData;
-    }
-
-    const fetchInitialData = async (client: typeof sql) => {
+    const db = requireDatabase();
+    const fetchInitialData = async (client: typeof db) => {
       // ─── Run ALL queries in parallel ────────────────────────────────────────
       // Previously sequential (8 awaits in a row). Now concurrent: total time =
       // max(individual query times) instead of sum(individual query times).
@@ -210,7 +199,7 @@ export const getInitialData = createServerFn({ method: "GET" })
       // Optional tables (fees and subjects) query the root sql client so that if they
       // do not exist in an unmigrated database, catching error 42P01 does not abort transaction tx.
       const feesQuery =
-        sql`SELECT * FROM fees ORDER BY due_date ASC NULLS LAST, created_at DESC`.catch(
+        db`SELECT * FROM fees ORDER BY due_date ASC NULLS LAST, created_at DESC`.catch(
           (error: any) => {
             if (
               error?.code === "42P01" ||
@@ -225,7 +214,7 @@ export const getInitialData = createServerFn({ method: "GET" })
           },
         );
 
-      const subjectsQuery = sql`SELECT * FROM subjects ORDER BY name ASC`.catch((error: any) => {
+      const subjectsQuery = db`SELECT * FROM subjects ORDER BY name ASC`.catch((error: any) => {
         if (
           error?.code === "42P01" ||
           error?.message?.includes('relation "subjects" does not exist') ||
@@ -337,7 +326,7 @@ export const getInitialData = createServerFn({ method: "GET" })
       return await serverCache.cachedFetch(cacheKey, 60, cacheTags, async () => {
         if (data?.userId) {
           try {
-            return await sql.begin(async (tx) => {
+            return await db.begin(async (tx) => {
               await setRLSContext(tx, data.userId!);
               return fetchInitialData(tx as unknown as SqlClient);
             });
@@ -346,10 +335,10 @@ export const getInitialData = createServerFn({ method: "GET" })
               "Failed to set RLS context for userId in getInitialData, falling back to uncontextualized query:",
               rlsErr,
             );
-            return await fetchInitialData(sql);
+            return await fetchInitialData(db);
           }
         }
-        return await fetchInitialData(sql);
+        return await fetchInitialData(db);
       });
     } catch (error: any) {
       console.error("Error in getInitialData server function:", error);
@@ -378,17 +367,7 @@ export const loginUser = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { id, password } = data;
 
-    if (!sql) {
-      const { mockUsers } = await import("./mock-data");
-      const mockUser = mockUsers.find(
-        (candidate) => candidate.id.toLowerCase() === id.trim().toLowerCase(),
-      );
-      if (!mockUser || mockUser.password !== password) return null;
-      if (mockUser.role === "teacher" && mockUser.status !== "verified") return null;
-      return mockUser;
-    }
-
-    const db = sql;
+    const db = requireDatabase();
     try {
       const results = await db`
         SELECT * FROM users 

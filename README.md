@@ -41,34 +41,18 @@ cd kindy-connect
 npm install
 \`\`\`
 
-### 2. Database Setup ⚠️ **OPTIONAL**
+### 2. Database Setup (Required)
 
-**The application works perfectly without database setup!** It includes sample data for immediate use.
+The application requires a PostgreSQL database. Configure `DATABASE_URL` in `.env`, test the
+connection, and initialize the schema before starting the application.
 
-**Current Status: Mock Mode** 
-- ✅ All features work with sample data
-- ✅ Perfect for development and testing
-- ⚠️  Data doesn't persist between restarts
-
-**Quick Database Check:**
 ```bash
-# Check current mode and get setup options
-npm run db:mode
-
-# Test database connection  
 npm run db:test
 ```
 
-**To set up a persistent database (optional):**
-
-See the database setup and environment sections below for complete instructions.
-
 **Quick Database Setup:**
 ```bash
-# Interactive database setup assistant
-npm run db:mode
-
-# Or manual setup:
+# Manual setup:
 # 1. Create Supabase project at https://supabase.com
 # 2. Get connection URL from Project Settings → Database
 # 3. Add to .env: DATABASE_URL=your_connection_string
