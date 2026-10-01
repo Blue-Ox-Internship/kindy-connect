@@ -80,7 +80,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
     : isStaff
       ? [
           { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
-          { to: "/app/pupils", label: "Pupils", icon: Baby },
+          { to: "/app/students", label: "students", icon: Baby },
           { to: "/app/parents", label: "Parents", icon: Users },
           { to: "/app/teachers", label: "Teachers", icon: GraduationCap, badge: pendingCount },
           { to: "/app/classes", label: "Classes", icon: BookOpen },

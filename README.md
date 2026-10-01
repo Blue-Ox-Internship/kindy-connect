@@ -6,10 +6,10 @@ A comprehensive school management system built with TanStack Start and Supabase.
 
 - 👥 **User Management** - Multi-role system (Super Admin, Admin, Deputy, Teacher)
 - 🏫 **Multi-School Support** - Manage multiple schools from one system
-- 👶 **Pupil Management** - Complete student records with photos
+- 👶 **student Management** - Complete student records with photos
 - 📊 **Attendance Tracking** - Arrival/departure logging with guardian info
 - 📝 **Marks & Grading** - Subject-wise assessment tracking
-- 👨‍👩‍👧 **Parent Portal** - Parent-pupil relationship management
+- 👨‍👩‍👧 **Parent Portal** - Parent-student relationship management
 - 📱 **Notifications** - SMS/Email alerts for arrivals and departures
 - 📈 **Reports** - Analytics and performance reports
 - 🔒 **Row Level Security** - School-based data isolation
@@ -175,7 +175,7 @@ kindy-connect/
 │ ├── routes/ # TanStack Router pages
 │ │ ├── index.tsx # Login page
 │ │ ├── app.dashboard.tsx # Main dashboard
-│ │ ├── app.pupils.tsx # Pupil management
+│ │ ├── app.students.tsx # student management
 │ │ ├── app.attendance.tsx # Attendance tracking
 │ │ └── ...
 │ ├── router.tsx # Router configuration
@@ -196,9 +196,9 @@ kindy-connect/
 - **schools** - School information
 - **users** - Teachers, admins, deputies
 - **classes** - Class/grade information
-- **pupils** - Student records
+- **students** - Student records
 - **parents** - Guardian information
-- **pupil_parents** - Parent-student relationships
+- **student_parents** - Parent-student relationships
 - **attendance** - Daily attendance logs
 - **marks** - Academic assessments
 - **notifications** - SMS/Email logs

@@ -31,7 +31,7 @@ export const Route = createFileRoute("/app/schools")({
 });
 
 function SchoolsPage() {
-  const { currentUser, schools, users, pupils, addSchool, updateSchool, deleteSchool } = useStore();
+  const { currentUser, schools, users, students, addSchool, updateSchool, deleteSchool } = useStore();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -129,7 +129,7 @@ function SchoolsPage() {
   const handleDelete = async (id: string, name: string) => {
     if (
       confirm(
-        `WARNING: Deleting "${name}" will also delete all classes, pupils, and parents belonging to it. Users will be unassigned. Proceed?`,
+        `WARNING: Deleting "${name}" will also delete all classes, students, and parents belonging to it. Users will be unassigned. Proceed?`,
       )
     ) {
       await deleteSchool(id);
@@ -274,7 +274,7 @@ function SchoolsPage() {
                 <TableRow>
                   <TableHead>School Details</TableHead>
                   <TableHead>Contact Info</TableHead>
-                  <TableHead>Pupils</TableHead>
+                  <TableHead>students</TableHead>
                   <TableHead>Teachers</TableHead>
                   <TableHead>Registered</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -282,7 +282,7 @@ function SchoolsPage() {
               </TableHeader>
               <TableBody>
                 {filtered.map((s) => {
-                  const schoolPupils = pupils.filter((p) => p.schoolId === s.id && p.active).length;
+                  const schoolstudents = students.filter((p) => p.schoolId === s.id && p.active).length;
                   const schoolTeachers = users.filter(
                     (u) => u.schoolId === s.id && u.role === "teacher" && u.status === "verified",
                   ).length;
@@ -312,7 +312,7 @@ function SchoolsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-semibold">{schoolPupils}</span> pupils
+                        <span className="font-semibold">{schoolstudents}</span> students
                       </TableCell>
                       <TableCell>
                         <span className="font-semibold">{schoolTeachers}</span> teachers

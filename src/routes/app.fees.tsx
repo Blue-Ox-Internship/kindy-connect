@@ -47,7 +47,7 @@ export const Route = createFileRoute("/app/fees")({
 });
 
 const emptyForm = {
-  pupilId: "",
+  studentId: "",
   description: "Tuition Fee",
   term: "Term 1",
   year: String(new Date().getFullYear()),
@@ -107,7 +107,7 @@ const getPaymentStatus = (fee: any) => {
 };
 
 function FeesPage() {
-  const { fees, pupils, classes, addFee, updateFee, refreshData, lastSyncTime, loading } = useStore();
+  const { fees, students, classes, addFee, updateFee, refreshData, lastSyncTime, loading } = useStore();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [selectedTerm, setSelectedTerm] = useState("all");
@@ -117,7 +117,7 @@ function FeesPage() {
   const [payment, setPayment] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [form, setForm] = useState(emptyForm);
-  const [pupilSearch, setPupilSearch] = useState("");
+  const [studentSearch, setstudentSearch] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [hasUserActivity, setHasUserActivity] = useState(true);
@@ -174,14 +174,14 @@ function FeesPage() {
   // Export functionality
   const exportFeesData = () => {
     const exportData = visibleFees.map(fee => {
-      const pupil = pupils.find(p => p.id === fee.pupilId);
+      const student = students.find(p => p.id === fee.studentId);
       const outstanding = outstandingAmount(fee.amountDue, fee.amountPaid);
       const daysOverdue = getDaysOverdue(fee.dueDate);
       const { status } = getPaymentStatus(fee);
       
       return [
-        pupil ? `${pupil.firstName} ${pupil.lastName}` : 'Unknown',
-        pupil?.admissionNo || '-',
+        student ? `${student.firstName} ${student.lastName}` : 'Unknown',
+        student?.admissionNo || '-',
         fee.description,
         fee.term,
         fee.year,
@@ -196,7 +196,7 @@ function FeesPage() {
     });
 
     const csvContent = [
-      ["Pupil Name", "Admission No", "Description", "Term", "Year", "Amount Due (UGX)", "Amount Paid (UGX)", "Outstanding (UGX)", "Due Date", "Days Overdue", "Status", "Notes"],
+      ["student Name", "Admission No", "Description", "Term", "Year", "Amount Due (UGX)", "Amount Paid (UGX)", "Outstanding (UGX)", "Due Date", "Days Overdue", "Status", "Notes"],
       ...exportData
     ].map(row => row.join(",")).join("\n");
 
@@ -314,34 +314,34 @@ function FeesPage() {
       setIsRefreshing(false);
     }
   };
-  const pupilNameMap = useMemo(() => {
+  const studentNameMap = useMemo(() => {
     const map = new Map<string, string>();
-    for (const p of pupils) {
+    for (const p of students) {
       map.set(p.id, `${p.firstName} ${p.lastName}`);
     }
     return map;
-  }, [pupils]);
+  }, [students]);
 
-  const pupilName = useCallback(
-    (id: string) => pupilNameMap.get(id) || "Unknown pupil",
-    [pupilNameMap],
+  const studentName = useCallback(
+    (id: string) => studentNameMap.get(id) || "Unknown student",
+    [studentNameMap],
   );
 
-  const searchablePupils = useMemo(() => {
-    const search = pupilSearch.trim().toLowerCase();
-    return pupils.filter((pupil) => {
-      if (selectedClass !== "all" && pupil.classId !== selectedClass) return false;
+  const searchablestudents = useMemo(() => {
+    const search = studentSearch.trim().toLowerCase();
+    return students.filter((student) => {
+      if (selectedClass !== "all" && student.classId !== selectedClass) return false;
       if (!search) return true;
-      return `${pupil.firstName} ${pupil.lastName} ${pupil.admissionNo}`
+      return `${student.firstName} ${student.lastName} ${student.admissionNo}`
         .toLowerCase()
         .includes(search);
     });
-  }, [pupils, pupilSearch, selectedClass]);
+  }, [students, studentSearch, selectedClass]);
 
   const visibleFees = useMemo(
     () =>
       fees.filter((fee) => {
-        const name = pupilNameMap.get(fee.pupilId) || "Unknown pupil";
+        const name = studentNameMap.get(fee.studentId) || "Unknown student";
         const matchesQuery = `${name} ${fee.description}`
           .toLowerCase()
           .includes(query.toLowerCase());
@@ -352,47 +352,47 @@ function FeesPage() {
           (status === "outstanding" && dueAmount > 0) ||
           (status === "overdue" && dueAmount > 0 && getDaysOverdue(fee.dueDate) > 0);
         const matchesTerm = selectedTerm === "all" || fee.term === selectedTerm;
-        const pupil = pupils.find((item) => item.id === fee.pupilId);
-        const matchesClass = selectedClass === "all" || pupil?.classId === selectedClass;
+        const student = students.find((item) => item.id === fee.studentId);
+        const matchesClass = selectedClass === "all" || student?.classId === selectedClass;
         
         return matchesQuery && matchesStatus && matchesTerm && matchesClass;
       }),
-    [fees, pupils, pupilNameMap, query, status, selectedTerm, selectedClass],
+    [fees, students, studentNameMap, query, status, selectedTerm, selectedClass],
   );
 
   const classStudentBalances = useMemo(() => {
     if (selectedClass === "all") return [];
     const search = query.trim().toLowerCase();
 
-    return pupils
-      .filter((pupil) => {
-        if (pupil.classId !== selectedClass) return false;
+    return students
+      .filter((student) => {
+        if (student.classId !== selectedClass) return false;
         if (!search) return true;
-        return `${pupil.firstName} ${pupil.lastName} ${pupil.admissionNo}`
+        return `${student.firstName} ${student.lastName} ${student.admissionNo}`
           .toLowerCase()
           .includes(search);
       })
-      .map((pupil) => {
-        const pupilFees = fees.filter(
-          (fee) => fee.pupilId === pupil.id && (selectedTerm === "all" || fee.term === selectedTerm),
+      .map((student) => {
+        const studentFees = fees.filter(
+          (fee) => fee.studentId === student.id && (selectedTerm === "all" || fee.term === selectedTerm),
         );
-        const pending = pupilFees.reduce(
+        const pending = studentFees.reduce(
           (total, fee) => total + outstandingAmount(fee.amountDue, fee.amountPaid),
           0,
         );
-        return { pupil, pending, feeCount: pupilFees.length };
+        return { student, pending, feeCount: studentFees.length };
       });
-  }, [fees, pupils, query, selectedClass, selectedTerm]);
+  }, [fees, students, query, selectedClass, selectedTerm]);
   // Remove the old totals calculation since we now use feeAnalytics
 
   const submit = async () => {
     const amountDue = Number(form.amountDue);
-    if (!form.pupilId || !form.description.trim() || !Number.isFinite(amountDue) || amountDue <= 0)
-      return toast.error("Choose a pupil and enter a valid amount");
+    if (!form.studentId || !form.description.trim() || !Number.isFinite(amountDue) || amountDue <= 0)
+      return toast.error("Choose a student and enter a valid amount");
     try {
       await addFee({
-        pupilId: form.pupilId,
-        schoolId: pupils.find((pupil) => pupil.id === form.pupilId)?.schoolId || "",
+        studentId: form.studentId,
+        schoolId: students.find((student) => student.id === form.studentId)?.schoolId || "",
         description: form.description.trim(),
         term: form.term,
         year: form.year,
@@ -588,12 +588,12 @@ function FeesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {classStudentBalances.map(({ pupil, pending, feeCount }) => (
-                    <TableRow key={pupil.id}>
+                  {classStudentBalances.map(({ student, pending, feeCount }) => (
+                    <TableRow key={student.id}>
                       <TableCell className="font-medium">
-                        {pupil.firstName} {pupil.lastName}
+                        {student.firstName} {student.lastName}
                       </TableCell>
-                      <TableCell>{pupil.admissionNo}</TableCell>
+                      <TableCell>{student.admissionNo}</TableCell>
                       <TableCell>{feeCount}</TableCell>
                       <TableCell>{formatCurrency(pending)}</TableCell>
                     </TableRow>
@@ -704,31 +704,31 @@ function FeesPage() {
                       </Select>
                     </div>
                     <div className="sm:col-span-2">
-                      <Label>Pupil</Label>
+                      <Label>student</Label>
                       <Select
-                        value={form.pupilId}
-                        onValueChange={(value) => setForm({ ...form, pupilId: value })}
+                        value={form.studentId}
+                        onValueChange={(value) => setForm({ ...form, studentId: value })}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select pupil" />
+                          <SelectValue placeholder="Select student" />
                         </SelectTrigger>
                         <SelectContent>
                           <div className="p-2">
                             <Input
                               placeholder="Search name or admission number..."
-                              value={pupilSearch}
-                              onChange={(event) => setPupilSearch(event.target.value)}
+                              value={studentSearch}
+                              onChange={(event) => setstudentSearch(event.target.value)}
                               onKeyDown={(event) => event.stopPropagation()}
                             />
                           </div>
-                          {!searchablePupils.length && (
+                          {!searchablestudents.length && (
                             <p className="px-3 py-2 text-sm text-muted-foreground">
                               No students found in this class.
                             </p>
                           )}
-                          {searchablePupils.map((pupil) => (
-                              <SelectItem key={pupil.id} value={pupil.id}>
-                                {pupil.firstName} {pupil.lastName} ({pupil.admissionNo})
+                          {searchablestudents.map((student) => (
+                              <SelectItem key={student.id} value={student.id}>
+                                {student.firstName} {student.lastName} ({student.admissionNo})
                               </SelectItem>
                             ))}
                         </SelectContent>
@@ -805,7 +805,7 @@ function FeesPage() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   className="pl-9"
-                  placeholder="Search pupils or charges..."
+                  placeholder="Search students or charges..."
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                 />
@@ -856,7 +856,7 @@ function FeesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Pupil</TableHead>
+                  <TableHead>student</TableHead>
                   <TableHead>Charge</TableHead>
                   <TableHead>Term</TableHead>
                   <TableHead>Due amount</TableHead>
@@ -876,7 +876,7 @@ function FeesPage() {
                     <TableRow key={fee.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
-                          <span>{pupilName(fee.pupilId)}</span>
+                          <span>{studentName(fee.studentId)}</span>
                           {daysOverdue > 30 && (
                             <TooltipProvider>
                               <Tooltip>
@@ -970,7 +970,7 @@ function FeesPage() {
               return fee ? (
                 <div className="p-3 bg-muted/50 rounded-lg">
                   <div className="text-sm">
-                    <p><strong>Pupil:</strong> {pupilName(fee.pupilId)}</p>
+                    <p><strong>student:</strong> {studentName(fee.studentId)}</p>
                     <p><strong>Fee:</strong> {fee.description} ({fee.term} {fee.year})</p>
                     <p><strong>Outstanding:</strong> {formatCurrency(outstanding)}</p>
                   </div>

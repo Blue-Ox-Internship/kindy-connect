@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
-import { useStore, type Pupil } from "@/lib/store";
+import { useStore, type student } from "@/lib/store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,14 +41,14 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { BulkUploadPupilsDialog } from "@/components/bulk-upload-pupils-dialog";
+import { BulkUploadstudentsDialog } from "@/components/bulk-upload-students-dialog";
 
-export const Route = createFileRoute("/app/pupils")({
-  head: () => ({ meta: [{ title: "Pupils - Noble Edu" }] }),
-  component: PupilsPage,
+export const Route = createFileRoute("/app/students")({
+  head: () => ({ meta: [{ title: "students - Noble Edu" }] }),
+  component: studentsPage,
 });
 
-function PupilsPage() {
+function studentsPage() {
   // Helper functions
   const toDate = (value: unknown) => {
     try {
@@ -79,12 +79,12 @@ function PupilsPage() {
 
   const {
     currentUser,
-    pupils = [],
+    students = [],
     classes = [],
     parents = [],
-    addPupil,
-    updatePupil,
-    deactivatePupil,
+    addstudent,
+    updatestudent,
+    deactivatestudent,
     schools = [],
     loading = false,
   } = useStore();
@@ -107,29 +107,29 @@ function PupilsPage() {
 
   // Statistics
   const stats = useMemo(() => {
-    const activePupils = pupils.filter(p => p.active);
-    const maleCount = activePupils.filter(p => p.gender === "M").length;
-    const femaleCount = activePupils.filter(p => p.gender === "F").length;
+    const activestudents = students.filter(p => p.active);
+    const maleCount = activestudents.filter(p => p.gender === "M").length;
+    const femaleCount = activestudents.filter(p => p.gender === "F").length;
     const classStats = filteredClasses.map(c => ({
       className: c.name,
-      count: activePupils.filter(p => p.classId === c.id).length
+      count: activestudents.filter(p => p.classId === c.id).length
     }));
     
     return {
-      total: pupils.length,
-      active: activePupils.length,
-      inactive: pupils.length - activePupils.length,
+      total: students.length,
+      active: activestudents.length,
+      inactive: students.length - activestudents.length,
       male: maleCount,
       female: femaleCount,
       classStats
     };
-  }, [pupils, filteredClasses]);
+  }, [students, filteredClasses]);
 
   const [open, setOpen] = useState(false);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [viewingPupil, setViewingPupil] = useState<Pupil | null>(null);
+  const [viewingstudent, setViewingstudent] = useState<student | null>(null);
 
   // Ensure only one dialog is open at a time to prevent Portal conflicts
   const openCreateDialog = () => {
@@ -144,31 +144,31 @@ function PupilsPage() {
     setBulkUploadOpen(true);
   };
 
-  const openEditDialog = (pupil: Pupil) => {
+  const openEditDialog = (student: student) => {
     setOpen(false);
     setBulkUploadOpen(false);
     setProfileOpen(false);
-    setEditingPupil(pupil);
+    setEditingstudent(student);
     setEditForm({
-      admissionNo: pupil.admissionNo,
-      firstName: pupil.firstName,
-      lastName: pupil.lastName,
-      gender: pupil.gender,
-      dob: pupil.dob,
-      classId: pupil.classId,
-      photo: pupil.photo || "",
+      admissionNo: student.admissionNo,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      gender: student.gender,
+      dob: student.dob,
+      classId: student.classId,
+      photo: student.photo || "",
     });
     setEditOpen(true);
   };
 
-  const openProfileDialog = (pupil: Pupil) => {
+  const openProfileDialog = (student: student) => {
     setOpen(false);
     setBulkUploadOpen(false);
     setEditOpen(false);
-    setViewingPupil(pupil);
+    setViewingstudent(student);
     setProfileOpen(true);
   };
-  const [editingPupil, setEditingPupil] = useState<Pupil | null>(null);
+  const [editingstudent, setEditingstudent] = useState<student | null>(null);
   const [form, setForm] = useState({
     admissionNo: "",
     firstName: "",
@@ -192,7 +192,7 @@ function PupilsPage() {
     photo: "",
   });
 
-  const filtered = pupils.filter((p) => {
+  const filtered = students.filter((p) => {
     const matchesClass = selectedClassFilter === "all" || p.classId === selectedClassFilter;
     const matchesStatus = selectedStatusFilter === "all" || 
       (selectedStatusFilter === "active" && p.active) || 
@@ -204,7 +204,7 @@ function PupilsPage() {
     return matchesClass && matchesStatus && matchesGender && matchesQuery;
   });
 
-  const exportPupilsData = () => {
+  const exportstudentsData = () => {
     const csvContent = [
       ["Admission No", "First Name", "Last Name", "Gender", "Date of Birth", "Age", "Class", "Status", "Parents Count"],
       ...filtered.map(p => [
@@ -224,12 +224,12 @@ function PupilsPage() {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `pupils_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute("download", `students_${new Date().toISOString().slice(0, 10)}.csv`);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("Pupils data exported successfully");
+    toast.success("students data exported successfully");
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -302,28 +302,28 @@ function PupilsPage() {
     }
     
     if (age > 18) {
-      return toast.error("Pupil seems too old. Please check the date of birth.");
+      return toast.error("student seems too old. Please check the date of birth.");
     }
     
     if (age < 2) {
-      return toast.error("Pupil seems too young. Please check the date of birth.");
+      return toast.error("student seems too young. Please check the date of birth.");
     }
 
     // Check for duplicates
-    if (pupils.some((p) => p.admissionNo.trim().toLowerCase() === admNo.toLowerCase())) {
+    if (students.some((p) => p.admissionNo.trim().toLowerCase() === admNo.toLowerCase())) {
       return toast.error(`Admission number '${admNo}' already exists`);
     }
 
-    // Check duplicate pupil in class
+    // Check duplicate student in class
     if (
-      pupils.some(
+      students.some(
         (p) =>
           p.classId === form.classId &&
           p.firstName.trim().toLowerCase() === fName.toLowerCase() &&
           p.lastName.trim().toLowerCase() === lName.toLowerCase(),
       )
     ) {
-      return toast.error(`Pupil '${fName} ${lName}' already exists in this class`);
+      return toast.error(`student '${fName} ${lName}' already exists in this class`);
     }
 
     // Parent validation
@@ -344,7 +344,7 @@ function PupilsPage() {
     }
 
     try {
-      await addPupil({
+      await addstudent({
         admissionNo: admNo,
         firstName: fName,
         lastName: lName,
@@ -377,8 +377,8 @@ function PupilsPage() {
         photo: "",
       });
     } catch (error: any) {
-      console.error("Error saving pupil:", error);
-      toast.error(`Failed to save pupil: ${error.message || "Unknown error"}`);
+      console.error("Error saving student:", error);
+      toast.error(`Failed to save student: ${error.message || "Unknown error"}`);
     }
   };
 
@@ -392,7 +392,7 @@ function PupilsPage() {
   const handleCloseEdit = (open: boolean) => {
     if (!open) {
       setEditOpen(false);
-      setEditingPupil(null);
+      setEditingstudent(null);
     }
   };
 
@@ -403,7 +403,7 @@ function PupilsPage() {
   };
 
   const submitEdit = async () => {
-    if (!editingPupil) return;
+    if (!editingstudent) return;
     const admNo = editForm.admissionNo.trim();
     const fName = editForm.firstName.trim();
     const lName = editForm.lastName.trim();
@@ -414,26 +414,26 @@ function PupilsPage() {
 
     // Check if admission number changed and is already taken
     if (
-      admNo.toLowerCase() !== editingPupil.admissionNo.trim().toLowerCase() &&
-      pupils.some((p) => p.admissionNo.trim().toLowerCase() === admNo.toLowerCase())
+      admNo.toLowerCase() !== editingstudent.admissionNo.trim().toLowerCase() &&
+      students.some((p) => p.admissionNo.trim().toLowerCase() === admNo.toLowerCase())
     ) {
       return toast.error(`Admission number '${admNo}' already exists`);
     }
 
-    // Check duplicate pupil in class
+    // Check duplicate student in class
     if (
-      pupils.some(
+      students.some(
         (p) =>
-          p.id !== editingPupil.id &&
+          p.id !== editingstudent.id &&
           p.classId === editForm.classId &&
           p.firstName.trim().toLowerCase() === fName.toLowerCase() &&
           p.lastName.trim().toLowerCase() === lName.toLowerCase(),
       )
     ) {
-      return toast.error(`Pupil '${fName} ${lName}' already exists in this class`);
+      return toast.error(`student '${fName} ${lName}' already exists in this class`);
     }
 
-    await updatePupil(editingPupil.id, {
+    await updatestudent(editingstudent.id, {
       admissionNo: admNo,
       firstName: fName,
       lastName: lName,
@@ -445,29 +445,29 @@ function PupilsPage() {
 
     toast.success(`${fName} ${lName} updated successfully`);
     setEditOpen(false);
-    setEditingPupil(null);
+    setEditingstudent(null);
   };
 
   if (loading && !currentUser) {
     return (
-      <AppShell title="Pupils">
+      <AppShell title="students">
         <div className="min-h-[50vh] flex flex-col items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mb-3" />
-          <p className="text-sm text-muted-foreground animate-pulse">Loading pupils...</p>
+          <p className="text-sm text-muted-foreground animate-pulse">Loading students...</p>
         </div>
       </AppShell>
     );
   }
 
   return (
-    <AppShell title="Pupils">
+    <AppShell title="students">
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Pupils</p>
+                <p className="text-sm text-muted-foreground">Total students</p>
                 <p className="text-2xl font-bold">{stats.total}</p>
               </div>
               <Users className="h-8 w-8 text-primary" />
@@ -584,12 +584,12 @@ function PupilsPage() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" onClick={exportPupilsData}>
+                  <Button variant="outline" onClick={exportstudentsData}>
                     <Download className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Export pupils data</p>
+                  <p>Export students data</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -599,12 +599,12 @@ function PupilsPage() {
             </Button>
             
             <Button onClick={openCreateDialog}>
-              <Plus className="h-4 w-4 mr-1" /> Register pupil
+              <Plus className="h-4 w-4 mr-1" /> Register student
             </Button>
             <Dialog open={open} onOpenChange={handleCloseCreate}>
               <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Register new pupil</DialogTitle>
+                  <DialogTitle>Register new student</DialogTitle>
                 </DialogHeader>
                 <div className="grid grid-cols-2 gap-3 pr-2">
                   <div className="col-span-2">
@@ -736,14 +736,14 @@ function PupilsPage() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={submit}>Save pupil</Button>
+                  <Button onClick={submit}>Save student</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
 
           <div className="mb-4 text-sm text-muted-foreground">
-            Showing {filtered.length} of {pupils.length} pupils
+            Showing {filtered.length} of {students.length} students
           </div>
 
           <Table>
@@ -762,7 +762,7 @@ function PupilsPage() {
             </TableHeader>
             <TableBody>
               {filtered.map((p) => {
-                const pupilParents = parents.filter(parent => p.parentIds.includes(parent.id));
+                const studentParents = parents.filter(parent => p.parentIds.includes(parent.id));
                 const age = calculateAge(p.dob);
                 
                 return (
@@ -811,8 +811,8 @@ function PupilsPage() {
                           </TooltipTrigger>
                           <TooltipContent>
                             <div className="max-w-48">
-                              {pupilParents.length > 0 ? (
-                                pupilParents.map(parent => (
+                              {studentParents.length > 0 ? (
+                                studentParents.map(parent => (
                                   <div key={parent.id} className="text-xs py-1">
                                     <div className="font-medium">{parent.name}</div>
                                     <div className="text-muted-foreground">{parent.relationship} • {parent.phone}</div>
@@ -853,7 +853,7 @@ function PupilsPage() {
                           {p.active ? (
                             <DropdownMenuItem 
                               onClick={() => {
-                                deactivatePupil(p.id);
+                                deactivatestudent(p.id);
                                 toast.success(`${p.firstName} ${p.lastName} deactivated`);
                               }}
                               className="text-red-600"
@@ -877,16 +877,16 @@ function PupilsPage() {
           {filtered.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12">
               <Users className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No pupils found</h3>
+              <h3 className="text-lg font-medium mb-2">No students found</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {pupils.length === 0 
-                  ? "No pupils have been registered yet." 
+                {students.length === 0 
+                  ? "No students have been registered yet." 
                   : "Try adjusting your search or filter criteria."
                 }
               </p>
-              {pupils.length === 0 && (
+              {students.length === 0 && (
                 <Button onClick={openCreateDialog}>
-                  <Plus className="h-4 w-4 mr-1" /> Register First Pupil
+                  <Plus className="h-4 w-4 mr-1" /> Register First student
                 </Button>
               )}
             </div>
@@ -894,11 +894,11 @@ function PupilsPage() {
         </CardContent>
       </Card>
 
-      {/* Edit Pupil Dialog */}
+      {/* Edit student Dialog */}
       <Dialog open={editOpen} onOpenChange={handleCloseEdit}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Pupil Details</DialogTitle>
+            <DialogTitle>Edit student Details</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
@@ -986,38 +986,38 @@ function PupilsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Pupil Profile Dialog */}
-      <Dialog open={profileOpen} onOpenChange={(open) => { if (!open) { setProfileOpen(false); setViewingPupil(null); } }}>
+      {/* student Profile Dialog */}
+      <Dialog open={profileOpen} onOpenChange={(open) => { if (!open) { setProfileOpen(false); setViewingstudent(null); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Pupil Profile</DialogTitle>
+            <DialogTitle>student Profile</DialogTitle>
           </DialogHeader>
-          {viewingPupil && (
+          {viewingstudent && (
             <div className="space-y-6">
               {/* Basic Info */}
               <div className="flex items-start gap-4">
-                {viewingPupil.photo ? (
+                {viewingstudent.photo ? (
                   <img
-                    src={viewingPupil.photo}
-                    alt={`${viewingPupil.firstName} ${viewingPupil.lastName}`}
+                    src={viewingstudent.photo}
+                    alt={`${viewingstudent.firstName} ${viewingstudent.lastName}`}
                     className="w-24 h-24 object-cover rounded-lg border"
                   />
                 ) : (
                   <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center text-2xl font-medium">
-                    {viewingPupil.firstName[0]}{viewingPupil.lastName[0]}
+                    {viewingstudent.firstName[0]}{viewingstudent.lastName[0]}
                   </div>
                 )}
                 <div className="flex-1">
-                  <h3 className="text-xl font-semibold">{viewingPupil.firstName} {viewingPupil.lastName}</h3>
+                  <h3 className="text-xl font-semibold">{viewingstudent.firstName} {viewingstudent.lastName}</h3>
                   <div className="grid grid-cols-2 gap-4 mt-3 text-sm">
                     <div>
                       <span className="text-muted-foreground">Admission No:</span>
-                      <div className="font-mono">{viewingPupil.admissionNo}</div>
+                      <div className="font-mono">{viewingstudent.admissionNo}</div>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Status:</span>
                       <div>
-                        {viewingPupil.active ? (
+                        {viewingstudent.active ? (
                           <Badge className="bg-green-100 text-green-800">Active</Badge>
                         ) : (
                           <Badge variant="secondary">Inactive</Badge>
@@ -1026,19 +1026,19 @@ function PupilsPage() {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Gender:</span>
-                      <div>{viewingPupil.gender === "M" ? "Male" : "Female"}</div>
+                      <div>{viewingstudent.gender === "M" ? "Male" : "Female"}</div>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Age:</span>
-                      <div>{calculateAge(viewingPupil.dob)} years old</div>
+                      <div>{calculateAge(viewingstudent.dob)} years old</div>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Date of Birth:</span>
-                      <div>{formatDate(viewingPupil.dob, "MMMM d, yyyy")}</div>
+                      <div>{formatDate(viewingstudent.dob, "MMMM d, yyyy")}</div>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Class:</span>
-                      <div>{classes.find(c => c.id === viewingPupil.classId)?.name || "-"}</div>
+                      <div>{classes.find(c => c.id === viewingstudent.classId)?.name || "-"}</div>
                     </div>
                   </div>
                 </div>
@@ -1052,7 +1052,7 @@ function PupilsPage() {
                 </h4>
                 <div className="grid gap-3">
                   {parents
-                    .filter(parent => viewingPupil.parentIds.includes(parent.id))
+                    .filter(parent => viewingstudent.parentIds.includes(parent.id))
                     .map(parent => (
                       <Card key={parent.id} className="p-4">
                         <div className="grid grid-cols-2 gap-4 text-sm">
@@ -1075,7 +1075,7 @@ function PupilsPage() {
                         </div>
                       </Card>
                     ))}
-                  {parents.filter(parent => viewingPupil.parentIds.includes(parent.id)).length === 0 && (
+                  {parents.filter(parent => viewingstudent.parentIds.includes(parent.id)).length === 0 && (
                     <div className="text-center py-4 text-muted-foreground">
                       No parent information available
                     </div>
@@ -1087,7 +1087,7 @@ function PupilsPage() {
               <div className="grid grid-cols-3 gap-4">
                 <Card className="p-4 text-center">
                   <div className="text-2xl font-bold text-blue-600">
-                    {attendance.filter(a => a.pupilId === viewingPupil.id).length}
+                    {attendance.filter(a => a.studentId === viewingstudent.id).length}
                   </div>
                   <div className="text-xs text-muted-foreground">Attendance Records</div>
                 </Card>
@@ -1100,7 +1100,7 @@ function PupilsPage() {
                 </Card>
                 <Card className="p-4 text-center">
                   <div className="text-2xl font-bold text-orange-600">
-                    {viewingPupil.parentIds.length}
+                    {viewingstudent.parentIds.length}
                   </div>
                   <div className="text-xs text-muted-foreground">Registered Guardians</div>
                 </Card>
@@ -1108,7 +1108,7 @@ function PupilsPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => viewingPupil && openEditDialog(viewingPupil)}>
+            <Button variant="outline" onClick={() => viewingstudent && openEditDialog(viewingstudent)}>
               <Edit className="h-4 w-4 mr-2" />
               Edit Details
             </Button>
@@ -1118,7 +1118,7 @@ function PupilsPage() {
       </Dialog>
 
       {/* Bulk Upload Dialog */}
-      <BulkUploadPupilsDialog open={bulkUploadOpen} onOpenChange={handleCloseBulkUpload} />
+      <BulkUploadstudentsDialog open={bulkUploadOpen} onOpenChange={handleCloseBulkUpload} />
     </AppShell>
   );
 }
