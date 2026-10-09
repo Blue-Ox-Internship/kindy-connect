@@ -95,6 +95,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         type: "image/png",
         href: "/favicon.png",
       },
+      {
+        rel: "manifest",
+        href: "/manifest.json",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/apple-touch-icon.png",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -124,7 +132,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <StoreProvider>
         <AppContent />
-        <Toaster richColors position="top-right" />
+        <Toaster richColors position="top-right" closeButton={false} />
       </StoreProvider>
     </QueryClientProvider>
   );
