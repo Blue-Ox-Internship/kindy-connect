@@ -272,8 +272,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, currentUserId: null, selectedSchoolId: null }));
   }, []);
 
-
-
   // ── Auto-retry countdown timer ───────────────────────────────────────────────
   const startRetryCountdown = useCallback((seconds: number, onFire: () => void) => {
     if (retryTimerRef.current) clearInterval(retryTimerRef.current);
@@ -350,7 +348,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // Auto-retry every 15 seconds for paused-project errors
       if (isPaused) startRetryCountdown(15, attemptLoad);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startRetryCountdown, state.currentUserId]);
 
   useEffect(() => {
@@ -393,8 +390,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       console.error("Failed to refresh database data:", err);
     }
   }, [state.currentUserId]);
-
-
 
   // ── Inactivity / Auto-lock logic ───────────────────────────────────────────
   const clearIdleTimer = useCallback(() => {
@@ -473,8 +468,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     [state.currentUserId, startIdleTimer],
   );
-
-
 
   const currentUser = useMemo(
     () => state.users.find((u: User) => u.id === state.currentUserId) ?? null,

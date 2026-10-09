@@ -23,7 +23,12 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SchoolSelector } from "@/components/school-selector";
 import { useEffect, type ReactNode } from "react";
-import { hasActiveSession, resetAuthSession, clearLegacySessionKeys, clearActiveUserId } from "@/lib/session-state";
+import {
+  hasActiveSession,
+  resetAuthSession,
+  clearLegacySessionKeys,
+  clearActiveUserId,
+} from "@/lib/session-state";
 
 export function AppShell({ children, title }: { children: ReactNode; title: string }) {
   const { currentUser, users = [], logout, schools = [], loading = false } = useStore();
@@ -59,7 +64,9 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
   const isSuperAdmin = currentUser.role === "super_admin";
   const isAdmin = currentUser.role === "super_admin" || currentUser.role === "admin";
   const isStaff = currentUser.role === "admin" || currentUser.role === "deputy";
-  const pendingCount = (users || []).filter((u) => u?.role === "teacher" && u?.status === "pending").length;
+  const pendingCount = (users || []).filter(
+    (u) => u?.role === "teacher" && u?.status === "pending",
+  ).length;
   const currentSchool = (schools || []).find((s) => s?.id === currentUser.schoolId);
 
   const adminFeeItem = { to: "/app/fees", label: "School Fees", icon: Landmark };

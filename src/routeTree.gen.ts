@@ -9,85 +9,35 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppUsersRouteImport } from './routes/app.users'
-import { Route as AppTeachersRouteImport } from './routes/app.teachers'
-import { Route as AppSubjectsRouteImport } from './routes/app.subjects'
-import { Route as AppSchoolsRouteImport } from './routes/app.schools'
-import { Route as AppReportsRouteImport } from './routes/app.reports'
-import { Route as AppPupilsRouteImport } from './routes/app.pupils'
-import { Route as AppParentsRouteImport } from './routes/app.parents'
-import { Route as AppMarksRouteImport } from './routes/app.marks'
-import { Route as AppFeesRouteImport } from './routes/app.fees'
-import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
-import { Route as AppClassesRouteImport } from './routes/app.classes'
-import { Route as AppAuditRouteImport } from './routes/app.audit'
+import { Route as AppRouteImport } from './routes/app'
 import { Route as AppAttendanceRouteImport } from './routes/app.attendance'
+import { Route as AppAuditRouteImport } from './routes/app.audit'
+import { Route as AppClassesRouteImport } from './routes/app.classes'
+import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
+import { Route as AppFeesRouteImport } from './routes/app.fees'
+import { Route as AppMarksRouteImport } from './routes/app.marks'
+import { Route as AppParentsRouteImport } from './routes/app.parents'
+import { Route as AppPupilsRouteImport } from './routes/app.pupils'
+import { Route as AppReportsRouteImport } from './routes/app.reports'
+import { Route as AppSchoolsRouteImport } from './routes/app.schools'
+import { Route as AppSubjectsRouteImport } from './routes/app.subjects'
+import { Route as AppTeachersRouteImport } from './routes/app.teachers'
+import { Route as AppUsersRouteImport } from './routes/app.users'
 
-const AppRoute = AppRouteImport.update({
-  id: '/app',
-  path: '/app',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppUsersRoute = AppUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => AppRoute,
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppTeachersRoute = AppTeachersRouteImport.update({
-  id: '/teachers',
-  path: '/teachers',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSubjectsRoute = AppSubjectsRouteImport.update({
-  id: '/subjects',
-  path: '/subjects',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSchoolsRoute = AppSchoolsRouteImport.update({
-  id: '/schools',
-  path: '/schools',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppReportsRoute = AppReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPupilsRoute = AppPupilsRouteImport.update({
-  id: '/pupils',
-  path: '/pupils',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppParentsRoute = AppParentsRouteImport.update({
-  id: '/parents',
-  path: '/parents',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppMarksRoute = AppMarksRouteImport.update({
-  id: '/marks',
-  path: '/marks',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppFeesRoute = AppFeesRouteImport.update({
-  id: '/fees',
-  path: '/fees',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDashboardRoute = AppDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppClassesRoute = AppClassesRouteImport.update({
-  id: '/classes',
-  path: '/classes',
+const AppAttendanceRoute = AppAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAuditRoute = AppAuditRouteImport.update({
@@ -95,9 +45,59 @@ const AppAuditRoute = AppAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAttendanceRoute = AppAttendanceRouteImport.update({
-  id: '/attendance',
-  path: '/attendance',
+const AppClassesRoute = AppClassesRouteImport.update({
+  id: '/classes',
+  path: '/classes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFeesRoute = AppFeesRouteImport.update({
+  id: '/fees',
+  path: '/fees',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMarksRoute = AppMarksRouteImport.update({
+  id: '/marks',
+  path: '/marks',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppParentsRoute = AppParentsRouteImport.update({
+  id: '/parents',
+  path: '/parents',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPupilsRoute = AppPupilsRouteImport.update({
+  id: '/pupils',
+  path: '/pupils',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSchoolsRoute = AppSchoolsRouteImport.update({
+  id: '/schools',
+  path: '/schools',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSubjectsRoute = AppSubjectsRouteImport.update({
+  id: '/subjects',
+  path: '/subjects',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTeachersRoute = AppTeachersRouteImport.update({
+  id: '/teachers',
+  path: '/teachers',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsersRoute = AppUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -214,13 +214,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/app': {
-      id: '/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AppRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -228,81 +221,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app/users': {
-      id: '/app/users'
-      path: '/users'
-      fullPath: '/app/users'
-      preLoaderRoute: typeof AppUsersRouteImport
-      parentRoute: typeof AppRoute
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/app/teachers': {
-      id: '/app/teachers'
-      path: '/teachers'
-      fullPath: '/app/teachers'
-      preLoaderRoute: typeof AppTeachersRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/subjects': {
-      id: '/app/subjects'
-      path: '/subjects'
-      fullPath: '/app/subjects'
-      preLoaderRoute: typeof AppSubjectsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/schools': {
-      id: '/app/schools'
-      path: '/schools'
-      fullPath: '/app/schools'
-      preLoaderRoute: typeof AppSchoolsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/reports': {
-      id: '/app/reports'
-      path: '/reports'
-      fullPath: '/app/reports'
-      preLoaderRoute: typeof AppReportsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/pupils': {
-      id: '/app/pupils'
-      path: '/pupils'
-      fullPath: '/app/pupils'
-      preLoaderRoute: typeof AppPupilsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/parents': {
-      id: '/app/parents'
-      path: '/parents'
-      fullPath: '/app/parents'
-      preLoaderRoute: typeof AppParentsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/marks': {
-      id: '/app/marks'
-      path: '/marks'
-      fullPath: '/app/marks'
-      preLoaderRoute: typeof AppMarksRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/fees': {
-      id: '/app/fees'
-      path: '/fees'
-      fullPath: '/app/fees'
-      preLoaderRoute: typeof AppFeesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/dashboard': {
-      id: '/app/dashboard'
-      path: '/dashboard'
-      fullPath: '/app/dashboard'
-      preLoaderRoute: typeof AppDashboardRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/classes': {
-      id: '/app/classes'
-      path: '/classes'
-      fullPath: '/app/classes'
-      preLoaderRoute: typeof AppClassesRouteImport
+    '/app/attendance': {
+      id: '/app/attendance'
+      path: '/attendance'
+      fullPath: '/app/attendance'
+      preLoaderRoute: typeof AppAttendanceRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/audit': {
@@ -312,11 +242,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuditRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/attendance': {
-      id: '/app/attendance'
-      path: '/attendance'
-      fullPath: '/app/attendance'
-      preLoaderRoute: typeof AppAttendanceRouteImport
+    '/app/classes': {
+      id: '/app/classes'
+      path: '/classes'
+      fullPath: '/app/classes'
+      preLoaderRoute: typeof AppClassesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/dashboard': {
+      id: '/app/dashboard'
+      path: '/dashboard'
+      fullPath: '/app/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/fees': {
+      id: '/app/fees'
+      path: '/fees'
+      fullPath: '/app/fees'
+      preLoaderRoute: typeof AppFeesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/marks': {
+      id: '/app/marks'
+      path: '/marks'
+      fullPath: '/app/marks'
+      preLoaderRoute: typeof AppMarksRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/parents': {
+      id: '/app/parents'
+      path: '/parents'
+      fullPath: '/app/parents'
+      preLoaderRoute: typeof AppParentsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/pupils': {
+      id: '/app/pupils'
+      path: '/pupils'
+      fullPath: '/app/pupils'
+      preLoaderRoute: typeof AppPupilsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/reports': {
+      id: '/app/reports'
+      path: '/reports'
+      fullPath: '/app/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/schools': {
+      id: '/app/schools'
+      path: '/schools'
+      fullPath: '/app/schools'
+      preLoaderRoute: typeof AppSchoolsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/subjects': {
+      id: '/app/subjects'
+      path: '/subjects'
+      fullPath: '/app/subjects'
+      preLoaderRoute: typeof AppSubjectsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/teachers': {
+      id: '/app/teachers'
+      path: '/teachers'
+      fullPath: '/app/teachers'
+      preLoaderRoute: typeof AppTeachersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/users': {
+      id: '/app/users'
+      path: '/users'
+      fullPath: '/app/users'
+      preLoaderRoute: typeof AppUsersRouteImport
       parentRoute: typeof AppRoute
     }
   }

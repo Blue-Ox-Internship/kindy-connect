@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -98,7 +104,7 @@ function FeesPage() {
   const isAdmin = currentUser?.role === "super_admin" || currentUser?.role === "admin";
 
   const defaultSchoolId =
-    currentUser?.role === "super_admin" ? schools[0]?.id ?? "" : currentUser?.schoolId ?? "";
+    currentUser?.role === "super_admin" ? (schools[0]?.id ?? "") : (currentUser?.schoolId ?? "");
 
   const [schoolId, setSchoolId] = useState(defaultSchoolId);
   const [fees, setFees] = useState<FeeRecord[]>([]);
@@ -307,10 +313,13 @@ function FeesPage() {
                 </div>
               ) : null}
 
-              <Dialog open={dialogOpen} onOpenChange={(open) => {
-                setDialogOpen(open);
-                if (!open) resetForm();
-              }}>
+              <Dialog
+                open={dialogOpen}
+                onOpenChange={(open) => {
+                  setDialogOpen(open);
+                  if (!open) resetForm();
+                }}
+              >
                 <DialogTrigger asChild>
                   <Button onClick={openCreateDialog} className="gap-2">
                     <Plus className="h-4 w-4" />
@@ -337,7 +346,9 @@ function FeesPage() {
                       <Label htmlFor="fee-category">Category</Label>
                       <Select
                         value={form.category}
-                        onValueChange={(value) => setForm((prev) => ({ ...prev, category: value as FeeCategory }))}
+                        onValueChange={(value) =>
+                          setForm((prev) => ({ ...prev, category: value as FeeCategory }))
+                        }
                       >
                         <SelectTrigger id="fee-category">
                           <SelectValue placeholder="Select category" />
@@ -381,7 +392,9 @@ function FeesPage() {
                         type="number"
                         min="0"
                         value={form.collected}
-                        onChange={(e) => setForm((prev) => ({ ...prev, collected: e.target.value }))}
+                        onChange={(e) =>
+                          setForm((prev) => ({ ...prev, collected: e.target.value }))
+                        }
                         placeholder="0"
                       />
                     </div>
@@ -391,7 +404,9 @@ function FeesPage() {
                       <Input
                         id="fee-description"
                         value={form.description}
-                        onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                        onChange={(e) =>
+                          setForm((prev) => ({ ...prev, description: e.target.value }))
+                        }
                         placeholder="Termly tuition, boarding support, or exam fees"
                       />
                     </div>
@@ -401,7 +416,9 @@ function FeesPage() {
                     <Button variant="outline" onClick={() => setDialogOpen(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={handleSaveFee}>{editingId ? "Save changes" : "Create fee"}</Button>
+                    <Button onClick={handleSaveFee}>
+                      {editingId ? "Save changes" : "Create fee"}
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -441,7 +458,9 @@ function FeesPage() {
                       <TableRow key={fee.id}>
                         <TableCell>
                           <div className="font-medium">{fee.name}</div>
-                          <div className="text-xs text-muted-foreground">{fee.description || "No description"}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {fee.description || "No description"}
+                          </div>
                         </TableCell>
                         <TableCell>{fee.category}</TableCell>
                         <TableCell>{currency(fee.amount)}</TableCell>
@@ -461,14 +480,24 @@ function FeesPage() {
                         </TableCell>
                         <TableCell>
                           <div>{formatDate(fee.dueDate)}</div>
-                          <div className="text-xs text-muted-foreground">Outstanding: {currency(outstanding)}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Outstanding: {currency(outstanding)}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="icon" onClick={() => openEditDialog(fee)}>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => openEditDialog(fee)}
+                            >
                               <PencilLine className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="icon" onClick={() => handleDeleteFee(fee.id)}>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleDeleteFee(fee.id)}
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
